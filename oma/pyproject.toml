@@ -1,0 +1,17 @@
+[tool.importlinter]
+root_packages = ["manager", "specialists", "contracts", "infra"]
+
+[[tool.importlinter.contracts]]
+name = "Manager must route to specialists only through the registry"
+type = "forbidden"
+source_modules = ["manager"]
+forbidden_modules = ["specialists"]
+# Re-added in Phase 6, as flagged in the Phase 5 report: manager/tools.py
+# now has a real `from specialists import registry` (delegate_to_specialist
+# calls registry.get(...).run(...)) -- this is the ONE legitimate path.
+# Nothing else in manager/ may import anything else under specialists
+# (specialists.base, specialists.build, specialists.code_review, etc.)
+# directly. Re-run `lint-imports` again after Phases 9, 10, and 11 build
+# the three real specialists -- exactly when a "quick" direct import
+# becomes most tempting.
+ignore_imports = ["manager.* -> specialists.registry"]

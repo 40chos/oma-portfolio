@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC TEST FIXTURE, not real Odoo source. -->
+<odoo>
+    <record id="demo_widget_form" model="ir.ui.view">
+        <field name="name">demo.widget.form</field>
+        <field name="model">demo.widget</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="code"/>
+                    <notebook>
+                        <page>
+                            <field name="description"/>
+                            <field name="line_ids">
+                                <tree>
+                                    <field name="qty"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="demo_widget_inherit" model="ir.ui.view">
+        <field name="name">demo.widget.form.inherit</field>
+        <field name="model">demo.widget</field>
+        <field name="inherit_id" ref="fixture_view_nested.demo_widget_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group" position="inside">
+                <field name="extra_note"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="demo_orphan_view_no_model" model="ir.ui.view">
+        <field name="name">demo.orphan.no.model</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="should_not_be_collected_into_views_primary"/>
+            </form>
+        </field>
+    </record>
+</odoo>

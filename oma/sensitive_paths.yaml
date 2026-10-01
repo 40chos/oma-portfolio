@@ -1,0 +1,43 @@
+# sensitive_paths.yaml
+# Anything a task's anticipated scope touches from this list is an
+# automatic tier-3 (or tier-4, if flagged as such) trigger, checked
+# mechanically by a script — never by asking a model whether something
+# "feels" risky. Extend this list over time as new sensitive areas are
+# discovered; treat it as a living file, not a fixed set written once.
+
+sensitive_paths:
+  - model: account.move
+    reason: "Financial — journal entries and invoices."
+    tier: 3
+
+  - model: account.move.line
+    reason: "Financial — invoice and journal line detail."
+    tier: 3
+
+  - field_pattern: "sale.order.line.price_*"
+    reason: "Financial — pricing and discount computation."
+    tier: 3
+
+  - model: stock.valuation.layer
+    reason: "Financial — stock valuation."
+    tier: 3
+
+  - concern: tax_computation
+    reason: "Financial — tax correctness."
+    tier: 3
+
+  - concern: currency_conversion
+    reason: "Financial — exchange-rate correctness."
+    tier: 3
+
+  - concern: schema_migration
+    reason: "Architectural — irreversible or high-blast-radius change."
+    tier: 4
+
+  - file: ir.model.access.csv
+    reason: "Security — model-level access control changes."
+    tier: 4
+
+  - model: ir.rule
+    reason: "Security — record-level rules, including multi-company scoping."
+    tier: 4

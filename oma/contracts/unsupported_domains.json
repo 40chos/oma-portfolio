@@ -1,0 +1,21 @@
+{
+  "_comment": "Phase 30, P0 (Phase K, §14). Small, immediate list of domains with ZERO real generation support in this pipeline today -- an attempt in any of these gets best-effort LLM output with none of the ~61 structural validators, none of the live-verification machinery, and none of the retry discipline the rest of this system builds, because all of that exists to check shapes that already have a real generation path. When P7/dimension_table.json ships, this file becomes a subset/import of it, not a separate system to maintain twice -- see the Phase 30 plan doc, §14, technical design step 1. Phase 34 (2026-08-11/12): wizard_transient_model removed from this list -- this pipeline's own general infrastructure already recognized/handled models.TransientModel correctly in several places (a real historical task, 'task 019', was a TransientModel wizard the general validators were tuned around), and two new, dedicated validators (specialists/build/wizard_structural_gate.py) now close the two real, deterministic mistakes a wizard generation could make (models.Model instead of models.TransientModel; a window action missing target='new'). Unit-tested; a live confirmation run against a real wizard task is the next step before treating this as fully proven.",
+  "domains": [
+    {
+      "domain": "qweb_report",
+      "description": "QWeb PDF/HTML report templates (report actions, report.report_type='qweb-pdf'/'qweb-html', report QWeb XML templates)"
+    },
+    {
+      "domain": "translation",
+      "description": "Translation/i18n work (.po files, translated terms, multi-language field values)"
+    },
+    {
+      "domain": "automation_trigger",
+      "description": "base.automation rules, webhook endpoints, or custom controller-triggered automation code"
+    },
+    {
+      "domain": "templated_email",
+      "description": "A one-off templated email (mail.mail/mail.template with no chatter thread), distinct from mail.thread-style chatter/messaging mixins which ARE supported"
+    }
+  ]
+}

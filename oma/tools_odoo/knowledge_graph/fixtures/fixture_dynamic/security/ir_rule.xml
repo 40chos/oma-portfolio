@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC TEST FIXTURE, not real Odoo source. -->
+<odoo>
+    <record id="demo_dynamic_comodel_rule" model="ir.rule">
+        <field name="name">demo.dynamic_comodel.own_only</field>
+        <field name="model_id" ref="model_demo_dynamic_comodel"/>
+        <field name="domain_force" eval="[('create_uid', '=', user.id)]"/>
+    </record>
+</odoo>

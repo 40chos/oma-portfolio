@@ -1,0 +1,17 @@
+# odoo_tool_allowlist.yaml
+# Exactly which models and which operations (read / search_read / write /
+# create / unlink) OdooToolClient is permitted to attempt at all -- checked
+# in code (tools_odoo/odoo_tool_client.py) before any call reaches Odoo,
+# refusing anything not explicitly listed here. This is the whitelist
+# layer the third-party mcp-server-odoo companion module would have
+# provided (see the technical document's revised §4) -- done instead as
+# code we own and can read directly, not a module installed inside Odoo.
+#
+# A living file, extended over time as a real task genuinely needs a new
+# model/operation -- never widened speculatively ahead of an actual need,
+# same spirit as sensitive_paths.yaml.
+
+odoo_tool_allowlist:
+  - model: res.partner
+    operations: [read, search_read, write]
+    reason: "Contacts -- read/update for Jack's real test tasks (service module linking customers, the contact field add)."
