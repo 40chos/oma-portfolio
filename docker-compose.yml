@@ -83,8 +83,103 @@ services:
     ports:
       - "127.0.0.1:${ODOO_HOST_PORT:-8069}:8069"
 
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "127.0.0.1:${OLLAMA_HOST_PORT:-11434}:11434"
+
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: "ollama:11434"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        ollama pull ${OMA_MODEL_BUILD:-qwen2.5-coder:7b} &&
+        ollama pull ${OMA_MODEL_MANAGER:-qwen2.5:7b-instruct} &&
+        ollama pull ${OMA_MODEL_FAST_EXTRACTION:-qwen2.5:3b-instruct}
+    restart: "no"
+
+  # Cloud mode only (OMA_LLM_MODE=cloud): `docker compose --profile cloud up -d`.
+  # Self-hosted, free, open-source proxy that exposes the real Anthropic API
+  # (using a key the operator supplies) behind the same OpenAI-compatible
+  # wire protocol infra/gateway_client.py already speaks -- so switching modes
+  # is a config change, not a second code path.
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    profiles: ["cloud"]
+    environment:
+      ANTHROPIC_API_KEY: ${OMA_CLOUD_ESCALATION_API_KEY:-}
+      LITELLM_MASTER_KEY: ${OMA_MODEL_GATEWAY_API_KEY:-sk-oma-local}
+    command: ["--config", "/app/config.yaml"]
+    volumes:
+      - ./docker/litellm-config.yaml:/app/config.yaml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4000/health/liveliness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "127.0.0.1:${LITELLM_HOST_PORT:-4000}:4000"
+
+  gitea:
+    image: gitea/gitea:1.22
+    environment:
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__server__ROOT_URL: http://gitea:3000/
+      GITEA__server__DOMAIN: gitea
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA__log__LEVEL: warn
+    volumes:
+      - gitea_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "127.0.0.1:${GITEA_HOST_PORT:-3000}:3000"
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      odoo:
+        condition: service_healthy
+    env_file:
+      - oma/.env
+    environment:
+      OMA_PG_HOST: postgres
+      OMA_PG_PORT: "5432"
+      OMA_REDIS_HOST: redis
+      OMA_REDIS_PORT: "6379"
+      NEO4J_URI: bolt://neo4j:7687
+      OMA_ODOO_URL: http://odoo:8069
+    ports:
+      - "127.0.0.1:${APP_HOST_PORT:-8000}:8000"
+
 volumes:
   pgdata:
   neo4jdata:
   odoo_filestore:
   odoo_addons:
+  ollama_models:
+  gitea_data:

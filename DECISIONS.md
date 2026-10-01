@@ -127,14 +127,67 @@ through the actual app code paths (`infra/settings.py`, `infra/neo4j_client.py`,
   despite `infra/neo4j_client.py` depending on it directly — added it for
   real, not worked around.
 
+## Stage 3 evidence: LLM gateway two-mode switch
+
+- `infra/gateway_client.py` kept its real mechanism (named backend pools per
+  role, each with its own circuit breaker/bulkhead/pooled httpx client,
+  dispatched per call by `backend_for_model()`) completely unchanged; only
+  `infra/settings.py`'s `_default_gateway_base_url()` changed what server
+  sits behind each pool, switched by `OMA_LLM_MODE`.
+- `local` (default): all three pools point at the `ollama` compose service.
+  Chose `qwen2.5-coder:7b` (coder role), `qwen2.5:7b-instruct` (reasoning
+  role: manager/classifier/code-review/testing-qa), `qwen2.5:3b-instruct`
+  (fast-extraction role) -- real, pullable Ollama models sized to run on a
+  laptop (CPU/Metal), not a GPU server, while still preserving the original's
+  three-tier role split (coder vs. reasoning vs. fast-extraction) rather than
+  collapsing it to one model.
+- `cloud` (`docker compose --profile cloud up -d`, `OMA_LLM_MODE=cloud`):
+  all three pools instead point at a self-hosted `litellm` container
+  (`docker/litellm-config.yaml`), which proxies to the real Anthropic API
+  using a key the operator supplies. Chosen over OpenAI/OpenRouter because
+  (a) the codebase already has a real, working Anthropic call path
+  (`infra/cloud_escalation.py`, kept as-is -- see below) and (b) LiteLLM as
+  an OpenAI-compatible proxy in front of a cloud model was *already* a real
+  part of this system's own architecture (`BACKEND_EXTERNAL`'s docstring:
+  "the sandbox's LiteLLM, from Phase 14 onward") -- reusing that pattern for
+  the primary gateway's cloud mode, rather than inventing a second,
+  unrelated cloud-integration mechanism.
+- `infra/cloud_escalation.py`'s own narrow, off-by-default, cost-governed
+  escalation path (three named Classifier/Planner/Judge call sites only,
+  separate cost ceiling, separate enable flag) is untouched and independent
+  of `OMA_LLM_MODE` -- both mechanisms coexist, exactly as before.
+- The old GPU-host wire-level model-alias rewrite (`_wire_model_id()`) is
+  kept as a real mechanism (not deleted), now empty-by-default and
+  env-configurable (`OMA_WIRE_MODEL_ALIASES`), since neither Ollama nor
+  LiteLLM need alias rewriting the way the old GPU Worker 02 did.
+
+## Stage 4 evidence: self-hosted Gitea, real commit verified
+
+- `docker/gitea-bootstrap.sh` (idempotent, re-runnable) provisions a real
+  admin user, org, repo, and access token against the `gitea` compose
+  service on first boot, and writes the token into `oma/.env` for both
+  the `app` container and a host-side run to pick up.
+- `tools_odoo/module_dev/vcs.py`'s separate `SECRETS/dev-agent.env` file-read
+  replaced with plain `os.environ` reads (the container's own environment
+  *is* the credential boundary now) -- its actual Gitea REST API mechanism
+  (branch-per-task, one real commit per round via the "change multiple
+  files" contents API) is otherwise unchanged.
+- Verified for real: `vcs.commit_validated_round()` against the live
+  container returned a real commit SHA
+  (`694261a739b0a0765de33e7f5746d31e593a2fb6`), confirmed via the Gitea API
+  that branch `task/smoke-test-0001` exists with that commit, authored as
+  `dev-agent`; `vcs.read_last_validated_commit()` read the same files back
+  with the expected `<module_name>/<path>` keys.
+
 ## Still open (tracked, not forgotten)
 
-- Stage 3: replace `infra/gateway_client.py`'s 3-GPU-host gateway with an
-  `OMA_LLM_MODE=local|cloud` switch (Ollama by default; Anthropic via the existing
-  `infra/cloud_escalation.py` path for cloud mode — chosen over OpenAI/OpenRouter
-  because the code already has a real, working call path for Anthropic specifically).
-- Stage 4: Gitea container, replacing `SECRETS/dev-agent.env` file-based credentials
-  with plain env vars.
+- Stage 2: seed the real knowledge graph (`tools_odoo/knowledge_graph/`) from
+  Odoo CE's own demo modules into Neo4j.
 - Stage 5: remove SSH (`odoo_jit_apikey.py`, `toolchain.py`'s `ssh_cmd`,
   `fetch_modules_via_ssh.py`) and the two systemd units, replacing with compose
   networking and direct in-container execution.
+- Stage 6: full app wiring + one real end-to-end UI run (classify → decompose
+  → Build → Code-Review → Testing/QA → install), captured as the recorded demo.
+- Record the demo, build the static GitHub Pages replay page from its real
+  trace JSON, rewrite README as a case study (demo → replay page → clone
+  instructions).

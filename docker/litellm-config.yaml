@@ -1,0 +1,23 @@
+# Cloud-mode model map: maps the logical model names OMA's specialists
+# request (OMA_MODEL_BUILD / OMA_MODEL_MANAGER / etc. -- set these to the
+# names on the left in .env when OMA_LLM_MODE=cloud) onto real Anthropic
+# models, reachable through LiteLLM's OpenAI-compatible /v1/chat/completions
+# so infra/gateway_client.py needs no second code path for cloud mode.
+model_list:
+  - model_name: claude-coder
+    litellm_params:
+      model: anthropic/claude-sonnet-4-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: claude-reasoning
+    litellm_params:
+      model: anthropic/claude-sonnet-4-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: claude-fast-extraction
+    litellm_params:
+      model: anthropic/claude-haiku-4-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+litellm_settings:
+  drop_params: true

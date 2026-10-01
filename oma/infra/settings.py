@@ -135,6 +135,23 @@ def load_redis_settings() -> RedisSettings:
     )
 
 
+def _default_gateway_base_url() -> str:
+    """Stage 3 port: the original three GPU-host base URLs are replaced by a
+    single OMA_LLM_MODE switch -- `local` (default) points every backend pool
+    at the self-hosted `ollama` compose service; `cloud` points them at the
+    self-hosted `litellm` compose service instead, which proxies to the real
+    Anthropic API using a key the operator supplies. Either way, all three
+    backend pools in infra/gateway_client.py still exist and still speak the
+    same OpenAI-compatible wire protocol -- only which real server sits
+    behind each pool changes. Explicit OMA_MODEL_GATEWAY_URL_* env vars
+    always override this, same as before.
+    """
+    mode = os.environ.get("OMA_LLM_MODE", "local").strip().lower()
+    if mode == "cloud":
+        return "http://litellm:4000/v1"
+    return "http://ollama:11434/v1"
+
+
 def load_gateway_settings() -> GatewaySettings:
     from infra.gpu_capacity_guard import (
         DEFAULT_MAX_WAIT_SEC,
@@ -142,11 +159,12 @@ def load_gateway_settings() -> GatewaySettings:
         DEFAULT_RAM_CEILING_BYTES,
         DEFAULT_RAM_CEILING_FRACTION,
     )
+    default_url = _default_gateway_base_url()
     return GatewaySettings(
-        coder_base_url=_require("OMA_MODEL_GATEWAY_URL_CODER"),
-        reasoning_base_url=_require("OMA_MODEL_GATEWAY_URL_REASONING"),
+        coder_base_url=os.environ.get("OMA_MODEL_GATEWAY_URL_CODER") or default_url,
+        reasoning_base_url=os.environ.get("OMA_MODEL_GATEWAY_URL_REASONING") or default_url,
         fast_extraction_base_url=(
-            os.environ.get("OMA_MODEL_GATEWAY_URL_FAST_EXTRACTION") or "http://10.1.19.200:9090/v1"
+            os.environ.get("OMA_MODEL_GATEWAY_URL_FAST_EXTRACTION") or default_url
         ),
         api_key=os.environ.get("OMA_MODEL_GATEWAY_API_KEY") or None,
         ram_ceiling_fraction=float(

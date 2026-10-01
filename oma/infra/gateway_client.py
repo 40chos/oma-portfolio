@@ -10,41 +10,30 @@ pattern, reimplemented small and direct, no Router hop in between):
     failed repeatedly within a short window, for a cooldown period
   - a bulkhead semaphore partitioned by BACKEND, not by model tier
 
-Real infra change, 2026-07-13 (the project owner's explicit instruction, following
-up on EXECUTION_ROADMAP_2026-07-12.md workstream #1): this system used
-to route every model through one single llama-swap host that hot-swapped
-whichever model a call asked for -- a real ~10-40s reload tax on every
-role switch. That host is retired for anything but the coder role. There
-are now two permanently-resident, single-purpose GPU hosts, and this
-client picks between them **per call, keyed off the `model` name** --
-never per client instance -- because one shared ModelGatewayClient
-instance is used process-wide across every specialist (build, manager,
-code-review, testing/QA), and each of those still needs to reach a
-different physical host depending on which model it asks for:
-  - GPU Worker 01 (10.1.19.195:9090) -- coder only (`qwen3-coder-30b-a3b`).
-    Never receives a request for anything else.
-  - GPU Worker 02 (10.1.19.203:9090) -- the one shared reasoning model
-    (`qwen3.6-27b`, logical name) for every other role: manager,
-    classifier, code-review, testing/QA routine tier, testing/QA
-    escalation tier. `qwen3-14b` and `deepseek-r1-distill-qwen-32b` are
-    retired -- every non-coder role now shares this one resident model
-    instead of swapping between four.
+Per the build plan's Phase 2 and §2.4 (Nexo's real llm_backends.py
+pattern, reimplemented small and direct, no Router hop in between), this
+client has always split traffic across named backend pools keyed off the
+`model` name, each with its own circuit breaker/bulkhead/pooled client, so
+an outage or rate limit on one backend never blocks another -- originally
+because the coder and reasoning roles lived on two separate, permanently-
+resident GPU hosts.
 
-Confirmed live (2026-07-13) that GPU Worker 02's own `/v1/models` does
-NOT expose the model under the logical id `qwen3.6-27b` -- it serves
-under the host-specific alias `JA-GPU2-27B-INT4-64K` only. Every other
-piece of this codebase (context-window lookups, docstrings, env var
-defaults, trace/UI display) keeps using the stable logical name
-`qwen3.6-27b`; only this module knows about the wire-level alias, and
-only rewrites it in the actual outgoing HTTP payload, immediately before
-the request is sent -- see `_wire_model_id()`.
+Stage 3 port: those two physical hosts are replaced by `OMA_LLM_MODE`
+(see infra/settings.py's `_default_gateway_base_url()`), switching every
+backend pool between two self-hosted targets instead of hunting for a
+real GPU fleet:
+  - `local` (default): every pool points at the `ollama` compose service.
+    Zero API cost, fully self-hosted, the default for a 24/7-capable demo.
+  - `cloud`: every pool points at the `litellm` compose service instead,
+    which proxies to the real Anthropic API using a key the operator
+    supplies -- for a higher-quality demo during an actual interview.
 
-Because the two hosts are now independent physical machines with
-independent failure modes, each gets its OWN circuit breaker, bulkhead,
-and pooled httpx.AsyncClient (`_BackendPool`) -- a outage on one must
-never trip the breaker for, or block the bulkhead of, the other. This
-replaces the old single-pool-per-client-instance design, which was only
-ever correct when both roles shared one physical host.
+The BACKEND_CODER / BACKEND_REASONING / BACKEND_FAST_EXTRACTION split
+itself is unchanged and still real: which model name routes to which
+pool is still resolved per call via `backend_for_model()`, so a slow or
+rate-limited coder-role call still can't block a reasoning-role call --
+only the servers sitting behind each pool changed, not the isolation
+mechanism between them.
 """
 
 from __future__ import annotations
@@ -216,16 +205,28 @@ BACKEND_REASONING = "gpu_worker_02_reasoning"  # 10.1.19.203:9090, qwen3.6-27b o
 BACKEND_FAST_EXTRACTION = "gpu_worker_03_fast_extraction"
 BACKEND_EXTERNAL = "external"  # the sandbox's LiteLLM, from Phase 14 onward
 
-_CODER_MODEL_NAMES = frozenset({"qwen3-coder-30b-a3b"})
-_FAST_EXTRACTION_MODEL_NAMES = frozenset({"qwen3-9b-fast-extraction"})
+# Stage 3 port: which model name routes to the coder-role / fast-extraction-role
+# backend pool is now derived from the same env vars that choose those models
+# in the first place (OMA_MODEL_BUILD, OMA_MODEL_FAST_EXTRACTION), rather than
+# a hardcoded set of the old GPU hosts' literal model names that could silently
+# drift out of sync with whatever .env actually configures. Read once at
+# import time -- these are startup config, not something that changes mid-run.
+_CODER_MODEL_NAMES = frozenset({os.environ.get("OMA_MODEL_BUILD", "qwen2.5-coder:7b")})
+_FAST_EXTRACTION_MODEL_NAMES = frozenset(
+    {os.environ.get("OMA_MODEL_FAST_EXTRACTION", "qwen2.5:3b-instruct")}
+)
 
-# GPU Worker 02 serves the reasoning model under this host-specific alias,
-# not the logical name `qwen3.6-27b` the rest of this codebase uses --
-# confirmed live via that host's own /v1/models (2026-07-13).
-_WIRE_MODEL_ALIASES = {
-    "qwen3.6-27b": "JA-GPU2-27B-INT4-64K",
-    "qwen3-9b-fast-extraction": "Qwen3-9B-int4-32k",
-}
+# The old GPU Worker 02 served its model under a host-specific wire alias
+# different from the logical name the rest of this codebase used. Neither
+# Ollama nor LiteLLM need that -- each serves/proxies a model under the exact
+# tag you ask for -- so this is empty by default. Kept as a real mechanism
+# (not deleted) via OMA_WIRE_MODEL_ALIASES, a comma-separated logical=wire
+# list, in case a future backend ever needs it again.
+_WIRE_MODEL_ALIASES = dict(
+    pair.split("=", 1)
+    for pair in os.environ.get("OMA_WIRE_MODEL_ALIASES", "").split(",")
+    if "=" in pair
+)
 
 
 # Temporary, operator-controlled failover (2026-07-28): GPU Worker 03

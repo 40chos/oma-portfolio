@@ -13,27 +13,31 @@ container's filesystem remains written by write_module_file() exactly
 as before, immediately before install_module() runs.
 
 One branch per task_id, named `task/<task_id>`, in the dedicated repo
-named by DEV_AGENT_GITEA_ORG/DEV_AGENT_GITEA_GENERATED_MODULES_REPO
-(SECRETS/dev-agent.env). Every commit uses Gitea's own "change multiple
-files" contents API so a round's files land as ONE real commit, not N
-racy individual writes. Credentials are read directly from
-SECRETS/dev-agent.env via dotenv_values() (never mutating os.environ,
-never printed/logged) -- this is the one file this module is allowed to
-read, per the standing project rule that credentials live only there.
+named by DEV_AGENT_GITEA_ORG/DEV_AGENT_GITEA_GENERATED_MODULES_REPO.
+Every commit uses Gitea's own "change multiple files" contents API so a
+round's files land as ONE real commit, not N racy individual writes.
+
+Stage 4 port: credentials used to be read from a separate SECRETS/dev-agent.env
+file via dotenv_values() rather than os.environ, specifically so they'd never
+leak into process environment/logs on the original bare-metal host. In this
+Docker Compose port, the container's own environment IS the credential
+boundary (nothing else shares it), so that extra indirection is gone --
+these are read like every other credential in this codebase, via
+infra.settings's _require() pattern. docker/gitea-bootstrap.sh provisions the
+real admin user/org/repo/token on first boot and prints the token into
+OMA_ENV_FILE for docker compose to pick up.
 """
 
 from __future__ import annotations
 
 import base64
 import io
+import os
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
-from dotenv import dotenv_values
-
-_SECRETS_ENV_PATH = Path(__file__).resolve().parents[2] / "SECRETS" / "dev-agent.env"
 
 _REQUIRED_KEYS = (
     "DEV_AGENT_GITEA_URL",
@@ -53,14 +57,14 @@ class VcsError(RuntimeError):
 
 
 def _gitea_config() -> dict[str, str]:
-    values = dotenv_values(_SECRETS_ENV_PATH)
-    missing = [k for k in _REQUIRED_KEYS if not values.get(k)]
+    missing = [k for k in _REQUIRED_KEYS if not os.environ.get(k)]
     if missing:
         raise VcsError(
-            f"missing required Gitea config key(s) {missing} in {_SECRETS_ENV_PATH} "
-            "-- confirm SECRETS/dev-agent.env has real DEV_AGENT_GITEA_* values set"
+            f"missing required Gitea config env var(s) {missing} -- run "
+            "docker/gitea-bootstrap.sh (or copy .env.example to .env and fill "
+            "these in) before anything calls vcs.py"
         )
-    return {k: values[k] for k in _REQUIRED_KEYS}  # type: ignore[misc]
+    return {k: os.environ[k] for k in _REQUIRED_KEYS}
 
 
 _SYSTEM_CA_BUNDLE = "/etc/ssl/certs/ca-certificates.crt"
