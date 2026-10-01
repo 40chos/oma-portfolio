@@ -179,10 +179,39 @@ through the actual app code paths (`infra/settings.py`, `infra/neo4j_client.py`,
   `dev-agent`; `vcs.read_last_validated_commit()` read the same files back
   with the expected `<module_name>/<path>` keys.
 
+## Stage 2 evidence: real knowledge graph, seeded from Odoo CE's own addons
+
+- Copied Odoo CE's own bundled addons directory straight out of the running
+  `odoo` container (`docker cp`, no SSH) -- 71 real module directories, not a
+  synthetic fixture.
+- Ran Stage A unmodified (`tools_odoo/knowledge_graph/driver.py`): parsed 75
+  modules, 333 real `needs_llm_review` flags.
+- The original pipeline's Stage B (LLM-written architectural notes,
+  `build_model_cards.py`) wasn't included in this handoff. Rather than block
+  on it or fabricate narrative content, wrote
+  `tools_odoo/knowledge_graph/build_stage2_derived_artifacts.py`: derives
+  `model_cards.jsonl` (FIELDS:/INHERITS: grammar) and `odoo_full_module_graph.json`
+  (author/topo_order/external_deps) mechanically from Stage A's own real
+  structural facts and each module's real `__manifest__.py` -- zero LLM calls,
+  zero fabricated content. Confirmed by direct inspection of
+  `scripts/odoo_kg_to_neo4j.py` that its live ETL path only ever regex-parses
+  FIELDS:/INHERITS: out of model_cards.jsonl and reads `extends` straight off
+  final_module_graph.jsonl (the EXTENDED_BY: grammar parsers are dead code,
+  per that script's own 2026-08-13 fix note) -- so this was sufficient, not
+  a shortcut around something still load-bearing.
+- `merge_final_graph.py` ran unmodified with an empty notes file / empty
+  review-output dir, which it already handles correctly: every Stage A
+  review flag stays honestly `not_reviewed` rather than being marked
+  resolved. 333 unresolved items across 33 modules, accurately reported.
+- Ran the real, unmodified `odoo_kg_to_neo4j.py --mode full` against this
+  local Neo4j. Verified with real Cypher: 98 `Module`, 395 `Model`, 3102
+  `Field`, 758 `View` nodes, 693 `DEPENDS_ON` edges. Confirmed the exact
+  `infra.neo4j_client` module Code-Review's hallucination filters import
+  returns correct data (`res.partner`'s real fields, `account`'s real
+  module dependencies).
+
 ## Still open (tracked, not forgotten)
 
-- Stage 2: seed the real knowledge graph (`tools_odoo/knowledge_graph/`) from
-  Odoo CE's own demo modules into Neo4j.
 - Stage 5: remove SSH (`odoo_jit_apikey.py`, `toolchain.py`'s `ssh_cmd`,
   `fetch_modules_via_ssh.py`) and the two systemd units, replacing with compose
   networking and direct in-container execution.

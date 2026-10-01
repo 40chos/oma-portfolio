@@ -9,3 +9,4 @@ var/
 .pytest_cache/
 .DS_Store
 .venv/
+oma/import_audit/
