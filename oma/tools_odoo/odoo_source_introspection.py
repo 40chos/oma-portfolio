@@ -1,15 +1,13 @@
 """Read-only, deterministic source-level introspection against the real
-SITE addons tree over SSH -- used to verify claims about whether a
-Python method actually exists on a real base model, instead of trusting
+addons tree in the Odoo container -- used to verify claims about whether
+a Python method actually exists on a real base model, instead of trusting
 an LLM's unverified assertion about it either way (Build inventing a
-call to a method that was never really there, or -- the case that
-motivated this module, 2026-07-24, task 020/`project.meerwerk` --
-Code-Review wrongly REJECTING a `super().action_accept()` call by
-claiming `action_accept` "is not defined in the base model" when a
-direct grep of the real source (`/opt/site/site16/project_meerwerk/
-models/project_meerwerk.py:121`) shows it plainly is. Odoo's own
-XML-RPC surface has no method-introspection call (only field/record
-introspection), so this is necessarily a source grep, not an RPC call.
+call to a method that was never really there, or Code-Review wrongly
+REJECTING a real `super().<method>()` call by claiming that method "is
+not defined in the base model" when a direct grep of the real source
+shows it plainly is). Odoo's own XML-RPC surface has no method-
+introspection call (only field/record introspection), so this is
+necessarily a source grep, not an RPC call.
 
 Deliberately its own tiny module, not part of
 `tools_odoo.module_dev.toolchain`: that module is intentionally
@@ -18,6 +16,10 @@ write-capable (scaffolding, installs, uninstalls), and
 specialist never imports anything write-capable, structurally, not by
 promise. Every command run here is a read-only `grep`/`test -d` --
 nothing in this module can mutate container or database state.
+
+Stage 5 port: reads used to go over SSH to a second real host; in this
+single-host Compose port, `docker exec` into the sibling `odoo` container
+replaces that transport directly.
 """
 
 from __future__ import annotations
@@ -27,11 +29,8 @@ import re
 import shlex
 import subprocess
 
-_SSH_HOST_ENV = "OMA_ODOO_SSH_HOST"
-_SSH_USER_ENV = "OMA_ODOO_SSH_USER"
-_SSH_KEY_PATH_ENV = "OMA_ODOO_SSH_KEY_PATH"
-_CONTAINER_ENV = "OMA_ODOO_SSH_CONTAINER"
-_CUSTOM_SITE_ADDONS_ROOT = "/opt/site/site16"
+_CONTAINER_ENV = "OMA_ODOO_CONTAINER"
+_CUSTOM_SITE_ADDONS_ROOT = "/mnt/extra-addons"
 
 # Module and method names are both plain Python identifiers here --
 # anything else can't be a real module/method name, so rejecting it
@@ -41,20 +40,12 @@ _IDENTIFIER_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
 
 def _run_readonly(bash_command: str, timeout: int = 15) -> subprocess.CompletedProcess | None:
+    container = os.environ.get(_CONTAINER_ENV, "oma-odoo-1")
     try:
-        host = os.environ[_SSH_HOST_ENV]
-        ssh_user = os.environ[_SSH_USER_ENV]
-        container = os.environ[_CONTAINER_ENV]
-    except KeyError:
-        return None
-    key_path = os.environ.get(_SSH_KEY_PATH_ENV)
-    remote_cmd = f"sudo docker exec {container} bash -c {shlex.quote(bash_command)}"
-    ssh_cmd = ["ssh"]
-    if key_path:
-        ssh_cmd += ["-i", key_path, "-o", "IdentitiesOnly=yes"]
-    ssh_cmd += [f"{ssh_user}@{host}", remote_cmd]
-    try:
-        return subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=timeout)
+        return subprocess.run(
+            ["docker", "exec", container, "bash", "-c", bash_command],
+            capture_output=True, text=True, timeout=timeout,
+        )
     except Exception:
         return None
 

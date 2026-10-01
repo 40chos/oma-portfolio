@@ -62,11 +62,8 @@ from infra.fencing import acquire_db_install_lock, release_db_install_lock
 from infra.odoo_settings import _assert_safe_odoo_target
 from tools_odoo.odoo_schema_client import is_fast_path_eligible
 
-_SSH_HOST_ENV = "OMA_ODOO_SSH_HOST"
-_SSH_USER_ENV = "OMA_ODOO_SSH_USER"
-_SSH_KEY_PATH_ENV = "OMA_ODOO_SSH_KEY_PATH"
-_CONTAINER_ENV = "OMA_ODOO_SSH_CONTAINER"
-_ODOO_BIN_PATH = "/opt/site/16/odoo-bin"
+_CONTAINER_ENV = "OMA_ODOO_CONTAINER"
+_ODOO_BIN_PATH = "/usr/bin/odoo"  # the official odoo:16 image's own binary path
 _ODOO_CONF_PATH = "/etc/odoo/odoo.conf"
 _LOCAL_BIN = "/var/lib/odoo/.local/bin"  # where pip3 --user lands pylint/click-odoo-*
 _FILESTORE_DIR = "/var/lib/odoo/filestore"
@@ -312,8 +309,6 @@ class InstallResult:
 def _run_in_container(bash_command: str, timeout: int = 180, container: str | None = None) -> subprocess.CompletedProcess:
     import os
 
-    host = os.environ[_SSH_HOST_ENV]
-    ssh_user = os.environ[_SSH_USER_ENV]
     # Real, deliberate design point (2026-07-13, Phase 20 sandbox
     # integration): `container` is an explicit PER-CALL override, never
     # a mutation of OMA_ODOO_SSH_CONTAINER itself -- this process runs
@@ -341,21 +336,20 @@ def _run_in_container(bash_command: str, timeout: int = 180, container: str | No
     # ONLY when the string contains no double quotes -- the moment a
     # bash_command embeds a double quote (e.g. _sandbox_pg_command()'s
     # PGPASSWORD="$db_password" -h "$db_host"), repr() silently switches
-    # to double-quote wrapping instead, and the remote shell then closes
+    # to double-quote wrapping instead, and the enclosing shell then closes
     # the outer bash -c "..." argument at that FIRST embedded ", splitting
     # the command and producing "syntax error near unexpected token ')'"
     # deterministically, every single call. shlex.quote() always emits a
     # single-quoted, POSIX-safe token regardless of what's inside.
-    remote_cmd = f"sudo docker exec {container} bash -c {shlex.quote(bash_command)}"
-    # dev-agent service identity (2026-07-09) -- explicit key path.
-    key_path = os.environ.get(_SSH_KEY_PATH_ENV)
-    ssh_cmd = ["ssh"]
-    if key_path:
-        ssh_cmd += ["-i", key_path, "-o", "IdentitiesOnly=yes"]
-    ssh_cmd += [f"{ssh_user}@{host}", remote_cmd]
+    #
+    # Stage 5 port: the original ran this over SSH to a second real host
+    # (odoo-dev.int) that itself ran `docker exec`. In this single-host
+    # Compose port there's no second host -- `docker exec` runs directly,
+    # same quoting/timeout handling below, unchanged.
+    docker_cmd = ["docker", "exec", container, "bash", "-c", bash_command]
     try:
         return subprocess.run(
-            ssh_cmd,
+            docker_cmd,
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -379,7 +373,7 @@ def _run_in_container(bash_command: str, timeout: int = 180, container: str | No
         # gracefully absorbs a timeout the same way it already absorbs any other command
         # failure, with zero behavior change for the normal (non-timeout) case.
         return subprocess.CompletedProcess(
-            args=ssh_cmd, returncode=-1,
+            args=docker_cmd, returncode=-1,
             stdout=exc.stdout.decode() if isinstance(exc.stdout, bytes) else (exc.stdout or ""),
             stderr=(exc.stderr.decode() if isinstance(exc.stderr, bytes) else (exc.stderr or ""))
             + f"\n[oma] _run_in_container command timed out after {timeout}s: {bash_command[:200]!r}",

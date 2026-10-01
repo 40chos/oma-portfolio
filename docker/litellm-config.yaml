@@ -3,21 +3,26 @@
 # names on the left in .env when OMA_LLM_MODE=cloud) onto real Anthropic
 # models, reachable through LiteLLM's OpenAI-compatible /v1/chat/completions
 # so infra/gateway_client.py needs no second code path for cloud mode.
+# All three roles pinned to gpt-4o-mini for the one-time demo-capture run --
+# cheapest capable OpenAI model, a few cents for a full end-to-end trace.
+# Swap to gpt-4o or a claude-* / anthropic model (see git history) for a
+# higher-quality interview demo; cost scales accordingly. Names on the left
+# are what OMA_MODEL_BUILD/MANAGER/etc. should be set to in .env.
 model_list:
-  - model_name: claude-coder
+  - model_name: openai-coder
     litellm_params:
-      model: anthropic/claude-sonnet-4-5
-      api_key: os.environ/ANTHROPIC_API_KEY
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
 
-  - model_name: claude-reasoning
+  - model_name: openai-reasoning
     litellm_params:
-      model: anthropic/claude-sonnet-4-5
-      api_key: os.environ/ANTHROPIC_API_KEY
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
 
-  - model_name: claude-fast-extraction
+  - model_name: openai-fast-extraction
     litellm_params:
-      model: anthropic/claude-haiku-4-5
-      api_key: os.environ/ANTHROPIC_API_KEY
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
 
 litellm_settings:
   drop_params: true

@@ -77,21 +77,9 @@ def check_field_exists_on_model(db: str, model: str, field_name: str) -> bool | 
     import subprocess
 
     try:
-        host = os.environ["OMA_ODOO_SSH_HOST"]
-        ssh_user = os.environ["OMA_ODOO_SSH_USER"]
-        container = os.environ["OMA_ODOO_SSH_CONTAINER"]
-        # Real host-side permission fix applied 2026-07-09 (see
-        # toolchain.py) -- default (non-root) exec is correct again.
-        remote_cmd = f"sudo docker exec -i {container} {cmd}"
-        # dev-agent service identity (2026-07-09) -- explicit key path, same
-        # as every other real SSH call site in this project now.
-        key_path = os.environ.get("OMA_ODOO_SSH_KEY_PATH")
-        ssh_cmd = ["ssh"]
-        if key_path:
-            ssh_cmd += ["-i", key_path, "-o", "IdentitiesOnly=yes"]
-        ssh_cmd += [f"{ssh_user}@{host}", remote_cmd]
+        container = os.environ.get("OMA_ODOO_CONTAINER", "oma-odoo-1")
         proc = subprocess.run(
-            ssh_cmd,
+            ["docker", "exec", "-i", container] + cmd.split(),
             input=script,
             capture_output=True,
             text=True,

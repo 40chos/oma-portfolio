@@ -8,12 +8,20 @@ permanent key.
 
 Generating an API key on someone's behalf isn't a plain XML-RPC
 `execute_kw` operation in stock Odoo (self-service, tied to the
-calling user's own session) -- so this runs via the same SSH +
-`odoo-bin shell` channel used to create the dedicated user itself
-(legitimate ORM access, real business logic, not raw SQL), which this
-project's access boundary already treats as the right channel for
-credential/container management, distinct from the XML-RPC API used
-for actual data operations.
+calling user's own session) -- so this runs via the same `odoo-bin
+shell` channel used to create the dedicated user itself (legitimate ORM
+access, real business logic, not raw SQL), which this project's access
+boundary already treats as the right channel for credential/container
+management, distinct from the XML-RPC API used for actual data
+operations.
+
+Stage 5 port: the original reached this channel over SSH + a remote
+`docker exec` (two real hosts: this devbox, and odoo-dev.int running the
+actual Odoo container). In this single-host Docker Compose port, the Odoo
+container is a direct sibling on the same compose network, so this is a
+plain local `docker exec` -- same real `odoo-bin shell` invocation, same
+script templates below, no SSH hop needed because there's no second host
+to hop to.
 """
 
 from __future__ import annotations
@@ -22,43 +30,30 @@ import subprocess
 
 from infra.odoo_settings import _assert_safe_odoo_target  # the guard, always run first
 
-_SSH_HOST_ENV = "OMA_ODOO_SSH_HOST"
-_SSH_USER_ENV = "OMA_ODOO_SSH_USER"
-_SSH_KEY_PATH_ENV = "OMA_ODOO_SSH_KEY_PATH"
-_CONTAINER_ENV = "OMA_ODOO_SSH_CONTAINER"
-_ODOO_BIN_PATH = "/opt/site/16/odoo-bin"
+_CONTAINER_ENV = "OMA_ODOO_CONTAINER"
+_ODOO_BIN_PATH = "/usr/bin/odoo"
 _ODOO_CONF_PATH = "/etc/odoo/odoo.conf"
 
 
 def _run_shell_script(db: str, script: str, remote_port: int = 8071) -> str:
-    """Runs a Python script through `odoo-bin shell` on odoo-dev.int via
-    SSH, targeting `db`. Always re-validates the safety guard here too
-    (not just at the call site) -- this function can execute real ORM
-    writes, so it must never trust a caller blindly.
+    """Runs a Python script through `odoo-bin shell` inside the `odoo`
+    compose service via `docker exec`, targeting `db`. Always re-validates
+    the safety guard here too (not just at the call site) -- this function
+    can execute real ORM writes, so it must never trust a caller blindly.
     """
     import os
 
     _assert_safe_odoo_target(db, remote_port)  # redundant with the caller's own check, deliberately
 
-    host = os.environ[_SSH_HOST_ENV]
-    ssh_user = os.environ[_SSH_USER_ENV]
-    container = os.environ[_CONTAINER_ENV]
+    container = os.environ.get(_CONTAINER_ENV, "oma-odoo-1")
 
-    # Real host-side permission fix applied 2026-07-09 (see toolchain.py
-    # for the full finding) -- /etc/odoo16-dev is readable by "odoo"
-    # again, default (non-root) exec is correct.
-    remote_cmd = (
-        f"sudo docker exec -i {container} {_ODOO_BIN_PATH} shell "
-        f"-c {_ODOO_CONF_PATH} -d {db} --no-http"
-    )
-    # dev-agent service identity (2026-07-09) -- explicit key path.
-    key_path = os.environ.get(_SSH_KEY_PATH_ENV)
-    ssh_cmd = ["ssh"]
-    if key_path:
-        ssh_cmd += ["-i", key_path, "-o", "IdentitiesOnly=yes"]
-    ssh_cmd += [f"{ssh_user}@{host}", remote_cmd]
+    # docker-compose.yml writes a real odoo.conf (db_host/db_port/db_user/
+    # db_password) into this container at its own startup -- a fresh
+    # `odoo shell` invocation here reads the same file, no separate
+    # connection args needed.
     proc = subprocess.run(
-        ssh_cmd,
+        ["docker", "exec", "-i", container, _ODOO_BIN_PATH, "shell",
+         "-c", _ODOO_CONF_PATH, "-d", db, "--no-http"],
         input=script,
         capture_output=True,
         text=True,

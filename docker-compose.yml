@@ -56,8 +56,16 @@ services:
       PORT: "5432"
       USER: ${OMA_PG_USER:-oma}
       PASSWORD: ${OMA_PG_PASSWORD:-oma_dev_password}
-    command: >
-      odoo -d ${ODOO_DB_NAME:-odoo16_dev} -i base --stop-after-init
+    # Writes a real odoo.conf with db connection settings baked in (not just
+    # passed as CLI args to this one process) -- so a later ad-hoc
+    # `docker exec ... odoo shell`/`odoo -i ...` call against the long-running
+    # `odoo` service below can also connect, with no SSH/systemd equivalent
+    # of "reconfigure the host" needed. See DECISIONS.md, Stage 5.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        printf '[options]\ndb_host = postgres\ndb_port = 5432\ndb_user = ${OMA_PG_USER:-oma}\ndb_password = ${OMA_PG_PASSWORD:-oma_dev_password}\naddons_path = /mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons\n' > /etc/odoo/odoo.conf
+        exec odoo -d ${ODOO_DB_NAME:-odoo16_dev} -i base --stop-after-init
     restart: "no"
 
   odoo:
@@ -70,8 +78,11 @@ services:
       PORT: "5432"
       USER: ${OMA_PG_USER:-oma}
       PASSWORD: ${OMA_PG_PASSWORD:-oma_dev_password}
-    command: >
-      odoo -d ${ODOO_DB_NAME:-odoo16_dev}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        printf '[options]\ndb_host = postgres\ndb_port = 5432\ndb_user = ${OMA_PG_USER:-oma}\ndb_password = ${OMA_PG_PASSWORD:-oma_dev_password}\naddons_path = /mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons\n' > /etc/odoo/odoo.conf
+        exec odoo -d ${ODOO_DB_NAME:-odoo16_dev}
     volumes:
       - odoo_filestore:/var/lib/odoo
       - odoo_addons:/mnt/extra-addons
@@ -120,12 +131,13 @@ services:
     profiles: ["cloud"]
     environment:
       ANTHROPIC_API_KEY: ${OMA_CLOUD_ESCALATION_API_KEY:-}
+      OPENAI_API_KEY: ${OMA_CLOUD_ESCALATION_API_KEY:-}
       LITELLM_MASTER_KEY: ${OMA_MODEL_GATEWAY_API_KEY:-sk-oma-local}
     command: ["--config", "/app/config.yaml"]
     volumes:
       - ./docker/litellm-config.yaml:/app/config.yaml:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:4000/health/liveliness || exit 1"]
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')\" || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10

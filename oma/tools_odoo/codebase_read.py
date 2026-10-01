@@ -1,14 +1,20 @@
 """Phase 10: strictly read-only helpers for the Code-Review specialist.
 This module never imports or exposes anything write-capable -- its only
-job is reading real files over SSH, for the two shapes Code-Review's
-run() needs: a scaffolded module under /mnt/extra-addons (diff review
-of a Build specialist's own output) and the actual custom Odoo codebase
-under /opt/site/site16 (task 4's whole-codebase audit). Both are read
-via a plain `find`/`cat` over SSH -- no docker exec -u root, no write
-flags, nothing that could mutate anything. Per the build plan's own
-emphasis, task 4's read-only property is enforced structurally here
-(this module has no write function to call at all), not left as a
-promise the specialist keeps.
+job is reading real files from the Odoo container, for the two shapes
+Code-Review's run() needs: a scaffolded module under /mnt/extra-addons
+(diff review of a Build specialist's own output) and the broader custom
+codebase under the same addons mount (task 4's whole-codebase audit, scoped
+to whatever Build has actually generated so far in this demo -- there's no
+separate pre-existing client codebase to point at in a fresh Odoo CE
+install). Both are read via a plain `find`/`cat` through `docker exec` --
+no -u root, no write flags, nothing that could mutate anything. Per the
+build plan's own emphasis, task 4's read-only property is enforced
+structurally here (this module has no write function to call at all), not
+left as a promise the specialist keeps.
+
+Stage 5 port: reads used to go over SSH to a second real host; in this
+single-host Compose port, `docker exec` into the sibling `odoo` container
+replaces that transport directly -- same read-only command shapes below.
 """
 
 from __future__ import annotations
@@ -17,16 +23,10 @@ import os
 import re
 import subprocess
 
-_SSH_HOST_ENV = "OMA_ODOO_SSH_HOST"
-_SSH_USER_ENV = "OMA_ODOO_SSH_USER"
-_SSH_KEY_PATH_ENV = "OMA_ODOO_SSH_KEY_PATH"
-_CONTAINER_ENV = "OMA_ODOO_SSH_CONTAINER"
+_CONTAINER_ENV = "OMA_ODOO_CONTAINER"
 
 _MODULE_DEV_ADDONS_DIR = "/mnt/extra-addons"
-# The actual custom Odoo module source -- a READ-ONLY bind mount on
-# odoo16-dev (confirmed via `docker inspect` in Phase 8), shared with
-# the host image. Task 4's real audit target.
-_CUSTOM_CODEBASE_ROOT = "/opt/site/site16"
+_CUSTOM_CODEBASE_ROOT = "/mnt/extra-addons"
 
 _MAX_FILES = 60
 _MAX_FILE_BYTES = 40_000
@@ -36,34 +36,16 @@ class CodebaseReadError(RuntimeError):
     pass
 
 
-def _ssh_run(remote_cmd: str, timeout: int = 60) -> subprocess.CompletedProcess:
-    host = os.environ[_SSH_HOST_ENV]
-    ssh_user = os.environ[_SSH_USER_ENV]
-    # Real, deliberate identity switch (2026-07-09, Operator): dev-agent, a
-    # dedicated service account, not a human's own SSH identity/agent --
-    # the private key path is explicit here rather than relying on
-    # whatever's already loaded in the calling shell's own ssh-agent, so
-    # this genuinely authenticates as dev-agent regardless of who/what
-    # process is running this.
-    key_path = os.environ.get(_SSH_KEY_PATH_ENV)
-    ssh_cmd = ["ssh"]
-    if key_path:
-        ssh_cmd += ["-i", key_path, "-o", "IdentitiesOnly=yes"]
-    ssh_cmd += [f"{ssh_user}@{host}", remote_cmd]
+def _docker_exec_readonly(bash_command: str, timeout: int = 60) -> subprocess.CompletedProcess:
+    container = os.environ.get(_CONTAINER_ENV, "oma-odoo-1")
     return subprocess.run(
-        ssh_cmd,
+        ["docker", "exec", container, "bash", "-c", bash_command],
         capture_output=True,
         text=True,
         timeout=timeout,
         encoding="utf-8",
         errors="replace",  # real custom-addon files aren't guaranteed clean UTF-8
     )
-
-
-def _docker_exec_readonly(bash_command: str, timeout: int = 60) -> subprocess.CompletedProcess:
-    container = os.environ[_CONTAINER_ENV]
-    remote_cmd = f"sudo docker exec {container} bash -c {bash_command!r}"
-    return _ssh_run(remote_cmd, timeout=timeout)
 
 
 def _read_files_under(root: str, find_expr: str) -> dict[str, str]:

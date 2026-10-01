@@ -210,11 +210,62 @@ through the actual app code paths (`infra/settings.py`, `infra/neo4j_client.py`,
   returns correct data (`res.partner`'s real fields, `account`'s real
   module dependencies).
 
+## Stage 3 evidence, continued: real hardware constraint, cloud mode verified
+
+- Pulled all three local models successfully (qwen2.5-coder:7b, qwen2.5:7b-instruct,
+  qwen2.5:3b-instruct), but the actual demo/build machine turned out to have
+  only 8GB total RAM, with Colima's VM capped at its 2GB default -- nowhere
+  near enough to load a 7B model (`ggml_aligned_malloc: insufficient memory
+  (attempted to allocate 4166.82 MB)`, a real error from the real container,
+  not a code bug). `ModelGatewayClient`'s own retry/circuit-breaker mechanism
+  handled the failure exactly as designed (retried, then raised a clear
+  `GatewayUnavailableError`), which is itself evidence the wiring is correct
+  even though the local generation didn't complete.
+- Rather than resize Colima and fight an 8GB ceiling for a stack that only
+  needs to run once for a capture (not stay up permanently -- see "Target
+  shape" above), switched the verification run to `OMA_LLM_MODE=cloud` via
+  the already-built LiteLLM path, re-pointed at OpenAI (`gpt-4o-mini`, the
+  operator's available credit) instead of Anthropic for this run --
+  `docker/litellm-config.yaml`'s `model_list` is just config, swapping
+  providers needed no code change.
+- Verified for real, twice: a raw HTTP call against the `litellm` service
+  got a real OpenAI completion back, and a full `ModelGatewayClient.generate()`
+  call (the actual mechanism every specialist calls through, circuit
+  breaker/bulkhead/retry included) got a real, non-canned model response.
+- Stopped the `ollama`/`ollama-init` containers after this to free RAM for
+  the Stage 6 capture run -- local mode stays fully wired and documented in
+  `.env.example` for anyone cloning this on a machine with more RAM/a GPU.
+
+## Stage 5 evidence: SSH removed, replaced with local `docker exec`
+
+- `infra/odoo_jit_apikey.py`, `tools_odoo/module_dev/toolchain.py`'s
+  `_run_in_container()` (the shared utility ~40 call sites go through),
+  `tools_odoo/codebase_read.py`, `tools_odoo/odoo_source_introspection.py`,
+  and `tools_odoo/spot_check.py` all replaced their SSH-to-a-second-host
+  transport with a direct `docker exec` into the sibling `odoo` compose
+  service -- same real commands (`odoo-bin shell`, `find`/`cat`, `grep`),
+  same timeout/error handling, just no second host to hop to.
+- Real, found-by-running-it bug: a fresh `odoo shell`/`odoo -i` invocation
+  via `docker exec` doesn't inherit the main process's CLI-arg-based db
+  connection config, because the official image's entrypoint translates
+  `HOST`/`PORT`/`USER`/`PASSWORD` env vars into CLI args for ONE process,
+  not into `odoo.conf` itself. Fixed at the source: `docker-compose.yml`'s
+  `odoo`/`odoo-init` commands now write a real `odoo.conf` with db
+  credentials before starting, so every subsequent `docker exec` against
+  that same container (shell, install, scaffold, coverage) reads the same
+  config consistently.
+- `tools_odoo/knowledge_graph/fetch_modules_via_ssh.py` deleted outright --
+  superseded by Stage 2's `docker cp` approach, no remaining callers.
+- Verified for real: a JIT Odoo API key created and revoked via
+  `infra.odoo_jit_apikey` (through `docker exec`, no SSH), and
+  `toolchain._run_in_container()` returning real container output.
+
 ## Still open (tracked, not forgotten)
 
-- Stage 5: remove SSH (`odoo_jit_apikey.py`, `toolchain.py`'s `ssh_cmd`,
-  `fetch_modules_via_ssh.py`) and the two systemd units, replacing with compose
-  networking and direct in-container execution.
+- The two `oma-backlog-triage.service`/`.timer` systemd units were already
+  dropped during the initial scaffold pass (Stage 0); `recurring_backlog_triage.py`
+  itself is kept as a plain script anyone can run manually or wire to any
+  scheduler (cron, a CI job) -- no systemd-specific code remains.
 - Stage 6: full app wiring + one real end-to-end UI run (classify → decompose
   → Build → Code-Review → Testing/QA → install), captured as the recorded demo.
 - Record the demo, build the static GitHub Pages replay page from its real
