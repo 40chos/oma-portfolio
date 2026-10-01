@@ -1,0 +1,18 @@
+title = "OMA gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known false positives, reviewed manually -- see DECISIONS.md"
+paths = [
+  # Vendored minified JS; gitleaks' generic-api-key rule matches minified
+  # identifier names like `_getDistanceToBezierEdge2`, not actual secrets.
+  '''oma/tools_odoo/knowledge_graph/lib/.*\.min\.js''',
+]
+regexes = [
+  # Deliberately fake credential used as a fixture in
+  # tests/test_code_review_specialist.py to verify the Code-Review
+  # specialist actually flags hardcoded secrets in generated code.
+  '''sk_live_51H8x9K2mZQwLIVEsecretdonotcommit12345''',
+]
