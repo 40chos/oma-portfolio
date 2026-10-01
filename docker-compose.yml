@@ -1,0 +1,90 @@
+name: oma
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${OMA_PG_USER:-oma}
+      POSTGRES_PASSWORD: ${OMA_PG_PASSWORD:-oma_dev_password}
+      POSTGRES_DB: ${OMA_PG_DB:-oma}
+      ODOO_DB_NAME: ${ODOO_DB_NAME:-odoo16_dev}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${OMA_PG_USER:-oma}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "127.0.0.1:${OMA_PG_HOST_PORT:-5432}:5432"
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "${OMA_REDIS_PASSWORD:-oma_dev_password}"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${OMA_REDIS_PASSWORD:-oma_dev_password} ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "127.0.0.1:${OMA_REDIS_HOST_PORT:-6379}:6379"
+
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: "${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-oma_dev_password}"
+      NEO4J_PLUGINS: '[]'
+    volumes:
+      - neo4jdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "127.0.0.1:${NEO4J_HTTP_PORT:-7474}:7474"
+      - "127.0.0.1:${NEO4J_BOLT_PORT:-7687}:7687"
+
+  odoo-init:
+    image: odoo:16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      HOST: postgres
+      PORT: "5432"
+      USER: ${OMA_PG_USER:-oma}
+      PASSWORD: ${OMA_PG_PASSWORD:-oma_dev_password}
+    command: >
+      odoo -d ${ODOO_DB_NAME:-odoo16_dev} -i base --stop-after-init
+    restart: "no"
+
+  odoo:
+    image: odoo:16
+    depends_on:
+      odoo-init:
+        condition: service_completed_successfully
+    environment:
+      HOST: postgres
+      PORT: "5432"
+      USER: ${OMA_PG_USER:-oma}
+      PASSWORD: ${OMA_PG_PASSWORD:-oma_dev_password}
+    command: >
+      odoo -d ${ODOO_DB_NAME:-odoo16_dev}
+    volumes:
+      - odoo_filestore:/var/lib/odoo
+      - odoo_addons:/mnt/extra-addons
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8069/web/login || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "127.0.0.1:${ODOO_HOST_PORT:-8069}:8069"
+
+volumes:
+  pgdata:
+  neo4jdata:
+  odoo_filestore:
+  odoo_addons:

@@ -1,29 +1,29 @@
 """Odoo connection settings, with a hardcoded, non-negotiable safety
 guard -- per the project owner's explicit instruction, worth the extra half hour.
 
-This devbox has SSH/docker access to FOUR containers on odoo-dev.int:
-  odoo16-dev   -> 127.0.0.1:8071->8069  -- our dev target, ALWAYS
-  odoo16-dev2  -> 127.0.0.1:8072->8069  -- a second dev/test container,
-                                            not used by this project
-  odoo16       -> 127.0.0.1:8070->8069  -- LIVE CORPORATE PRODUCTION.
-                                            NEVER touch this, ever.
-  odoo19       -> 127.0.0.1:8069->8069  -- unrelated, different version
+Original deployment note (kept for context on why this guard is shaped the way
+it is): this ran against a devbox with SSH/docker access to four real Odoo
+containers reachable by port, one of which was live corporate production --
+`OMA_ODOO_REMOTE_PORT` identified which physical container a request was
+actually headed for, independent of whatever local SSH-tunnel port carried
+the bytes there, specifically so a future tunnel-port change could never
+accidentally defeat the guard.
 
-Port 8071 is bound to 127.0.0.1 on odoo-dev.int itself -- unreachable
-directly from this devbox, so an SSH local port-forward tunnels it here:
-    ssh -f -N -L 18071:127.0.0.1:8071 dev-agent@odoo
-OMA_ODOO_URL points at that LOCAL tunnel endpoint. The guard below does
-NOT check the tunnel's local port (that's an implementation detail of
-how the bytes get here) -- it checks the two things that actually
-identify which real Odoo instance and database code is about to talk
-to: OMA_ODOO_DB must be exactly "odoo16_dev", and the tunnel's target
-remote port (OMA_ODOO_REMOTE_PORT, separate from whatever local port a
-future tunnel might use) must be exactly 8071.
+In this self-hosted port, there is exactly one Odoo container (reached
+directly over Docker Compose networking, no SSH tunnel), so there's only one
+real network port in play. `OMA_ODOO_REMOTE_PORT` is kept anyway, as a pure
+logical safety tag rather than a literal network port: it still has to equal
+the one allowed value for a request to proceed, which still means a
+misconfigured `.env` (or a copy-pasted config pointed at some other, real
+Odoo instance down the line) gets refused rather than silently actioned. The
+underlying doctrine is unchanged -- `OMA_ODOO_DB` must exactly match the
+canonical dev name (or a recognized duplicate/fresh-test pattern), never a
+bare prefix match.
 
 Deliberately an ALLOW-LIST, not a deny-list: this only lets the one
 known-good target through, rather than trying to blocklist the one
-known-bad value (8070 / 16_202012) and hoping nothing else bad ever
-shows up. A deny-list only catches what you already thought to name.
+known-bad value and hoping nothing else bad ever shows up. A deny-list only
+catches what you already thought to name.
 """
 
 from __future__ import annotations

@@ -86,6 +86,47 @@ than ask approval for each one.
   wholesale rather than patched in place — the originals are an internal phase-by-phase
   build log addressed to the original team, not portfolio-facing documentation.
 
+## Target shape: on-demand, not always-on
+
+Mid-build, the brief changed: this does not run 24/7 anywhere paid. The finish
+line for the Docker Compose work is one real, clean, fully-passing end-to-end
+run on demand (`docker compose up`, laptop or screen-share), not a hosted URL.
+After that run is captured (see below), the deliverable becomes a recorded
+demo + a free static GitHub Pages replay page (driven by the real captured
+trace JSON) + clone-and-run instructions — no paid hosting anywhere.
+
+## Stage 1 evidence: Postgres + Redis + Neo4j + Odoo CE, real and healthy
+
+Ran via `docker compose up -d postgres redis neo4j odoo-init odoo`, verified
+through the actual app code paths (`infra/settings.py`, `infra/neo4j_client.py`,
+`infra/odoo_settings.py`), not just `docker exec`:
+
+- Postgres 16, Redis 7, Neo4j 5 Community, Odoo 16 CE all report `healthy`.
+- `odoo-init` (one-shot `odoo -i base --stop-after-init`) exited 0, loaded 8
+  modules with demo data (40 `res.partner` demo records confirmed in the db).
+- `scripts/001_agent_memory_events.sql` applied for real against the `oma`
+  database; `scripts/010_ensure_agent_memory_events_partitions.py` created 4
+  real monthly partitions (`agent_memory_events_2026_10` through `2027_01`).
+- A real Python smoke test (`infra.settings.load_postgres_settings()` +
+  `psycopg2`, `infra.settings.load_redis_settings()` + `redis`,
+  `infra.neo4j_client.get_neo4j_driver()`, and `infra.odoo_settings.load_odoo_settings()`
+  + `xmlrpc.client` against `/xmlrpc/2/common`) connected to all four and got
+  real responses, including the Odoo server-version handshake.
+- `infra/odoo_settings.py`'s production-guard assertion (`_assert_safe_odoo_target`)
+  fired and passed against the new topology without any change to its actual
+  logic — confirming the "never touch anything resembling production" safety
+  mechanism survived the port intact, pointed at the new single-container target.
+- **Colima, not Docker Desktop**, is the local Docker runtime on this machine.
+  Found and fixed one real port collision during this: a native Homebrew
+  Postgres was already bound to `127.0.0.1:5432`, shadowing the container's
+  published port — remapped the host side to `55432` via `OMA_PG_HOST_PORT`
+  (container-internal port/networking unaffected).
+- Fixed two Dockerfile/health-check bugs found by actually running this
+  (not just reading it): the Odoo CE image has `curl` but not `wget`
+  (health check rewritten); `neo4j` wasn't in `requirements.txt` at all
+  despite `infra/neo4j_client.py` depending on it directly — added it for
+  real, not worked around.
+
 ## Still open (tracked, not forgotten)
 
 - Stage 3: replace `infra/gateway_client.py`'s 3-GPU-host gateway with an
