@@ -1,6 +1,6 @@
 # OMA — Odoo Manager Agent
 
-[![CI](https://github.com/REPLACE_ME/oma-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/REPLACE_ME/oma-portfolio/actions/workflows/ci.yml)
+[![CI](https://github.com/40chos/oma-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/40chos/oma-portfolio/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A multi-agent system that takes a plain-English request ("add a field to
