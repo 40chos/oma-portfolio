@@ -550,7 +550,7 @@
   },
   "uncategorized": {
     "backlog": false,
-    "consecutive_clean_runs": 9,
+    "consecutive_clean_runs": 10,
     "escalations_used": 0,
     "history": [
       {
@@ -609,12 +609,19 @@
         "qualifying_failure": false,
         "task_id": "228a280d-a26e-45c9-bc98-c3661368ef40",
         "used_retrieved_pattern": false
+      },
+      {
+        "at": "2026-10-02T10:39:42.876200+00:00",
+        "goal_text": "On res.partner, please add a simple text field for storing a LinkedIn profile URL",
+        "qualifying_failure": false,
+        "task_id": "611c0454-d83c-42bb-8569-8b5e1eb6c158",
+        "used_retrieved_pattern": false
       }
     ],
     "last_certified_at": null,
     "n_required": 15,
     "total_qualifying_failures": 0,
-    "total_runs": 9
+    "total_runs": 10
   },
   "workflow_with_custom_buttons_or_cron": {
     "backlog": false,

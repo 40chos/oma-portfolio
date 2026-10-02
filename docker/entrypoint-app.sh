@@ -11,9 +11,10 @@ until PGPASSWORD="$OMA_PG_PASSWORD" psql -h "$OMA_PG_HOST" -p "$OMA_PG_PORT" -U 
 done
 echo "[entrypoint] postgres is up."
 
-echo "[entrypoint] applying agent_memory_events schema (idempotent)..."
-PGPASSWORD="$OMA_PG_PASSWORD" psql -h "$OMA_PG_HOST" -p "$OMA_PG_PORT" -U "$OMA_PG_USER" -d "$OMA_PG_DB" \
-  -f /app/scripts/001_agent_memory_events.sql
+echo "[entrypoint] applying the Postgres schema (idempotent)..."
+for f in /app/scripts/0*.sql; do
+  PGPASSWORD="$OMA_PG_PASSWORD" psql -h "$OMA_PG_HOST" -p "$OMA_PG_PORT" -U "$OMA_PG_USER" -d "$OMA_PG_DB" -f "$f"
+done
 
 echo "[entrypoint] ensuring current partitions exist..."
 python3 /app/scripts/010_ensure_agent_memory_events_partitions.py

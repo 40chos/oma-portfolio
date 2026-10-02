@@ -116,6 +116,18 @@ else
   say "Knowledge graph already seeded -- skipping (delete oma/var/knowledge_graph to redo)."
 fi
 
+# ---------------------------------------------------------------------------
+# 8. Postgres schema (idempotent -- every statement is CREATE ... IF NOT
+#    EXISTS / CREATE OR REPLACE VIEW). The containerized app's own
+#    entrypoint-app.sh does this inside the container; the host-run path
+#    here needs the same thing done from the host side instead.
+# ---------------------------------------------------------------------------
+say "Applying the Postgres schema (agent_memory_events, active_task_plan_items)..."
+for f in oma/scripts/0*.sql; do
+  PGPASSWORD="$OMA_PG_PASSWORD" psql -h "$OMA_PG_HOST" -p "$OMA_PG_PORT" -U "$OMA_PG_USER" -d "$OMA_PG_DB" -f "$f" >/dev/null
+done
+./.venv/bin/python3 oma/scripts/010_ensure_agent_memory_events_partitions.py
+
 echo
 say "Everything's up. Opening the app on http://localhost:${APP_HOST_PORT:-8000}"
 echo "    (Ctrl-C stops the app; the containers keep running -- 'docker compose down' to stop those too)"
