@@ -446,6 +446,23 @@ def create_sandbox_database(db_name: str, container: str, template: str | None =
     """
     if not _DB_NAME_RE.match(db_name):
         raise SandboxDatabaseError(f"refusing unsafe database name {db_name!r}")
+    if template:
+        # Real, recurring issue in this port's topology (confirmed live,
+        # 2026-10-02): Postgres refuses `createdb -T <template>` while ANY
+        # session holds a connection open to the template, including a
+        # merely-idle one -- and this single shared Postgres container also
+        # serves Odoo's own connection pool, which leaves idle connections
+        # open to whatever database it last touched (including this golden
+        # template, e.g. right after infra.odoo_admin.create_database()
+        # provisioned it). Best-effort cleanup, never fatal on its own --
+        # if this fails for any reason, the createdb call below still runs
+        # and fails with its own real, honest error exactly as before.
+        terminate_cmd = (
+            f"psql -d postgres -c \""
+            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+            f"WHERE datname='{template}' AND pid <> pg_backend_pid() AND state='idle'\""
+        )
+        _run_in_container(_sandbox_pg_command(terminate_cmd, container), container=container)
     createdb_cmd = f"createdb {db_name}" + (f" -T {template}" if template else "")
     proc = _run_in_container(_sandbox_pg_command(createdb_cmd, container), container=container)
     if proc.returncode != 0:
