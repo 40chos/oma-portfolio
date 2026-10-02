@@ -1,5 +1,8 @@
 # OMA — Odoo Manager Agent
 
+[![CI](https://github.com/REPLACE_ME/oma-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/REPLACE_ME/oma-portfolio/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A multi-agent system that takes a plain-English request ("add a field to
 this model," "restrict this view to a security group") and turns it into a
 real, installed Odoo ERP module change — writing the code, reviewing it,
@@ -7,32 +10,79 @@ installing it in an isolated sandbox, verifying the result independently,
 and only then promoting it. A human-approval gate sits in front of anything
 sensitive.
 
-This is a port of a system I built and ran in production, stripped of
-everything specific to that environment and rebuilt against a fully
-self-hosted stack (Odoo Community Edition, Postgres, Redis, Neo4j, Gitea,
-and either a local model via Ollama or a cloud model via LiteLLM) so anyone
-can run the real thing. Every mechanism below — the scheduler, the fencing
-lock, the knowledge graph, the three-specialist review pipeline, the
-certification system, the failure-recovery logic — is the real,
-unmodified code, not a simplified rewrite. Only the environment it talks to
-changed. [`DECISIONS.md`](DECISIONS.md) is the honest log of every judgment
-call made during that port, including the real bugs found by actually
-running it.
+This is a from-scratch reimplementation of a system I built and ran in
+production, ported — with my employer's permission — to a fully
+self-hosted, open-source stack so anyone can run the real thing. All
+client data, names, and proprietary code have been removed or replaced.
+Every mechanism below — the scheduler, the fencing lock, the knowledge
+graph, the three-specialist review pipeline, the certification system, the
+failure-recovery logic — is the real, unmodified code, not a simplified
+rewrite. Only the environment it talks to changed.
+
+## See it work
 
 **[→ Watch a real run replay](https://claude.ai/code/artifact/2aa5e7f5-bf07-4066-bdb5-af4ea9fcea0f)** —
 a scrubbable flight-recorder timeline built from the actual trace of one
-real execution: the request going in, classification, Build writing code,
-Code-Review and Testing/QA independently checking it, and the real result —
-including the real generated `models.py`/`views.xml` and the real commit.
-No video, no slides — the real captured data, replayable in your browser,
-free, forever, no server required.
+real execution: the request going in, classification, Build writing code
+live (token by token), Code-Review and Testing/QA independently checking
+it, and the real result — the real generated `models.py`/`views.xml` and
+the real commit. No video, no slides — the real captured data, replayable
+in your browser, free, forever, no server required.
+
+<!--
+  RECORDING NOTE (remove once captured): a 20-30s GIF goes here, above this
+  comment, showing: type a request into the chat -> the Task Plan panel
+  opens live -> real node/round events streaming in -> the passed result.
+  See "Recording your own demo GIF" below for the exact capture steps.
+-->
+
+`DECISIONS.md` is the full, honest log of every judgment call made during
+this port — including the real bugs found by actually running it, not
+just reading the code.
+
+## How it's wired
+
+```mermaid
+flowchart TB
+    Operator["Operator -- you, chat UI"] -->|plain-English goal| Manager
+
+    subgraph Manager["Manager -- manager/loop.py"]
+        Classify["Classify + risk tier"]
+        Graph["Constraint-graph scheduler\nTarjan cycle detection"]
+        Classify --> Graph
+    end
+
+    Manager -->|dispatches nodes under a concurrency cap| Specialists
+
+    subgraph Specialists["Three independent specialists, per node"]
+        Build["Build\nwrites the module code"]
+        Review["Code-Review\nhallucination + schema-fact checks"]
+        QA["Testing/QA\nsandbox install, behavioral verify"]
+        Build --> Review --> QA
+    end
+
+    Specialists <-->|structural facts, blast-radius checks| KG[("Neo4j knowledge graph\nof the live Odoo schema")]
+    Specialists -->|fenced write -- Kleppmann lock| Sandbox[("Sandbox DB -- Postgres")]
+    QA -->|only on a clean pass| Promote[("Real target DB -- Postgres")]
+
+    Manager -->|repeated failures, gateway outages| Recovery["Automatic failure recovery\nexponential backoff, resume"]
+    Manager -->|sensitive-scope gate| SignOff["Human sign-off -- tier 3/4 only"]
+    SignOff -.->|approved| Specialists
+
+    Manager -->|per-category track record| Cert["Certification system"]
+    Cert -.->|once trusted| Deterministic["Deterministic generator\nskips the LLM entirely"]
+```
 
 ## What's actually interesting here
 
 - **A constraint-graph scheduler** (`manager/graph_scheduler.py`) that
   dispatches independent sub-tasks in parallel under a concurrency cap,
   respecting real dependency edges, with Tarjan's-algorithm cycle
-  detection on the constraint graph.
+  detection on the constraint graph. A genuinely complex request really
+  does split into multiple first-layer nodes with real `blocked` ->
+  `running` -> `passed`/`failing` transitions as pieces wait on each
+  other — not a single flat task. See `DECISIONS.md` for a real example:
+  one goal decomposed into 9 sub-contracts.
 - **A fencing lock** (`infra/fencing.py`) implementing the Kleppmann
   distributed-lock fix — a monotonic fence token, not just a TTL'd lock,
   so a stale writer can never commit after losing its lock.
@@ -56,6 +106,11 @@ free, forever, no server required.
   ever write to an explicitly allow-listed target, enforced in code
   (`infra/odoo_settings.py`'s `ProductionOdooGuardError`), never just
   convention.
+- **Live, not after-the-fact** — the chat UI opens a task's live event
+  stream (Server-Sent Events over Redis pub/sub) the instant the Manager
+  mints its task_id, before any real work has happened, so you watch
+  classification, node splits, and token-by-token code generation as they
+  actually occur, not a summary after the fact.
 
 ## Run it yourself
 
@@ -87,6 +142,25 @@ test, and install — against a real Odoo CE instance with real demo data.
 Verified end to end from a genuinely clean clone (fresh volumes, no prior
 state) as part of this port — see `DECISIONS.md`, Stage 8.
 
+### Recording your own demo GIF
+
+If you want to capture a live run yourself (for a resume link, an
+interview follow-up, whatever):
+
+1. `./setup.sh`, open `http://localhost:8000`.
+2. Start screen recording (macOS: Cmd+Shift+5; or any screen-to-GIF tool —
+   Peek, ScreenToGif, Kap are all free).
+3. Type a request with real structure, e.g. *"On res.partner, add a
+   computed field showing the count of linked project tasks, and restrict
+   editing it to the Sales Manager group"* — multi-part requests are what
+   show the constraint-graph splitting, which is the actually interesting
+   part to show, not a single trivial field.
+4. Let it run ~20-30s: the Task Plan panel opens automatically and streams
+   live — classification, node creation, Build's code streaming in
+   token-by-token, Code-Review/Testing-QA's verdicts.
+5. Stop recording once a node reaches `passed`. Trim to the live-streaming
+   part — that's the part a static screenshot can't prove.
+
 ### Why no `app` container by default
 
 The Build/Testing-QA specialists run `docker exec` against the sibling
@@ -112,6 +186,9 @@ docker/                Compose support: Dockerfiles, entrypoints, Gitea/knowledg
                         bootstrap scripts, the LiteLLM cloud-mode config
 docs/                  the real-run replay page (GitHub Pages, served from here)
 demo-capture/          the real captured trace the replay page is built from
+.github/workflows/     CI — syntax + import validation on every push (see the
+                        workflow file's own header comment for why it's scoped
+                        this way, not a full integration-test run)
 DECISIONS.md           every judgment call made during the port, and why
 ```
 
@@ -121,9 +198,11 @@ specialist internals, the manager's autonomy-tier model in
 
 ## Status
 
-All 7 stages — infra, knowledge graph, LLM gateway, Git versioning, SSH
-removal, full end-to-end wiring, and final secret-scan + clean-clone
-verification — are done. `DECISIONS.md` has real evidence for each one:
-command output, real database/Gitea state, and the real bugs found by
-actually running this rather than just reading it. Gitleaks and
-TruffleHog both report zero findings across the full git history.
+All 9 stages — infra, knowledge graph, LLM gateway, Git versioning, SSH
+removal, full end-to-end wiring, final secret-scan + clean-clone
+verification, a genuinely fresh-instance pass, and a live-streaming
+architecture fix found by actually using the running system — are done.
+`DECISIONS.md` has real evidence for each one: command output, real
+database/Gitea state, and the real bugs found by actually running this
+rather than just reading it. Gitleaks and TruffleHog both report zero
+findings across the full git history.

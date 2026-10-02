@@ -155,7 +155,7 @@ def list_pending_proposed_rules() -> list[dict]:
             """
             SELECT id, summary, detail, tags, created_at
             FROM agent_memory_events
-            WHERE event_type = 'rule' AND detail->>'status' = 'proposed'
+            WHERE event_type = 'rule' AND detail->>'status' = 'proposed' AND active = true
             ORDER BY id DESC
             """
         )

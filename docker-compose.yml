@@ -65,7 +65,11 @@ services:
     command:
       - |
         printf '[options]\ndb_host = postgres\ndb_port = 5432\ndb_user = ${OMA_PG_USER:-oma}\ndb_password = ${OMA_PG_PASSWORD:-oma_dev_password}\naddons_path = /mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons\n' > /etc/odoo/odoo.conf
-        exec odoo -d ${ODOO_DB_NAME:-odoo16_dev} -i base --stop-after-init
+        # sale + project installed alongside base so tools_odoo/smoke_suite.py's
+        # core-Odoo regression checks (create_sale_order, create_project_task) have
+        # something real to exercise -- a bare `base`-only demo db makes those two
+        # checks fail every single run, which reads as a false regression signal.
+        exec odoo -d ${ODOO_DB_NAME:-odoo16_dev} -i base,sale,project --stop-after-init
     restart: "no"
 
   odoo:
@@ -82,6 +86,12 @@ services:
     command:
       - |
         printf '[options]\ndb_host = postgres\ndb_port = 5432\ndb_user = ${OMA_PG_USER:-oma}\ndb_password = ${OMA_PG_PASSWORD:-oma_dev_password}\naddons_path = /mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons\n' > /etc/odoo/odoo.conf
+        # Build/Code-Review's static-analysis pass (tools_odoo/module_dev/toolchain.py)
+        # shells into this container to run pylint-odoo and bandit against generated
+        # modules -- install both here (pip3 --user, same mechanism, lands on the
+        # odoo_filestore volume so it survives container recreation) rather than
+        # assuming a bespoke image.
+        pip3 install --user --quiet pylint-odoo bandit || true
         exec odoo -d ${ODOO_DB_NAME:-odoo16_dev}
     volumes:
       - odoo_filestore:/var/lib/odoo

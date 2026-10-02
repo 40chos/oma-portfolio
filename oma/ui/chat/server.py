@@ -23,6 +23,7 @@ import select
 import sys
 import threading
 import time
+import uuid
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -138,6 +139,13 @@ async def _resume_orphan_in_background(task_id: str, redis_client, lock_key: str
         redis_client.delete(lock_key)
 
 _sessions: dict[str, list[dict]] = {}
+# task_id -> {"status": "running"|"done", "reply": str | None} -- backs the early-
+# task_id / background-turn fix below (GET /api/message_result/{task_id}): lets the
+# main-chat POST return the real task_id the instant the Manager mints it, instead of
+# only after the whole (often 10s-70s+) round loop finishes, so the frontend can open
+# this task's live SSE stream (GET /api/stream/{task_id}) at the actual moment it
+# starts rather than after it's already over.
+_message_results: dict[str, dict] = {}
 _client: ModelGatewayClient | None = None
 # Set once in lifespan(), used as /api/tasks' default cutoff -- see there.
 _server_start_ts: datetime | None = None
@@ -495,25 +503,57 @@ async def post_message(req: MessageRequest):
         verified=True,
     )
 
-    result = await run_turn(
-        req.message, _client, CLASSIFIER_MODEL,
-        conversation_history=history, anticipated_scope=req.anticipated_scope,
-        manager_model=MANAGER_MODEL,
-    )
+    # Real fix (the project owner's own report: "I don't see time ticking... I see
+    # code changes, code review findings... but why I don't see it"). This endpoint
+    # used to `await run_turn(...)` fully before returning anything, so the
+    # frontend only ever learned this task's task_id AFTER the entire round loop
+    # (often 10s-70s+) had already finished -- by the time it opened this task's
+    # live stream, there was nothing left to watch. task_id is minted here, up
+    # front, and run_turn's own real work happens in the background; the HTTP
+    # response returns the task_id immediately so the frontend can open the live
+    # stream (GET /api/stream/{task_id}) at the actual moment the turn starts.
+    task_id = str(uuid.uuid4())
+    _message_results[task_id] = {"status": "running", "reply": None}
 
-    reply_text = _render_reply(result)
-    history.append({"role": "assistant", "content": reply_text})
-    append_project_memory(
-        event_type="main_chat_message", actor="manager", task_id=None, module=None,
-        summary=reply_text[:300], tags=["main_chat"],
-        detail={
-            "session_id": req.session_id, "role": "assistant", "content": reply_text,
-            "task_id": result.get("task_id"),
-        },
-        verified=True,
-    )
+    async def _run_and_record():
+        try:
+            result = await run_turn(
+                req.message, _client, CLASSIFIER_MODEL,
+                conversation_history=history, anticipated_scope=req.anticipated_scope,
+                manager_model=MANAGER_MODEL, task_id=task_id,
+            )
+            reply_text = _render_reply(result)
+            history.append({"role": "assistant", "content": reply_text})
+            append_project_memory(
+                event_type="main_chat_message", actor="manager", task_id=None, module=None,
+                summary=reply_text[:300], tags=["main_chat"],
+                detail={
+                    "session_id": req.session_id, "role": "assistant", "content": reply_text,
+                    "task_id": result.get("task_id"),
+                },
+                verified=True,
+            )
+            _message_results[task_id] = {"status": "done", "reply": reply_text, "result": result}
+        except Exception as exc:  # noqa: BLE001 - must surface to the polling client, never vanish silently
+            logging.exception("background run_turn failed for task %s", task_id)
+            _message_results[task_id] = {
+                "status": "done",
+                "reply": f"Something went wrong running this turn: {exc}",
+                "result": {"task_id": task_id, "status": "failed"},
+            }
 
-    return JSONResponse(jsonable_encoder({"reply": reply_text, "result": result}))
+    asyncio.create_task(_run_and_record())
+    return JSONResponse(jsonable_encoder({"result": {"task_id": task_id, "status": "started"}}))
+
+
+@app.get("/api/message_result/{task_id}")
+async def get_message_result(task_id: str):
+    """Polled by the frontend after POST /api/message returns its early task_id --
+    see _run_and_record() above. "running" until the background turn finishes,
+    then "done" with the real rendered reply, exactly once."""
+    return JSONResponse(jsonable_encoder(
+        _message_results.get(task_id, {"status": "done", "reply": "(unknown task_id)"})
+    ))
 
 
 @app.get("/api/pending")

@@ -473,6 +473,92 @@ carried over unscrubbed" might have other instances beyond this one --
 worth a dedicated pass over `oma/state/` and any other persisted JSON if
 this repo accumulates more such files later.
 
+## Stage 10: real bugs found by actually using the running system
+
+The operator ran the live instance themselves and reported four real things.
+Each was investigated and fixed at the root, not patched around:
+
+**Frontend sanitization gap.** The Stage-whatever Python-only sanitization
+pass (`--include=*.py`) never touched `oma/ui/chat/index.html` -- it's HTML,
+not Python. 12 "Jack"/"jack" and 84 "Andrew" references shipped in the one
+file every visitor actually looks at first. Fixed: `jack` (the CSS
+class/role) -> `operator`, "Jack" (the displayed name) -> "Operator",
+every `Andrew`-attributed comment -> `the project owner`, matching the
+exact phrasing already used throughout the `.py` files. Verified: zero
+matches anywhere in the repo.
+
+**Three real findings from one real task run.** A single real task
+(`f185ca1f-...`, "add a fax number field") surfaced three independent,
+genuine problems, not one:
+- `pg_dump` (host, Homebrew, 14.20) refused to dump the `postgres:16`
+  container's database -- Postgres pg_dump cannot dump a server newer
+  than itself. Fixed by running `pg_dump` (and the filestore `tar`) via
+  `docker exec` *inside* the container that actually matches its own
+  server version, copying the result out with `docker cp` -- removes the
+  host/container version coupling entirely rather than pinning a host
+  tool version that will drift again.
+- `bandit` (the security linter `tools_odoo/module_dev/toolchain.py`
+  already shells out to) was never installed anywhere -- the `odoo:16`
+  image is stock, no custom build step ever ran `pip install`. Installed,
+  and baked into the `odoo` service's own compose startup command so a
+  fresh clone gets it for free.
+- "REGRESSION SIGNAL: 2/3 core smoke checks failed" after every install --
+  a false positive. `tools_odoo/smoke_suite.py`'s own checks create a
+  `sale.order` and a `project.task`, but the demo database only had
+  `base` + 7 deps installed -- those models genuinely didn't exist.
+  Installed `sale` and `project` (baked into `odoo-init` for fresh
+  clones). All 3 checks now pass for real.
+
+**No live progress during a run.** The operator could see a task's full
+result once it finished, but nothing while it ran -- despite the real
+backend publishing real trace events (`node_state_changed`, token deltas)
+from the moment a turn starts. Root cause: `POST /api/message`
+(`ui/chat/server.py`) `await`ed the entire round loop before returning
+anything, so the frontend only learned a task's `task_id` after there was
+nothing left to watch. Fixed: `run_turn()` (`manager/loop.py`) now accepts
+an optional pre-generated `task_id` (every existing caller unaffected,
+still generates its own if not given); `post_message()` mints the
+`task_id` up front, launches the real round loop as a background task, and
+returns immediately. The frontend opens this task's SSE stream
+(`/api/stream/{task_id}`) the instant it gets the `task_id` back, and
+separately polls a new `GET /api/message_result/{task_id}` for the real
+rendered reply once the background turn finishes. Verified live: the POST
+now returns in under a second (previously 10-70s+), and the opened stream
+showed real token-by-token Build output arriving as it was generated.
+
+**Proof the constraint-graph splitting is real, not a single-node
+illustration.** Submitted a genuinely multi-part goal (a new model, a
+computed field, a related field, a security rule, and a server action,
+spanning two existing models) through the now-fixed live path. It
+decomposed into 9 real sub-contracts with independently tracked nodes
+(`equipment_loan_model`, `active_loans_count_field`,
+`partner_chatter_log`, `batch_return_action`, ...) showing genuine
+`blocked` -> `running` -> `failing` transitions as later pieces waited on
+earlier ones. It correctly, honestly paused on the one piece needing
+Odoo server-action automation this system has no real codegen support
+for yet, rather than faking it -- exactly the "disclosed, not silently
+incomplete" behavior the rest of this codebase holds itself to.
+
+**One more sanitization-class bug, found while cleaning up this session's
+own test data.** `manager/correction.py`'s `list_pending_proposed_rules()`
+was the same bug class as Stage 9's `read_main_chat_history()` fix:
+no `active = true` filter, so an archived proposed-rule row kept
+reappearing in the pending-items queue. Fixed and verified (18 leftover
+test-session rows correctly disappeared from `/api/pending` after the
+fix, where archiving alone hadn't been enough).
+
+All of this session's own test task_ids, chat rows, and proposed-rule
+rows were archived (`active=false`, exact row IDs, never deleted) after
+explicit confirmation, same discipline as Stage 9. Checked but
+deliberately NOT changed: a broader sweep found ~25 more call sites
+across `manager/replanning.py`, `manager/dashboard.py`, `manager/tools.py`,
+and `manager/learning.py` that also read `agent_memory_events` without an
+`active` filter -- left alone because, unlike the two confirmed cases
+above, these may intentionally read full history for learning/analytics
+rather than display, and changing them without verifying each one
+individually risks a real behavior change to core production logic. Noted
+here as a real, open question, not silently fixed or silently ignored.
+
 ## Still open (tracked, not forgotten)
 
 - The two `oma-backlog-triage.service`/`.timer` systemd units were already

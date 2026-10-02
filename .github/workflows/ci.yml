@@ -1,0 +1,67 @@
+name: CI
+
+# Deliberately scoped: syntax-validates and import-checks the entire real
+# codebase on every push/PR. Does NOT spin up the full stack (Postgres,
+# Redis, Neo4j, Odoo CE, a real or stubbed LLM) -- most of this project's
+# own test suite (oma/tests/, 300+ files) is written against those real
+# services on purpose (this project's own stated principle: no mocks for
+# anything that matters), which makes it a poor fit for a free CI runner
+# with no persistent infra. Running the real suite is `./setup.sh` +
+# `python3 -m pytest oma/tests/` locally -- see README.md.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  syntax-and-imports:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r oma/requirements.txt
+
+      - name: Syntax-check every Python file
+        run: |
+          python3 -m py_compile $(find oma -name '*.py' -not -path '*/node_modules/*')
+
+      - name: Import-check every top-level module
+        working-directory: oma
+        run: |
+          python3 - <<'PY'
+          import importlib, pkgutil, sys
+
+          # Optional, standalone scripts with their own heavy visualization deps
+          # (networkx/pyvis) not in the core requirements.txt -- not imported by
+          # the real manager/specialist pipeline, so excluded here rather than
+          # bloating every real install with a dependency only these two use.
+          SKIP_PREFIXES = ("tools_odoo.knowledge_graph.build_visualization",)
+
+          failures = []
+          for pkg_name in ("manager", "specialists", "infra", "contracts", "tools_odoo"):
+              try:
+                  pkg = importlib.import_module(pkg_name)
+              except Exception as exc:
+                  failures.append(f"{pkg_name}: {exc}")
+                  continue
+              for _, modname, _ in pkgutil.walk_packages(pkg.__path__, pkg_name + "."):
+                  if modname.startswith(SKIP_PREFIXES):
+                      continue
+                  try:
+                      importlib.import_module(modname)
+                  except Exception as exc:
+                      failures.append(f"{modname}: {exc}")
+
+          if failures:
+              print(f"{len(failures)} import failures:")
+              for f in failures:
+                  print(" -", f)
+              sys.exit(1)
+          print("All modules import cleanly.")
+          PY

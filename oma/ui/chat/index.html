@@ -10,7 +10,7 @@
      -- D3-force physics + PixiJS canvas rendering, same CDN versions. -->
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-<!-- Real UX addition, 2026-08-08 (Andrew's own explicit request: "colors and everything else
+<!-- Real UX addition, 2026-08-08 (the project owner's own explicit request: "colors and everything else
      for builder is not fully like claude code ones -- claude code adjusts to coding language,
      different color inside"; researched directly rather than guessed -- Claude Code's own real
      code-block/diff rendering engine (per its public GitHub issues on theming, e.g.
@@ -24,13 +24,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.10.0/highlight.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.10.0/styles/monokai.min.css">
 <style>
-/* 2026-08-06 (Andrew's report): the token NAMES below are unchanged on
+/* 2026-08-06 (the project owner's report): the token NAMES below are unchanged on
    purpose -- every var(--xxx) reference across this whole file (badges,
    graph, buttons, panels) keeps working exactly as before, so this is a
    values-only repaint, not a risky rename-everywhere refactor. What
    changed is the underlying SYSTEM: 16+ nearly-arbitrary hues collapsed
    down to one disciplined set -- a single brand accent (violet-blue, the
-   "purple/blue" Andrew said he already likes), four semantic states
+   "purple/blue" the project owner said he already likes), four semantic states
    (success/danger/warning/neutral-info), and one neutral gray ramp for
    everything else. Researched against real 2026 dashboard-design practice
    (restraint over variety: 1-2 neutrals carry most of the screen, a
@@ -75,7 +75,7 @@
   --paused-soft: var(--accent-soft);
 
   /* Escalation two-cluster vocabulary (spec §11) preserved: "judgment
-     call for Jack" reuses the brand accent (a decision only he can make
+     call for the operator" reuses the brand accent (a decision only they can make
      IS the "needs you" signal); "system stuck, honest about it" reuses
      the danger/failed family (a real bad-outcome state), not a new hue. */
   --judgment: var(--accent);
@@ -205,13 +205,13 @@ button{font-family:inherit;}
 #conv-main{flex:1;display:flex;flex-direction:column;min-width:0;}
 #messages{flex:1;min-height:0;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
 .msg{display:flex;gap:8px;align-items:flex-start;animation:fadeUp .25s ease-out;}
-.msg.jack{flex-direction:row-reverse;}
+.msg.operator{flex-direction:row-reverse;}
 .msg-avatar{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;
   font-size:9.5px;font-weight:700;flex-shrink:0;margin-top:1px;}
-.msg-avatar.jack{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);}
+.msg-avatar.operator{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);}
 .msg-avatar.sys{background:var(--panel-3);border:1px solid var(--border);color:var(--text-muted);}
 .msg-bubble{max-width:85%;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.55;}
-.msg-bubble.jack{background:var(--accent-soft);border:1px solid var(--accent-dim);}
+.msg-bubble.operator{background:var(--accent-soft);border:1px solid var(--accent-dim);}
 .msg-bubble.sys{background:var(--panel-2);border:1px solid var(--border-soft);flex:1;min-width:120px;}
 .msg-tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;margin-bottom:4px;}
 #branch-actions{padding:10px 14px;border-top:1px solid var(--border-soft);display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
@@ -232,7 +232,7 @@ button{font-family:inherit;}
 .branch-btn.dismiss{color:var(--text-faint);}
 .branch-btn.pending{opacity:.5;cursor:default;transform:none;}
 
-/* Chat input redesign 2026-08-06 (Andrew's report: "looks awful, like a
+/* Chat input redesign 2026-08-06 (the project owner's report: "looks awful, like a
    plain text field"). Fuller rounded shell, a real focus glow instead of
    a flat border-color swap, and a solid filled circular send button
    (same visual language as the primary action button) instead of a small
@@ -329,7 +329,7 @@ button{font-family:inherit;}
 .diff-badge-new{color:var(--passed);background:var(--passed-soft);}
 .diff-badge-modified{color:var(--waityou);background:var(--running-soft);}
 .diff-badge-deleted{color:var(--failed);background:var(--failed-soft);}
-/* Real UX addition, 2026-08-08 (Andrew's own explicit request: "colors... not fully like claude
+/* Real UX addition, 2026-08-08 (the project owner's own explicit request: "colors... not fully like claude
    code ones... claude code adjusts to coding language... code show fit in window without scroll
    bar at all" -- researched directly, not guessed: see this file's own <head> comment on
    Claude Code's real highlight.js + Monokai rendering, confirmed against highlight.js's own
@@ -378,7 +378,7 @@ button{font-family:inherit;}
 .round-strip-seg.passed{background:var(--passed);}
 .round-strip-seg.paused{background:var(--waityou);}
 .round-strip-seg:hover{opacity:.75;}
-/* Real UX rewrite, 2026-08-08 (Andrew's own explicit request: back to vertical, always-visible
+/* Real UX rewrite, 2026-08-08 (the project owner's own explicit request: back to vertical, always-visible
    specialist sections -- Build, then Code Review, then Testing/QA, each appearing only once the
    manager actually invoked it -- reading top to bottom, not clicking between tabs). */
 .spec-sections{display:none;margin-top:4px;display:flex;flex-direction:column;gap:8px;}
@@ -421,7 +421,7 @@ button{font-family:inherit;}
 #task-hdr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
 #task-title{font-size:14.5px;font-weight:700;line-height:1.4;}
 #task-meta{font-size:11px;color:var(--text-faint);margin-top:3px;}
-/* Redesign 2026-08-06 (Andrew's report: the old colored-text-on-tinted-
+/* Redesign 2026-08-06 (the project owner's report: the old colored-text-on-tinted-
    background chips read as unpolished/"a kid made it"). Real hierarchy now:
    a solid, confident fill for the one primary action; quiet neutral
    outlines for secondary ones that only pick up their real color
@@ -557,7 +557,7 @@ button{font-family:inherit;}
 .evidence-full{display:none;margin:6px 0 0;padding:6px;background:var(--bg);border:1px solid var(--border-soft);
   border-radius:5px;white-space:pre-wrap;font-size:11px;color:var(--text-muted);}
 .evidence-item.expanded .evidence-full{display:block;}
-/* Real UX fix, 2026-08-08 (Andrew's own direct investigation — the full, un-narrowed goal text
+/* Real UX fix, 2026-08-08 (the project owner's own direct investigation — the full, un-narrowed goal text
    was rendered in full every time, dominating the panel for any real multi-paragraph goal).
    Same collapse-by-default, click-to-expand convention as .evidence-item above, reused rather
    than inventing a second one — 2-line clamp by default, full text on click. */
@@ -583,14 +583,14 @@ button{font-family:inherit;}
 .empty-state .empty-title{font-size:13.5px;font-weight:600;color:var(--text-muted);}
 .empty-state .empty-sub{font-size:12px;max-width:280px;line-height:1.6;}
 
-/* 2026-08-06 (Andrew's report): this used to live under #conv-panel, so
+/* 2026-08-06 (the project owner's report): this used to live under #conv-panel, so
    position:absolute;inset:0 covered the ENTIRE middle column -- goal text,
    ribbon, everything -- behind a dark backdrop just to show one node's
    detail, and nothing behind it was clickable. It's now moved (real DOM
    reparenting in renderTaskDetail(), not a copy) into #graph-wrap itself
    each render, so inset:0 constrains it to just the graph's own box and the
    rest of the page stays fully live underneath. */
-/* Real UX fix, 2026-08-08 (Andrew's own direct request: node detail should sit inline, below
+/* Real UX fix, 2026-08-08 (the project owner's own direct request: node detail should sit inline, below
    the graph, not as a covering overlay drawer). #drawer-backdrop is now unused in the real
    render path (kept only so the existing DOM-move-not-clone pattern elsewhere in this file,
    which relocates this pair of persistent elements into whichever #graph-wrap is current,
@@ -645,7 +645,7 @@ button{font-family:inherit;}
    data volume. "off" state is dim/outlined (filtered out but count still visible), "on"
    state is filled -- never fully removes the chip itself, so a hidden section's real count
    stays visible and one click away, matching the "filter in/out" request exactly. */
-/* Real gap found live (Andrew's report): 91 escalated + 873 proposed rules
+/* Real gap found live (the project owner's report): 91 escalated + 873 proposed rules
    is genuinely too many rows to scroll through to find one specific task
    (e.g. one just created to test something). Filters by section; this adds
    the other real axis -- search by exact text -- across all sections and
@@ -852,7 +852,7 @@ const B = {
 };
 
 /* Two-cluster escalation labels (spec §11): judgment = a decision only
-   Jack can make; stuck = the system being honest that it isn't
+   the operator can make; stuck = the system being honest that it isn't
    converging. The real backend does not classify escalations into these
    two clusters today -- list_pending_escalations() returns a flat
    {task_id, message, prior_rounds} with no "type" field -- so every real
@@ -867,13 +867,13 @@ const state = {
   selectedTaskId: null,
   activeBranchId: null,
   showHistory: true,            // ?all_history=true on GET /api/tasks -- default ON 2026-08-06
-  // (Andrew's own request: a mid-sweep service restart for an unrelated UI change hid
+  // (the project owner's own request: a mid-sweep service restart for an unrelated UI change hid
   // in-progress tasks from before the restart, which was confusing since nothing was
   // actually lost -- just filtered. Defaulting to full history means a restart never
   // again silently hides real, currently-running work from the default view.)
   tasks: { needs_attention: [], in_progress: [], completed: [] },
   pending: { sign_offs: [], proposed_rules: [], escalations: [] },
-  // 2026-08-06 (Andrew's own report: "900 rules I don't want to see every time, I need to
+  // 2026-08-06 (the project owner's own report: "900 rules I don't want to see every time, I need to
   // filter it in or out, the same for running or paused or everything else"): per-section
   // show/hide, independent of showHistory (which controls DATA VOLUME fetched from the
   // backend) -- this controls DISPLAY, so a section can be hidden without losing the
@@ -890,11 +890,11 @@ const state = {
   streamedTaskId: null,
   selectedNodeId: null,         // Phase 31 UI §3.3 -- the graph node whose drawer is currently open, if any (was missing entirely; live patches could never refresh an open panel without it)
   liveLines: {},                // taskId -> [ real SSE/trace_history event lines ], capped
-  lastDiff: {},                 // taskId -> nodeId (or '__task__' for a non-decomposed task) -> the real, most recent {files:[{file,lines}]} diff result seen on this task's live stream (2026-08-08 addition — real backend data (build_output.detail['diff'], specialists/build/specialist.py's _compute_module_diff) that already existed but was never rendered anywhere; keyed per-node 2026-08-08 same day, closing a real gap Andrew found live: clicking a specific node showed none of this, because it only ever rendered at the whole-task level)
+  lastDiff: {},                 // taskId -> nodeId (or '__task__' for a non-decomposed task) -> the real, most recent {files:[{file,lines}]} diff result seen on this task's live stream (2026-08-08 addition — real backend data (build_output.detail['diff'], specialists/build/specialist.py's _compute_module_diff) that already existed but was never rendered anywhere; keyed per-node 2026-08-08 same day, closing a real gap the project owner found live: clicking a specific node showed none of this, because it only ever rendered at the whole-task level)
   lastChecklist: {},            // taskId -> nodeId (or '__task__') -> {findings, checks} real Code-Review/Testing-QA structured results (2026-08-08 addition, same per-node keying as lastDiff above)
   activityTicker: {},           // taskId -> [ real short narrative strings ] (2026-08-08 addition — driven off the already-streaming node_specialist_changed/node_round_advanced SSE events, which today only silently recolor a node with no narrative anywhere)
-  selectedAttemptByNode: {},    // nodeId -> resume_index currently selected in that node's drawer round history (2026-08-09 addition — Andrew's own explicit request for a real per-attempt selector: "I can select... it was my previous, it's new resume... click through them". Undefined/missing = "show the latest (most recent) attempt", the same view a never-resumed node always showed.
-  liveStreamByNode: {},          // nodeId -> {actor, callLabel, text} — the real, currently in-flight LLM token stream for that node's current call (2026-08-09 addition — Andrew's own explicit, repeated request: "streaming everything... while they're really creating... not after it finishes"). Reset whenever a new call_label starts; rendered live into the node's drawer by renderConstraintNodeZoneB()'s own live-stream box, patched directly (no re-render) by ensureStream()'s onmessage on every delta.
+  selectedAttemptByNode: {},    // nodeId -> resume_index currently selected in that node's drawer round history (2026-08-09 addition — the project owner's own explicit request for a real per-attempt selector: "I can select... it was my previous, it's new resume... click through them". Undefined/missing = "show the latest (most recent) attempt", the same view a never-resumed node always showed.
+  liveStreamByNode: {},          // nodeId -> {actor, callLabel, text} — the real, currently in-flight LLM token stream for that node's current call (2026-08-09 addition — the project owner's own explicit, repeated request: "streaming everything... while they're really creating... not after it finishes"). Reset whenever a new call_label starts; rendered live into the node's drawer by renderConstraintNodeZoneB()'s own live-stream box, patched directly (no re-render) by ensureStream()'s onmessage on every delta.
   _lastTasksJSON: undefined,
   _lastPendingJSON: undefined,
   lastPolledAt: null,
@@ -924,7 +924,7 @@ function findSignOff(taskId){ return state.pending.sign_offs.find(s=>s.task_id==
 function lastBranchMsg(taskId){ const m = state.branchMessages[taskId]; return (m && m.length) ? m[m.length-1].detail : null; }
 
 /* ============================= GET /api/tasks + GET /api/pending (real polling) ===== */
-// 2026-08-06 (Andrew: "any update should be smooth"). The real remaining
+// 2026-08-06 (the project owner: "any update should be smooth"). The real remaining
 // glitch wasn't data latency (already sub-10ms via GET /api/stream) -- it
 // was HOW an update lands: every render here works by replacing a chunk of
 // innerHTML wholesale, which repaints instantly and unstyled, i.e. a hard
@@ -1009,7 +1009,7 @@ async function restoreMainChatHistory(){
   let data;
   try { data = await apiGet(`/api/message_history?session_id=${encodeURIComponent(state.sessionId)}`); }
   catch(err){ console.error('restoreMainChatHistory failed', err); return; }
-  state.mainMessages = (data.messages || []).map(m => ({from: m.role === 'user' ? 'jack' : 'sys', text: m.content, task_id: m.task_id||null}));
+  state.mainMessages = (data.messages || []).map(m => ({from: m.role === 'user' ? 'operator' : 'sys', text: m.content, task_id: m.task_id||null}));
   if(state.activeBranchId === null) renderConversation();
 }
 
@@ -1054,7 +1054,7 @@ async function sendMessage(){
   }
 
   state.mainMessages = state.mainMessages || [];
-  state.mainMessages.push({from:'jack', text});
+  state.mainMessages.push({from:'operator', text});
   // A real, quietly-pulsing dot (same animation the running-task indicator
   // elsewhere in this file already uses) instead of static text -- this
   // wait is routinely 10s-70s+, long enough that a motionless message can
@@ -1083,13 +1083,43 @@ async function sendMessage(){
     _setSendBusy(false);
     return;
   }
-  state.mainMessages.pop();  // drop the "Working on it" placeholder, the real reply replaces it
+  // Real fix (the project owner's own report: "I don't see time ticking... but why
+  // I don't see it, it should be like it was real in our production system"):
+  // POST /api/message now returns this task's real task_id THE MOMENT the Manager
+  // mints it, before the round loop itself has done any work -- open this task's
+  // live stream right away (not after waiting for the full reply, as before) so
+  // its real node/round/specialist events are visible as they actually happen.
   const taskId = data.result && data.result.task_id;
-  state.mainMessages.push({from:'sys', text: data.reply, task_id: taskId||null});
-  renderConversation();
-  _setSendBusy(false);
   await Promise.all([refreshTasks(), refreshPending()]);
   if(taskId) selectBranch(taskId);
+
+  // The actual rendered reply isn't known yet -- the turn is still running in the
+  // background server-side. Poll GET /api/message_result/{task_id} (cheap, local,
+  // in-memory lookup server-side) until it reports "done", then swap the "Working
+  // on it" placeholder for the real text, exactly as it would have read before
+  // this fix, just correctly timed relative to the live stream opening.
+  if(taskId){
+    const poll = async () => {
+      let res;
+      try { res = await apiGet(`/api/message_result/${taskId}`); }
+      catch(err){ console.error('message_result poll failed', err); return; }
+      if(res.status !== 'done'){ setTimeout(poll, 1500); return; }
+      state.mainMessages = state.mainMessages || [];
+      const idx = state.mainMessages.findIndex(m => m._placeholder);
+      const finalMsg = {from:'sys', text: res.reply, task_id: taskId};
+      if(idx >= 0) state.mainMessages.splice(idx, 1, finalMsg);
+      else state.mainMessages.push(finalMsg);
+      renderConversation();
+      _setSendBusy(false);
+      refreshTasks(); refreshPending();
+    };
+    setTimeout(poll, 800);
+  } else {
+    state.mainMessages.pop();
+    state.mainMessages.push({from:'sys', text:'The Manager did not return a task for this message.'});
+    renderConversation();
+    _setSendBusy(false);
+  }
 }
 document.getElementById('chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter') sendMessage(); });
 
@@ -1274,7 +1304,7 @@ function createForceGraph(hostEl, nodes, opts){
     });
   }
   rebuildAdjacency();
-  // Real sizing rule (Andrew's own words): "the biggest is tasks, everything
+  // Real sizing rule (the project owner's own words): "the biggest is tasks, everything
   // else smaller and smaller and smaller" -- NOT a raw connection-count
   // scale (which made whatever happened to have the most edges biggest,
   // often a merge step, not the actual task). This sizes by real
@@ -1283,7 +1313,7 @@ function createForceGraph(hostEl, nodes, opts){
   // gets the max radius; each real dependency step away shrinks it further,
   // monotonically, regardless of how many siblings/connections it has.
   let graphMaxDepth = 1;
-  // Real fix, 2026-08-08 (Andrew's own direct clarification): "STEP N" is the Nth
+  // Real fix, 2026-08-08 (the project owner's own direct clarification): "STEP N" is the Nth
   // decomposition/splitting GENERATION, not real dependency-chain distance from Task -- these
   // are genuinely different real relationships (see the split-parent comment above
   // _addRootAndSplitLineage's own node.deps assignment). depthOf here now walks ONLY the
@@ -1308,7 +1338,7 @@ function createForceGraph(hostEl, nodes, opts){
     }
     nodes.forEach(n => { n.depth = depthOf(n.id, new Set()); });
     graphMaxDepth = Math.max(...nodes.map(n=>n.depth), 1);
-    // Real UX fix, 2026-08-08 (Andrew's direct report + screenshot: nodes arranged in a
+    // Real UX fix, 2026-08-08 (the project owner's direct report + screenshot: nodes arranged in a
     // free-floating circle around Task made the real dependency order -- step 3 farthest,
     // step 1 closest, everything flowing toward Task -- impossible to read, edges crossing
     // and overlapping every direction at once). Assigns each node a stable per-depth sibling
@@ -1323,10 +1353,10 @@ function createForceGraph(hostEl, nodes, opts){
   }
   recomputeDepths();
   function nodeRadius(d){
-    // Real fix, 2026-08-08 (Andrew's own direct report: "scales of nodes very weird it should
+    // Real fix, 2026-08-08 (the project owner's own direct report: "scales of nodes very weird it should
     // be logical"). A prior design (same day, root/split-lineage feature) deliberately made the
     // root SMALLER than every real work node, reasoning "a marker, not a work item" -- but that
-    // produces exactly the confusing result Andrew flagged live: with a shallow split tree
+    // produces exactly the confusing result the project owner flagged live: with a shallow split tree
     // (graphMaxDepth as low as 2, common for a real task), a plain depth-1 piece renders at
     // radius 19 while Task itself sits fixed at 11 -- the task's own circle smaller than its own
     // direct children, contradicting the ordinary, intuitive reading of a hierarchy diagram
@@ -1505,7 +1535,7 @@ function createForceGraph(hostEl, nodes, opts){
   let hoveredNode = null;
   function worldToScreen(x,y){ return [world.x + x*world.scale.x, world.y + y*world.scale.y]; }
 
-  // Real layout rule, corrected per Andrew's direct pushback on the first
+  // Real layout rule, corrected per the project owner's direct pushback on the first
   // attempt (strict left-to-right columns read as "a train timeline, not a
   // graph" -- fair; that gave up the real, unpredictable physics-driven
   // shape entirely). What he actually wants: the SAME free-form force layout
@@ -1526,16 +1556,16 @@ function createForceGraph(hostEl, nodes, opts){
   const GROUP_COLORS_CSS = ['#6aa8ff','#c79bff','#66e0ac','#f2cf5c','#ff9166','#ef5b63','#66b8f2','#eab93e','#a78bfa','#4ade80'];
   function groupColor(depth){ return GROUP_COLORS[depth % GROUP_COLORS.length]; }
   function groupColorCss(depth){ return GROUP_COLORS_CSS[depth % GROUP_COLORS_CSS.length]; }
-  // Real UX change, 2026-08-08 (Andrew's own explicit, repeated direction, after reviewing the
+  // Real UX change, 2026-08-08 (the project owner's own explicit, repeated direction, after reviewing the
   // industry-convention research and confirming he wants his own logic anyway): number layers
   // as a countdown toward the task, not ascending from it. The real depth value (distance from
   // the task, used for sizing/layout everywhere else in this file) is unchanged -- only the
   // DISPLAYED number is inverted, so the most independent/foundational layer (the real deepest
   // one, previously "Step 1") now reads as the highest step number, and the layer immediately
   // before the task (previously the highest step number) now reads "Step 1" -- Step N, ...,
-  // Step 2, Step 1, Task, matching how Andrew reads a tree: start from the independent leaves,
+  // Step 2, Step 1, Task, matching how the project owner reads a tree: start from the independent leaves,
   // count down as you move up the hierarchy, arrive at the task last.
-  // Real fix, 2026-08-08 (Andrew's own direct clarification, real recursion finally observed
+  // Real fix, 2026-08-08 (the project owner's own direct clarification, real recursion finally observed
   // live on task 4af6d7bc: "task splits into initial pieces -- that's step 1. If some of those
   // need further splitting, those NEW pieces become step 2" -- counting UP with each real
   // splitting generation). This USED to invert (graphMaxDepth-depth+1) back when `depth` still
@@ -1543,7 +1573,7 @@ function createForceGraph(hostEl, nodes, opts){
   // superseded -- see recomputeDepths' own comment on why depth now walks splitParent, not
   // predecessor_labels). That inversion was never revisited when depth was repurposed to mean
   // split-GENERATION, so the piece produced by the DEEPEST real recursion was showing the
-  // LOWEST step number -- backwards from Andrew's stated model. No inversion needed now: depth
+  // LOWEST step number -- backwards from the project owner's stated model. No inversion needed now: depth
   // 1 (the task's own first, initial split) is genuinely STEP 1; depth 2 (a piece from THAT
   // batch that needed splitting further) is genuinely STEP 2; and so on, exactly matching each
   // real successive recursion round in manager/replanning.py's own recursively_decompose_
@@ -1678,7 +1708,7 @@ function createForceGraph(hostEl, nodes, opts){
   }
   function drawSmoothHull(g, hull, color){
     // Rounded-corner closed polygon (quadratic curve through edge
-    // midpoints) -- a real curve, not a square, per Andrew's explicit ask.
+    // midpoints) -- a real curve, not a square, per the project owner's explicit ask.
     g.beginFill(color, 0.045).lineStyle(1, color, 0.32); // refined 2026-08-06: thinner + more subtle, per "outlines are too big, not modern" feedback
     const n = hull.length;
     const mid = (p1,p2)=>[(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
@@ -1698,7 +1728,7 @@ function createForceGraph(hostEl, nodes, opts){
       const members = groups.get(depth);
       const color = groupColor(depth);
       let topPoint;
-      // Real UX fix, 2026-08-08 (Andrew's own direct report, with a screenshot: "why doesn't
+      // Real UX fix, 2026-08-08 (the project owner's own direct report, with a screenshot: "why doesn't
       // step two connect to a single group with outline as it was for all the other groups" --
       // two real siblings at the identical real depth, correctly computed, just rendered with
       // no connecting boundary between them). The `< 3` threshold below was never a real
@@ -1733,12 +1763,12 @@ function createForceGraph(hostEl, nodes, opts){
     labelBgLayer.clear();
     const k = world.scale.x;
     if(k < 0.28){ labelPool.forEach(s=>{ s.text.visible=false; }); return; }
-    // Real fix (Andrew's report + screenshot): the hovered node used to get
+    // Real fix (the project owner's report + screenshot): the hovered node used to get
     // a special full-untruncated-title label pill, which for a long real
     // goal string could grow wide enough to sit as a big, out-of-place bar
     // low in the graph, overlapping the zoom controls -- and it was pure
     // duplicate information anyway, since #graph-tooltip (the small box
-    // that already follows the cursor on hover, which Andrew said is fine)
+    // that already follows the cursor on hover, which the project owner said is fine)
     // shows the exact same full title right next to the pointer. Hover no
     // longer gets special label treatment at all here -- every node's
     // label (including the hovered one) is now just the normal truncated
@@ -1770,12 +1800,12 @@ function createForceGraph(hostEl, nodes, opts){
     for(; poolIdx<labelPool.length; poolIdx++) labelPool[poolIdx].text.visible = false;
   }
 
-  // Real layout, 2026-08-08 (Andrew's direct report + screenshot: a free-form circular
+  // Real layout, 2026-08-08 (the project owner's direct report + screenshot: a free-form circular
   // layout -- earlier chosen after pushback that a strict column layout read as "a train
   // timeline, not a graph" -- put same-depth siblings at arbitrary angles around Task, so
   // edges crossed in every direction and the real "step 3 farthest, flowing down through
   // step 2/1 into Task" order was unreadable). This supersedes that revert: one consistent
-  // direction now, chosen by Andrew explicitly -- depth sets a node's position along a single
+  // direction now, chosen by the project owner explicitly -- depth sets a node's position along a single
   // axis (COL_SPACING per depth step, Task at the origin end, deepest/foundational nodes
   // farthest out), while the OTHER axis is where the force physics (charge/collide/link) still
   // runs free -- so same-depth siblings fan out and jostle apart naturally instead of sitting
@@ -1882,7 +1912,7 @@ function createForceGraph(hostEl, nodes, opts){
       gfx.endFill();
     });
   }
-  // Real edge design (Andrew's explicit ask, researched against 2026
+  // Real edge design (the project owner's explicit ask, researched against 2026
   // graph-viz practice -- "marching ants" animated dash-phase for direction,
   // distinct dash pattern + color per edge category, arrowheads): a real
   // dependency graph's edges are NOT all the same kind of connection. Most
@@ -1893,7 +1923,7 @@ function createForceGraph(hostEl, nodes, opts){
   // adjacent-edge status color, so a skip is recognizable as a different
   // KIND of connection, not just a longer one. Every edge also animates:
   // the dashes visibly travel from the deeper/later node back toward
-  // whatever it depends on -- per Andrew's own direction ("logic goes from
+  // whatever it depends on -- per the project owner's own direction ("logic goes from
   // the last layer... back to the main task"), not the other way round --
   // with a small arrowhead at the task-ward end reinforcing the same
   // direction statically, for anyone looking at a paused frame.
@@ -1907,7 +1937,7 @@ function createForceGraph(hostEl, nodes, opts){
     g.closePath();
     g.endFill();
   }
-  // Real UX fix, 2026-08-08 (Andrew's own explicit direction: connections should visibly flow
+  // Real UX fix, 2026-08-08 (the project owner's own explicit direction: connections should visibly flow
   // FROM the earlier/more-independent piece TOWARD the piece that depends on it, all the way to
   // Task -- "not to step three, but from step three and farther to farther... everything going
   // to task, not from task, but to task"). Draws dashes along (x1,y1)->(x2,y2), animated so the
@@ -1943,7 +1973,7 @@ function createForceGraph(hostEl, nodes, opts){
       if(!s||!t||s.x===undefined||t.x===undefined) return;
       // Click highlights, never hides or repositions -- a selected node's
       // own edges brighten, everything else just dims a touch. The graph
-      // stays exactly as-is otherwise (Andrew's report: clicking a node was
+      // stays exactly as-is otherwise (the project owner's report: clicking a node was
       // rearranging the whole graph into a radial layout, which fought
       // directly with "nodes should be static").
       // Real UX fix, 2026-08-08: full-chain membership (both endpoints anywhere in the
@@ -1970,13 +2000,13 @@ function createForceGraph(hostEl, nodes, opts){
       // refined 2026-08-06: thinner lines + smaller arrowheads -- "arrows and
       // outlines are too big, doesn't look modern" feedback, same logic/data.
       const color = isSkip ? SKIP_EDGE_COLOR : graphStatusHex(t.status);
-      // Real fix, 2026-08-08 (Andrew's own direct correction, task e89150c8-69de-4cad-8450-
+      // Real fix, 2026-08-08 (the project owner's own direct correction, task e89150c8-69de-4cad-8450-
       // 69eda822cfcb: "connection goes from service_ticket_model to equipment_registry... but
       // equipment_registry is independent... direction is incorrect"). Reverts the prior
       // child-points-at-parent convention: a real dependency edge now flows s -> t, s being the
       // independent/predecessor piece (e.g. equipment_registry, zero real predecessors of its
       // own) and t the piece that needs it (e.g. service_ticket_model) -- reads as a real
-      // build-order flowchart, "this happens, which enables that," matching Andrew's own
+      // build-order flowchart, "this happens, which enables that," matching the project owner's own
       // explicit confirmation. Purely a rendering change -- e.source/e.target, real
       // predecessor_labels, and every other real edge/scheduling field are untouched.
       if(isSkip) drawDashedFlow(edgeLayer, x1,y1,x2,y2, color, 0.8, baseAlpha*0.85, 2, 7, edgePhase*1.6);
@@ -2089,7 +2119,7 @@ function createForceGraph(hostEl, nodes, opts){
     tip.style.left = (rect.left+globalPos.x+nodeRadius(d)+12)+'px';
     tip.style.top = (rect.top+globalPos.y-10)+'px';
     tip.style.opacity = '1';
-    // Real UX addition, 2026-08-08 (Andrew's own direct confusion: "why does it start from a
+    // Real UX addition, 2026-08-08 (the project owner's own direct confusion: "why does it start from a
     // STEP 1 node, not the last step" -- real answer is "step number never decided run order,
     // real dependencies did," but the graph never SAID that anywhere a user would see it while
     // looking at the exact node in question). Real predecessor_labels (not d.deps, which also
@@ -2124,7 +2154,7 @@ function createForceGraph(hostEl, nodes, opts){
       app.stage.off('pointermove',move); app.stage.off('pointerup',up); app.stage.off('pointerupoutside',up);
       if(!dragCandidate.moved){ selectNode(d.id); opts.onNode && opts.onNode(d); }
       else {
-        // Real bug found live (Andrew's report: "click and drag doesn't
+        // Real bug found live (the project owner's report: "click and drag doesn't
         // work"): clearing fx/fy on release un-pins the node, so physics
         // immediately pulls it back away from wherever it was just dropped
         // -- the drag fires fine, the drop just never visibly sticks. Keep
@@ -2139,7 +2169,7 @@ function createForceGraph(hostEl, nodes, opts){
   }
 
   // Selection is now purely visual (edge highlight + label priority) --
-  // no repositioning, no hiding. Real bug fixed here (Andrew's report:
+  // no repositioning, no hiding. Real bug fixed here (the project owner's report:
   // "it still focuses on some nodes when I click on some node" and "they
   // should be static"): this used to yank the clicked node + its neighbors
   // into a fixed radial layout and hide everything else, which is real
@@ -2177,7 +2207,7 @@ function createForceGraph(hostEl, nodes, opts){
     drawLayerBands(); updateLabels();
   }
 
-  // Real trackpad fixes (Andrew, on a MacBook trackpad):
+  // Real trackpad fixes (the project owner, on a MacBook trackpad):
   // 1. Plain two-finger scroll was being treated as a zoom gesture (any
   //    wheel event zoomed), so just scrolling made the whole graph zoom in
   //    and out on its own -- reads as "nodes moving" with no deliberate
@@ -2207,7 +2237,7 @@ function createForceGraph(hostEl, nodes, opts){
     };
     app.stage.on('pointermove',move); app.stage.on('pointerup',up); app.stage.on('pointerupoutside',up);
   });
-  // Real UX fix, 2026-08-08 (Andrew's own direct feedback: "I don't see any hints or any stuff
+  // Real UX fix, 2026-08-08 (the project owner's own direct feedback: "I don't see any hints or any stuff
   // that they can click or hover over these specific connections... what does this connection
   // mean?"). Edges are drawn into one shared PIXI Graphics object (redrawEdges(), for real
   // performance reasons -- one draw call, not N interactive sprites), so per-edge PIXI
@@ -2244,7 +2274,7 @@ function createForceGraph(hostEl, nodes, opts){
     const tip = document.getElementById('graph-tooltip');
     if(!tip) return;
     if(best){
-      // Real bug fixed 2026-08-08 (Andrew's own report: "showing somewhere else, not inside
+      // Real bug fixed 2026-08-08 (the project owner's own report: "showing somewhere else, not inside
       // our graph window"): ev.global.x/y are PIXI-canvas-relative coordinates, not page
       // coordinates -- used directly as CSS left/top with no offset, the tooltip landed
       // wherever the canvas's own top-left happened to be on the page instead of near the
@@ -2349,7 +2379,7 @@ function openDrawer(node){
   document.getElementById('drawer-backdrop').classList.add('open');
   document.getElementById('node-drawer').classList.add('open');
   refreshOpenDrawerContent(node);
-  // Real fix, 2026-08-08 (Andrew's own direct report: "I open... this node... rounds... I don't
+  // Real fix, 2026-08-08 (the project owner's own direct report: "I open... this node... rounds... I don't
   // see anything... maybe in backend something happens, but in UI no"). Root cause: this
   // renders whatever `node._constraintNode` ALREADY holds in memory -- correct for a node whose
   // data arrived via a live SSE patch since the last full fetch, but silently stale/empty if the
@@ -2392,7 +2422,7 @@ function refreshOpenDrawerContent(node){
     // Phase 31 UI doc §2 -- the redesigned Zone A/B/D panel for a real constraint-graph node.
     // Zone C (2026-08-08 addition) is folded directly INTO Zone B's own per-round rows below
     // (click a round, then click Build/Code Review/Testing-QA to see that specialist's own
-    // real content for that round) rather than a separate section here -- Andrew's own direct
+    // real content for that round) rather than a separate section here -- the project owner's own direct
     // request, to avoid the same real content appearing twice on the page.
     const n = node._constraintNode;
     body.appendChild(renderConstraintNodeZoneA(node, n));
@@ -2442,7 +2472,7 @@ function refreshOpenDrawerContent(node){
    own comment) when node.activeSpecialist is populated; falls back to the generic "● Running"
    only for the brief real window before the first node_specialist_changed event of a run lands,
    never a guess. */
-// Real UX addition, 2026-08-08 (Andrew's own explicit request: "add time tracker and counter
+// Real UX addition, 2026-08-08 (the project owner's own explicit request: "add time tracker and counter
 // for every round for every builder code reviewer tester orchestrator ... everything all
 // time"). Formats a real seconds count the same short way throughout this feature -- under a
 // minute as "12.3s", a minute or more as "3m 07s" -- never raw unlabeled floats.
@@ -2453,7 +2483,7 @@ function fmtSecs(s){
   const m = Math.floor(s/60), rem = Math.round(s%60);
   return `${m}m ${String(rem).padStart(2,'0')}s`;
 }
-// Real fix, 2026-08-09 (Andrew's own direct live report: "timer for different resumes, it's
+// Real fix, 2026-08-09 (the project owner's own direct live report: "timer for different resumes, it's
 // staying the same... it should be separate sync, not the same timer for everything").
 // manager/tools.py's persist_node_round_timing() now keys one level deeper --
 // round_timings.{round}.{resume_index}.{actor} -- so each attempt's own real time is isolated
@@ -2515,7 +2545,7 @@ function renderConstraintNodeZoneA(node, n){
 // specialist_type.value); "build" is kept too since some existing call sites/data already use
 // the plainer name (e.g. this file's own persist_node_round_step calls, manager/loop.py).
 const SPECIALIST_SOURCE_MAP = {build:'build', bug_fix:'build', code_review:'review', testing_qa:'qa'};
-/* Phase 31 UI §2 -- Zone B: round timeline. Restructured 2026-08-08 (Andrew's own direct
+/* Phase 31 UI §2 -- Zone B: round timeline. Restructured 2026-08-08 (the project owner's own direct
    request: click a round, then click Build/Code Review/Testing-QA specifically, see THAT
    specialist's own real content for THAT round -- not one long prose block). Grouped from the
    real failure_records array (each entry already carries its own real `source` -- build/
@@ -2526,7 +2556,7 @@ const SPECIALIST_SOURCE_MAP = {build:'build', bug_fix:'build', code_review:'revi
    durably persisted anywhere (SSE-only, not stored), so a past round's Build tab says so
    explicitly rather than showing stale or fabricated content. */
 const SPEC_STATUS_ICON = {passed:'✓', failed:'✗', running:'●', paused:'⏸'};
-/* Real UX rewrite, 2026-08-08 (Andrew's own explicit request: back to how the pre-Phase-31 UI
+/* Real UX rewrite, 2026-08-08 (the project owner's own explicit request: back to how the pre-Phase-31 UI
    did this -- specialists appear as a VERTICAL, always-visible list, not tabs you click between
    ("I need to switch between all of them... it should be like vertical stuff"), each one only
    appearing once the manager has actually invoked it ("only then they appear, not everything at
@@ -2535,7 +2565,7 @@ const SPEC_STATUS_ICON = {passed:'✓', failed:'✗', running:'●', paused:'⏸
    into round_steps (contracts/schema.py), reusing the exact same real messages already
    published live (build_output.summary, review_output.summary, verification.notes) -- nothing
    invented here, just organized and kept. */
-// Real fix, 2026-08-09 (Andrew's own direct live report: "it should replace our previous round
+// Real fix, 2026-08-09 (the project owner's own direct live report: "it should replace our previous round
 // one... I want it to collect into one single picture... resume one, resume two, resume three...
 // so we could sort out all this resume, but not replace"). manager/tools.py's
 // persist_node_round_diff/findings/checks() now APPEND a {resume_index, [valueKey]: ...} entry
@@ -2581,7 +2611,7 @@ function renderConstraintNodeZoneB(node, n){
   const nodeDiff = taskDiffs[node.id];
   const nodeChecklist = taskChecklists[node.id] || {};
 
-  // Real fix, 2026-08-09 (Andrew's own direct, repeated live request: "add a separate maybe
+  // Real fix, 2026-08-09 (the project owner's own direct, repeated live request: "add a separate maybe
   // button or... list where I can select... it was my previous, it's new resume, it's the
   // second resume... I can click through them"). Every round's own roundDiffs/roundFindings/
   // roundChecks/roundSteps entry now carries resume_index (see _normalizeRoundAttempts()'s own
@@ -2658,7 +2688,7 @@ function renderConstraintNodeZoneB(node, n){
     return wrap;
   }
 
-  // Real fix, 2026-08-09 (Andrew's own direct live report: "it should represent that round one
+  // Real fix, 2026-08-09 (the project owner's own direct live report: "it should represent that round one
   // failed, round one passed... check if it represents timers... color"). Every non-current
   // round used to be labeled "Failed" UNCONDITIONALLY, regardless of whether it actually failed
   // or was the round that genuinely satisfied the node -- wrong the instant a node's FINAL round
@@ -2696,7 +2726,7 @@ function renderConstraintNodeZoneB(node, n){
   strip.innerHTML = segs;
   wrap.appendChild(strip);
 
-  // Real UX addition, 2026-08-09 (Andrew's own direct, repeated, emphatic request: "streaming
+  // Real UX addition, 2026-08-09 (the project owner's own direct, repeated, emphatic request: "streaming
   // everything... while they're really creating... not after it finishes"). manager/loop.py's
   // real LLM calls already stream token-by-token 'delta' events (infra/gateway_client.py's
   // _generate_inner_streaming()) -- this was previously only ever rendered into the flat
@@ -2722,7 +2752,7 @@ function renderConstraintNodeZoneB(node, n){
     const rnKey = String(rn);
     const row = el('div','round-row'); row.dataset.rn = rn;
     const timingForRound = _timingForRoundAttempt(roundTimings, rnKey, selectedResumeIdx);
-    // Real UX addition, 2026-08-08 (Andrew's own explicit request: "add time tracker and
+    // Real UX addition, 2026-08-08 (the project owner's own explicit request: "add time tracker and
     // counter for every round ... orchestrator ... everything all time"). round_total is
     // persisted once this round genuinely concludes (manager/loop.py, right after verification
     // is known) -- a still-running round has no round_total yet, so the header simply omits the
@@ -2738,7 +2768,7 @@ function renderConstraintNodeZoneB(node, n){
     const checkAttempt = _normalizeRoundAttempts(roundChecks[rnKey], 'checks').find(a => a.resume_index === selectedResumeIdx);
 
     // Real UX addition, 2026-08-08: the orchestrator/manager itself gets its own real row too --
-    // Andrew's own explicit ask ("orchestrator all processes"), computed server-side
+    // the project owner's own explicit ask ("orchestrator all processes"), computed server-side
     // (manager/loop.py) as round_total minus every specialist's own measured time, never a guess.
     const managerSecs = timingForRound.manager;
 
@@ -2876,7 +2906,7 @@ function normalizeConstraintNodeStatus(s){
   if(s === 'blocked') return 'blocked';    // split out of the old ready||blocked branch -- was silently indistinguishable from a fresh node
   return s; // running/pending/paused already match the vocabulary used elsewhere
 }
-/* Phase 31 UI, root/split-lineage (2026-08-08) -- real UI gap found live (Andrew's own report):
+/* Phase 31 UI, root/split-lineage (2026-08-08) -- real UI gap found live (the project owner's own report):
    "the graph shows only the flat, top-level pieces... no visual sense of... this piece was
    itself split further." Backend fix: ConstraintNode.split_from (each node's own immediate real
    parent label, None for an original top-level piece) plus the round's own detail.split_lineage
@@ -2918,7 +2948,7 @@ function _addRootAndSplitLineage(nodes, task, splitLineage){
     return ghostId;
   }
 
-  // Real fix, 2026-08-08 (Andrew's own direct clarification, after his prior "everything
+  // Real fix, 2026-08-08 (the project owner's own direct clarification, after his prior "everything
   // connects to Task" report): the structural split-parent edge below is legitimate and must
   // stay on EVERY node, not just deps-less ones -- it is a genuinely different real relationship
   // (which decomposition round produced this node) from a predecessor_labels dependency edge
@@ -2926,7 +2956,7 @@ function _addRootAndSplitLineage(nodes, task, splitLineage){
   // and neither substitutes for the other. What was actually wrong (fixed below, in
   // recomputeDepths) is that STEP-number/layout depth was being computed by walking `n.deps` --
   // a mix of both edge kinds -- when it must walk ONLY this structural splitParent chain: "step
-  // N" is supposed to mean "the Nth generation this piece was split off in," per Andrew's own
+  // N" is supposed to mean "the Nth generation this piece was split off in," per the project owner's own
   // explicit model (task splits once into an initial batch -- one step -- then only whichever of
   // those pieces genuinely need it split again, becoming the next step, and so on), never real
   // execution-dependency distance from Task.
@@ -3038,7 +3068,7 @@ function renderStatusStrip(nodes){
     const m = STATUS_STRIP_META[s];
     return `<span class="status-strip-chip ${m.cls}"><span class="status-strip-icon">${m.icon}</span>${counts[s]} ${esc(m.label)}</span>`;
   }).join('');
-  // Real UX addition, 2026-08-08 (Andrew's own explicit request: "everything all time") --
+  // Real UX addition, 2026-08-08 (the project owner's own explicit request: "everything all time") --
   // real wall-clock time across every real node's every real round, summed with the same
   // round_total field each node's own Zone A/B timing already reads, so this figure and each
   // node's own displayed total are always consistent with each other.
@@ -3052,7 +3082,7 @@ function renderStatusStrip(nodes){
 // Real UX addition, 2026-08-08 (research: GitHub/VS Code/Claude Code diff-view convention).
 // diffFiles is the real {file, lines:[{type:'add'|'del'|'ctx', text}]} shape
 // _compute_module_diff() already produces server-side -- no transformation needed here.
-// Real UX addition, 2026-08-08 (Andrew's own explicit request, researched directly against
+// Real UX addition, 2026-08-08 (the project owner's own explicit request, researched directly against
 // Claude Code's real rendering rather than guessed -- see this file's own <head> comment):
 // maps a real generated file's extension to the highlight.js language name it actually needs.
 // Every real extension Build's own module writer produces (manifests/models/views/security/
@@ -3182,7 +3212,7 @@ async function buildGraphForTask(task){
     }));
     const lastId = nodes[nodes.length-1].id;
     const curStatus = task.status === 'pending' ? 'pending' : task.status;
-    // Real bug closed 2026-08-08 (Andrew's own direct investigation, task
+    // Real bug closed 2026-08-08 (the project owner's own direct investigation, task
     // ecec351f-6787-4562-89b8-0d6042159ba6): this synthetic "current status" node — what a user
     // actually clicks on a paused/failed/passed simple (non-decomposed) task — matched none of
     // openDrawer()'s content branches (_constraintNode/_round/_planItem), since it never had any
@@ -3289,7 +3319,7 @@ async function renderTaskDetail(){
     </div>`;
     return;
   }
-  // 2026-08-06 (Andrew's own report): the header was showing the FULL raw goal text as a
+  // 2026-08-06 (the project owner's own report): the header was showing the FULL raw goal text as a
   // "title", then the "What you asked" box below repeated the exact same full text again --
   // real, confirmed duplication, not just a stylistic complaint. A title should be short;
   // the full text belongs in the body, once.
@@ -3306,7 +3336,7 @@ async function renderTaskDetail(){
     simBar.style.display='none';
   }
 
-  // Real regression found live (Andrew's report -- "majority of tasks just
+  // Real regression found live (the project owner's report -- "majority of tasks just
   // don't render"): the drawer/backdrop get moved INTO #graph-wrap when it's
   // built (below), which itself lives inside #task-body. The very next task
   // selection wipes #task-body via body.innerHTML='' -- which, unlike the
@@ -3363,7 +3393,7 @@ async function renderTaskDetail(){
   const canvas = el('div'); canvas.id='graph-canvas';
   const zoomControls = el('div'); zoomControls.id='graph-zoom-controls';
   zoomControls.innerHTML = `<button title="Zoom in" onclick="__graphEngine&&__graphEngine.zoomIn()">+</button><button title="Zoom out" onclick="__graphEngine&&__graphEngine.zoomOut()">–</button><button title="Fit view" onclick="__graphEngine&&__graphEngine.fit()">⤢</button>`;
-  // Real UX addition, 2026-08-08 (Andrew's own direct confusion, real screenshot: "why does
+  // Real UX addition, 2026-08-08 (the project owner's own direct confusion, real screenshot: "why does
   // execution start from a STEP 1 node, not the last step... backend logic is great but UI
   // should be different"). Root cause wasn't a bug -- STEP number (which splitting generation
   // produced a piece) and execution order (which piece the Manager runs first) are two
@@ -3381,7 +3411,7 @@ async function renderTaskDetail(){
   viewport.appendChild(canvas); viewport.appendChild(zoomControls); viewport.appendChild(hint); viewport.appendChild(concurrencyChip);
   wrap.appendChild(viewport);
   gsec.appendChild(wrap);
-  // Real UX fix, 2026-08-08 (Andrew's own direct request: node detail should sit inline, below
+  // Real UX fix, 2026-08-08 (the project owner's own direct request: node detail should sit inline, below
   // the graph, not as a covering overlay). Real DOM move, not a clone -- the drawer is a
   // persistent, single element that otherwise lives outside #task-body (so it survives its own
   // wipe/rebuild cycle) -- appended as a SIBLING after #graph-wrap (not inside it, which has a
@@ -3446,7 +3476,7 @@ async function renderTaskDetail(){
     const c = el('div','card card-esc judgment');
     let priorHtml = '';
     if((esc_.prior_rounds||[]).length){
-      // Real UX fix, 2026-08-08 (Andrew's own direct feedback: "round one failed, round two
+      // Real UX fix, 2026-08-08 (the project owner's own direct feedback: "round one failed, round two
       // failed... but what IS this round one?"): each round already carries real, structured
       // verification_result fields (reproduction_confirmed, spot_check_mismatch, gates_disagree
       // — contracts/schema.py's VerificationResult) — rendered here as a real checklist above
@@ -3545,7 +3575,7 @@ async function renderTaskDetail(){
 
   // ---- live activity, while running OR paused (real SSE feed)
   //
-  // Real bug found live (2026-08-10, Andrew's own direct report on task
+  // Real bug found live (2026-08-10, the project owner's own direct report on task
   // e65381cc-f2d4-43cb-818b-39b9b3bae7b9, node `ticket_views_menu`: "I don't see any updates
   // in UI except first round and resumes also appears after hard refresh" -- backend confirmed
   // genuinely, actively streaming the whole time). This gate used to open the SSE connection
@@ -3609,7 +3639,7 @@ function scheduleGraphPatch(id, partial){
   scheduleGraphFlush();
   if('status' in partial) scheduleSidebarRefresh();
 }
-// Real fix, 2026-08-08 (Andrew's own explicit, emphatic request: "everything should update in
+// Real fix, 2026-08-08 (the project owner's own explicit, emphatic request: "everything should update in
 // UI the same speed as in backend, in millisecond... without me refreshing pages"). Root cause
 // found live: every node carries TWO separate copies of its own data -- the outer graph-display
 // object (node.status/roundNumber/activeSpecialist, read by the graph's own node coloring/
@@ -3699,7 +3729,7 @@ function ensureStream(taskId){
   state.liveLines[taskId] = state.liveLines[taskId] || [];
   const es = new EventSource(`/api/stream/${taskId}`);
   state.eventSource = es;
-  // Real fix, 2026-08-08 (Andrew's own direct report: after a task resumes -- e.g. this exact
+  // Real fix, 2026-08-08 (the project owner's own direct report: after a task resumes -- e.g. this exact
   // service surviving a restart via its own orphan-recovery -- the UI "stops on some state...
   // node labels and rounds" instead of catching up). Root cause: __curNodes only ever advances
   // one live SSE event at a time (scheduleGraphPatch below); it is never re-derived from
@@ -3732,7 +3762,7 @@ function ensureStream(taskId){
       patchConstraintNodeLive(ev.node_id, { round_number: ev.round_number });
       pushActivityTicker(taskId, `“${nodeTitleById(ev.node_id)}” moved to round ${ev.round_number}`);
     } else if(ev.phase === 'node_round_timing'){
-      // Real UX addition, 2026-08-08 (Andrew's own explicit, emphatic request: "everything
+      // Real UX addition, 2026-08-08 (the project owner's own explicit, emphatic request: "everything
       // should update in UI the same speed as in backend, in millisecond... without me
       // refreshing pages"). manager/loop.py's own _persist_round_timings_for_this_round() now
       // publishes this the instant it durably writes each real timing -- merge it straight onto
@@ -3752,7 +3782,7 @@ function ensureStream(taskId){
         scheduleGraphFlush();
       }
     }
-    // Real UX addition, 2026-08-09 (Andrew's own explicit, repeated request: "streaming
+    // Real UX addition, 2026-08-09 (the project owner's own explicit, repeated request: "streaming
     // everything... while they're really creating... code reviewer, tester, everything at the
     // same time it really creates, not after it finishes"). infra/gateway_client.py's real
     // token-by-token 'delta' events now carry node_id too -- route each one straight into
@@ -3780,7 +3810,7 @@ function ensureStream(taskId){
         }
       }
     }
-    // Real UX addition, 2026-08-08 (Andrew's own explicit request: the granular step-by-step
+    // Real UX addition, 2026-08-08 (the project owner's own explicit request: the granular step-by-step
     // narrative appearing LIVE, at the same time it actually happens, not just on next reload).
     // manager/loop.py's real "level":"specialist" progress events (never a "kind":"result" one
     // -- those are handled separately below) now carry node_id/round too; push each one
@@ -3802,7 +3832,7 @@ function ensureStream(taskId){
     // but nothing ever consumed it. Store the latest and re-render if this task's detail is
     // currently open, same live-refresh pattern the graph patches above already use.
     if(ev.kind === 'result' && ev.result && (ev.result.diff || ev.result.findings || ev.result.checks)){
-      // Real UX fix, 2026-08-08 (Andrew's own direct report: clicking a specific node's own
+      // Real UX fix, 2026-08-08 (the project owner's own direct report: clicking a specific node's own
       // drawer showed none of this -- it only ever rendered at the whole-task level, not per
       // node). manager/loop.py now publishes `node_id` (the real constraint label,
       // TaskContract.current_constraint_label -- None for a non-decomposed task) alongside
@@ -3870,7 +3900,7 @@ function ensureStream(taskId){
   // one real EventSource object for this task, just transiently reconnecting, not gone.
   es.onerror = () => {};
 }
-// Real fix, 2026-08-08 (Andrew's own direct request: "ui after resuming... nodes graph should
+// Real fix, 2026-08-08 (the project owner's own direct request: "ui after resuming... nodes graph should
 // change... it stop on some state"). Extracted from renderTaskDetail()'s own existing REST-
 // refetch branch (buildGraphForTask -> renderGraph/renderStatusStrip/renderNeedsAttentionList)
 // so ensureStream()'s onopen handler above can force the exact same real resync without also
@@ -4001,7 +4031,7 @@ function renderTaskListPanel(){
     sec.innerHTML = `<div class="tl-section-title">${b.label} <span class="tl-count">${countLabel}</span></div>`;
     items.forEach(t=>{
       const row = el('div','tl-row'+(state.selectedTaskId===t.task_id?' selected':''));
-      // Redesign 2026-08-06 (Andrew's report: 200+ multi-line rows with a
+      // Redesign 2026-08-06 (the project owner's report: 200+ multi-line rows with a
       // wall of badges each is unreadable at a glance -- "too much
       // information," "very hard to understand"). Default view is a status
       // dot + single-line clamped title + a small always-on status line
@@ -4076,7 +4106,7 @@ function renderConversation(){
   }
 
   const task = taskById(state.activeBranchId);
-  // Real bug fixed 2026-08-08 (Andrew's own report, with a screenshot pinpointing the exact
+  // Real bug fixed 2026-08-08 (the project owner's own report, with a screenshot pinpointing the exact
   // element): this header is meant to be a short panel title ("Conversation" when nothing's
   // selected, otherwise a compact task name) -- it was set directly to the FULL, raw
   // task.title with no truncation at all, a completely separate code path from renderMsgList()
@@ -4085,9 +4115,9 @@ function renderConversation(){
   // this file, reused here rather than inventing a fourth truncation pattern.
   hdr.textContent = task ? summarize(task.title, 60) : state.activeBranchId;
   hdr.title = task ? task.title : ''; // full text still available on hover, native browser tooltip, zero extra UI
-  const goalRow = task ? [{from:'jack', text: task.title}] : [];
+  const goalRow = task ? [{from:'operator', text: task.title}] : [];
   const real = (state.branchMessages[state.activeBranchId] || []).map(m => ({
-    from: m.detail.role === 'jack' ? 'jack' : 'sys',
+    from: m.detail.role === 'operator' ? 'operator' : 'sys',
     text: m.detail.headline || m.detail.text || JSON.stringify(m.detail),
   }));
   renderMsgList(msgs, goalRow.concat(real));
@@ -4096,7 +4126,7 @@ function renderConversation(){
 
 function renderMsgList(msgs, list){
   list.forEach(m=>{
-    const row = el('div','msg'+(m.from==='jack'?' jack':''));
+    const row = el('div','msg'+(m.from==='operator'?' operator':''));
     // Real 2026 perceived-performance fix: a genuinely long (10s-70s+)
     // wait shown as motionless static text reads as frozen. Same pulse
     // animation the running-task status dot elsewhere in this file
@@ -4104,7 +4134,7 @@ function renderMsgList(msgs, list){
     // (the real "still working" placeholder) -- never a fake/permanent
     // animation on a resolved message.
     const pulseDot = m._pulse ? `<span class="msg-pulse-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px;animation:pulse 1.4s ease-in-out infinite;"></span>` : '';
-    // Real UX fix, 2026-08-08 (Andrew's own direct feedback: a real, genuinely long pasted goal
+    // Real UX fix, 2026-08-08 (the project owner's own direct feedback: a real, genuinely long pasted goal
     // "closes entire my chat" — same collapse-by-default, click-to-expand convention as the
     // detail panel's own .goal-clamp, reused here rather than a third pattern). Only long
     // messages get clamped — an ordinary short chat line renders exactly as before.
@@ -4114,8 +4144,8 @@ function renderMsgList(msgs, list){
           return `<span class="goal-clamp" id="${mid}" style="display:-webkit-box;" onclick="document.getElementById('${mid}').classList.toggle('expanded');this.nextElementSibling.textContent=document.getElementById('${mid}').classList.contains('expanded')?'Show less':'Show full message';">${esc(m.text)}</span>`
             + `<div class="goal-clamp-hint" onclick="document.getElementById('${mid}').classList.toggle('expanded');this.textContent=document.getElementById('${mid}').classList.contains('expanded')?'Show less':'Show full message';">Show full message</div>`; })()
       : esc(m.text);
-    row.innerHTML = `<div class="msg-avatar mono ${m.from==='jack'?'jack':'sys'}">${m.from==='jack'?'J':'M'}</div>
-      <div class="msg-bubble ${m.from==='jack'?'jack':'sys'}"><div class="msg-tag">${m.from==='jack'?'Jack':'OMA'}</div>${pulseDot}${bodyHtml}</div>`;
+    row.innerHTML = `<div class="msg-avatar mono ${m.from==='operator'?'operator':'sys'}">${m.from==='operator'?'O':'M'}</div>
+      <div class="msg-bubble ${m.from==='operator'?'operator':'sys'}"><div class="msg-tag">${m.from==='operator'?'Operator':'OMA'}</div>${pulseDot}${bodyHtml}</div>`;
     msgs.appendChild(row);
   });
   msgs.scrollTop = msgs.scrollHeight;
@@ -4200,7 +4230,7 @@ function renderBranchRail(){
   mainDot.title = 'Main conversation';
   mainDot.onclick = selectMainChat;
   rail.appendChild(mainDot);
-  // 2026-08-06 (Andrew's own request): was hardcapped to the 10 most recent, silently
+  // 2026-08-06 (the project owner's own request): was hardcapped to the 10 most recent, silently
   // hiding real, active tasks from this navigation rail with no way to reach them from
   // here. The rail container already has overflow-y:auto (line ~142), so it scrolls
   // instead of needing a cap -- show every real task, same "no hidden work" rule as the
@@ -4268,7 +4298,7 @@ function closeGallery(){
 }
 
 /* ============================= topbar stats / clock (real counts only) === */
-// Redesign 2026-08-06 (Andrew's report: too much always-on text, hard to
+// Redesign 2026-08-06 (the project owner's report: too much always-on text, hard to
 // scan at a glance): same three real counts, now small icon+number chips
 // instead of spelled-out labels ("tasks running" -> a pulse dot + number).
 // The "last updated / polling every 6s" detail is real and still worth
@@ -4315,7 +4345,7 @@ refreshTasks().then(()=>{
 refreshPending();
 
 /* ============================= real-time push (GET /api/stream) ========
-   2026-08-06 (Andrew: "everything should be instant... without me needing
+   2026-08-06 (the project owner: "everything should be instant... without me needing
    to refresh"). Real backend push, not a faster poll -- see GET /api/stream
    in server.py for the full story (researched against 2026 practice: SSE
    over WebSockets, since every real update here is server-to-client only;
@@ -4345,7 +4375,7 @@ setInterval(refreshTasks, 30000);
 setInterval(refreshPending, 30000);
 
 /* ============================= new-version detection =====================
-   2026-08-06 (Andrew: opened an already-loaded tab, a real code change
+   2026-08-06 (the project owner: opened an already-loaded tab, a real code change
    didn't appear without a manual refresh -- correctly surfaced as a real
    gap, not something the live-data push above was ever able to cover).
    Real, important distinction: GET /api/stream pushes DATA changes into an
@@ -4390,7 +4420,7 @@ _captureCurrentPageEtag().then(() => {
 });
 
 /* ============================= accessibility: keyboard support ==========
-   2026-08-06 (Andrew: "what else should be perfect for 2026 UX" -- real
+   2026-08-06 (the project owner: "what else should be perfect for 2026 UX" -- real
    web-researched gap, not guessed: this file has ~30+ interactive elements
    built as plain <div onclick="..."> across many different render
    functions (action buttons, filter chips, task rows, drawer close, rule

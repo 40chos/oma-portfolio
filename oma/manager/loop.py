@@ -407,6 +407,7 @@ async def run_turn(
     anticipated_scope: dict | None = None,
     manager_model: str | None = None,
     override_repeated_failure_check: bool = False,
+    task_id: str | None = None,
 ) -> dict:
     """Runs one full turn of the Manager's loop against a single Operator
     message. Returns a dict describing what happened -- never raises
@@ -414,6 +415,13 @@ async def run_turn(
     failure, sign-off-required); those come back as a structured
     {"status": "paused", "reason": ..., "message": ...} result instead,
     exactly so a CLI or future UI can render each one distinctly.
+
+    `task_id` (optional): lets a caller mint the task_id itself BEFORE calling
+    this function, so it can be handed to a client/UI immediately (e.g. to open
+    a live SSE stream at the real moment the turn starts) without waiting for
+    this whole, often 10s-70s+, call to return. Every existing caller that
+    doesn't pass this gets the exact same behavior as before -- a fresh
+    uuid4() generated here, invisible until the function returns.
 
     `override_repeated_failure_check` (2026-08-08, real gap found live during the site_50
     benchmark, tasks 008-010): `check_repeated_failures()`'s own pause message literally asks
@@ -434,7 +442,7 @@ async def run_turn(
     """
     conversation_history = conversation_history or []
     anticipated_scope = anticipated_scope or {}
-    task_id = str(uuid.uuid4())
+    task_id = task_id or str(uuid.uuid4())
 
     # Phase 30, P3 (Phase G, §10, closes Problem G): a hard, deterministic
     # pre-flight gate for the small subset of active rules that reduce to
