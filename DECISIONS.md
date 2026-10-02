@@ -438,6 +438,41 @@ Colima networking error on a container recreated immediately after
 earlier manual test run squatting on a port (killed, unrelated to
 `setup.sh` itself).
 
+## Stage 9: a real sanitization miss, found by the user's own question
+
+The user asked a sharp, simple question: a fresh clone shouldn't show any
+historical tasks at all, so why did theirs? Checking it surfaced something
+this whole port had missed: `oma/state/scope_certification.json` (committed
+since the very first commit) was carried over from the original handoff
+**unscrubbed** -- 95 real historical entries, dates from August 2026, up to
+31 consecutive real runs per scope, from the actual pre-port system.
+
+Reviewed the actual content before deciding what to do: every entry turned
+out to be a synthetic, auto-generated combinatorial-test goal (the pairwise
+test-generation harness's own output -- standard Odoo models like
+`sale.order`/`purchase.order`/`res.partner`, no real company names, no real
+people, no client-specific business logic). Not a secret-scanner miss --
+gitleaks/TruffleHog correctly didn't flag it, because none of it is a
+credential. But it's real pre-port operational history, and shipping it
+would make a fresh checkout look like it already had a real usage track
+record it never actually earned in this environment.
+
+Fixed by resetting the file to `{}` -- confirmed via
+`manager/scope_certification.py`'s own `_load_state()` that an empty/absent
+state file is the genuinely correct "no certification history yet" case,
+not a workaround. Also used this as a live opportunity to clean the
+*running* instance's `agent_memory_events` task history (10 tasks, all
+from this session's own testing/debugging, none from the actual operator)
+back to a real clean slate via the same `active=false` mechanism used
+throughout this log -- done only after explicit confirmation, including a
+second, more carefully-scoped pass after an appropriately-cautious
+unbounded-predicate rejection the first time.
+
+Open question worth tracking: this class of "real historical state file
+carried over unscrubbed" might have other instances beyond this one --
+worth a dedicated pass over `oma/state/` and any other persisted JSON if
+this repo accumulates more such files later.
+
 ## Still open (tracked, not forgotten)
 
 - The two `oma-backlog-triage.service`/`.timer` systemd units were already
