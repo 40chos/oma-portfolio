@@ -163,6 +163,19 @@ services:
     ports:
       - "127.0.0.1:${GITEA_HOST_PORT:-3000}:3000"
 
+  # Not started by default -- see README "Running the app" for why. The
+  # Build/Testing-QA specialists need `docker exec` access to the sibling
+  # `odoo` container (tools_odoo/module_dev/toolchain.py's
+  # _run_in_container()); giving a container that access means mounting the
+  # host's real Docker socket into it, which grants full control over the
+  # whole Docker daemon -- a meaningfully bigger attack surface than this
+  # app actually needs, and in tension with this project's own
+  # "sandboxed, allow-listed execution" design. The default path runs this
+  # process on the host instead (plain `uvicorn ui.chat.server:app`, same
+  # venv as everything else), where `docker exec` is just the normal
+  # Docker CLI a developer already has -- zero socket-mounting needed. This
+  # service is kept for anyone who wants full containerization anyway and
+  # is comfortable with that tradeoff; see DECISIONS.md, Stage 6.
   app:
     build:
       context: .
@@ -185,6 +198,13 @@ services:
       OMA_REDIS_PORT: "6379"
       NEO4J_URI: bolt://neo4j:7687
       OMA_ODOO_URL: http://odoo:8069
+      OMA_ODOO_CONTAINER: oma-odoo-1
+      DEV_AGENT_GITEA_URL: http://gitea:3000
+      # Deliberately NOT overriding OMA_MODEL_GATEWAY_URL_* here --
+      # infra/settings.py's _default_gateway_base_url() already resolves
+      # the right compose service name (`ollama` or `litellm`) from
+      # OMA_LLM_MODE alone, so an explicit override here would hardcode
+      # one mode and silently defeat the switch for the other.
     ports:
       - "127.0.0.1:${APP_HOST_PORT:-8000}:8000"
 

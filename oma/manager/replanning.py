@@ -69,6 +69,16 @@ HARD_CEILING_FRACTION = 0.85
 MODEL_CONTEXT_WINDOWS = {
     "qwen3-coder-30b-a3b": 98304,
     "qwen3.6-27b": 65536,
+    # Stage 3 port: local Ollama and cloud (via LiteLLM) logical model names.
+    "qwen2.5-coder:7b": 32768,
+    "qwen2.5:7b-instruct": 32768,
+    "qwen2.5:3b-instruct": 32768,
+    "openai-coder": 128000,
+    "openai-reasoning": 128000,
+    "openai-fast-extraction": 128000,
+    "claude-coder": 200000,
+    "claude-reasoning": 200000,
+    "claude-fast-extraction": 200000,
 }
 UNKNOWN_MODEL_WINDOW_FALLBACK = 32768
 

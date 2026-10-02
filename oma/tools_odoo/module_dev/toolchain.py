@@ -73,24 +73,13 @@ _FILESTORE_DIR = "/var/lib/odoo/filestore"
 # CLI override on every command in this module, never written to disk.
 _MODULE_DEV_ADDONS_DIR = "/mnt/extra-addons"
 _BASE_ADDONS_PATH = [
-    "/opt/site/16/addons",
-    "/opt/site/16/odoo/addons",
-    "/opt/site/site16",
-    "/opt/site/extra_addons/account-analytic",
-    "/opt/site/extra_addons/account-financial-reporting",
-    "/opt/site/extra_addons/account-reconcile",
-    "/opt/site/extra_addons/bank-statement-import",
-    "/opt/site/extra_addons/currency",
-    "/opt/site/extra_addons/extra",
-    "/opt/site/extra_addons/extra_account",
-    "/opt/site/extra_addons/helpdesk",
-    "/opt/site/extra_addons/mis-builder",
-    "/opt/site/extra_addons/odoo-llm",
-    "/opt/site/extra_addons/reporting-engine",
-    "/opt/site/extra_addons/report-print-send",
-    "/opt/site/extra_addons/server-tools",
-    "/opt/site/extra_addons/server-ux",
-    "/opt/site/extra_addons/web",
+    # The official odoo:16 image's own bundled core addons -- see
+    # docker-compose.yml's odoo.conf generation. The original deployment's
+    # equivalent list of real OCA/custom addon repo paths doesn't apply
+    # here (none of those third-party modules are part of a fresh Odoo CE
+    # install); this is the real, actual addons_path confirmed via that
+    # same odoo.conf.
+    "/usr/lib/python3/dist-packages/odoo/addons",
 ]
 _FULL_ADDONS_PATH = ",".join(_BASE_ADDONS_PATH + [_MODULE_DEV_ADDONS_DIR])
 

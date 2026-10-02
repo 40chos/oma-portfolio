@@ -118,7 +118,7 @@ from tools_odoo.module_dev.toolchain import (
 # is proven to install cleanly here FIRST, in complete isolation, before
 # ever touching the real, shared odoo16-dev the rest of this pipeline
 # (Code-Review, Testing/QA, Operator's own manual use) depends on.
-_SANDBOX_CONTAINER = "odoo16-dev2"
+_SANDBOX_CONTAINER = os.environ.get("OMA_ODOO_SANDBOX_CONTAINER", "oma-odoo-1")
 _SANDBOX_REMOTE_PORT = 8072
 
 

@@ -1,10 +1,10 @@
 {
-  "infra/fencing.py": "315e5a3a858a1b695b654b953d46d9effd069712e0ebd5e67c3650caf41ca24f",
+  "infra/fencing.py": "cdc0ca758778af28f5a039d8c35adaa7f7e1d66283324174b6faa29834558d04",
   "manager/concurrent_claim.py": "0e6c3cf8c76eb7ea8c00e340ea644c80c458cec8fb9fac85c2066329e3e2d142",
   "manager/gate_tamper_protection.py": "ebd2b6cef7045e848ae4f3eddf99c36687cf255a36c2fd06a8adf798b78707fd",
   "manager/graph_governance_flags.py": "9fd0d5ab2c07b3b073f37a4cc218c54b9abc1d83373ce80862a91ee77d22ac27",
   "manager/intake_grounding.py": "cff7ace320d8fc8c1ff21047e7ca7e80a7edb0b95a25cfb8c9abaa516d173da5",
-  "manager/scope_certification.py": "f8471b9d876e9ed0802a10bde2d3dfd72331ec447548830a5430cfff5a3b4110",
+  "manager/scope_certification.py": "4f32970dc9228c7b03c36dbd775c346b9490f80a558ffec8eb5a7043ac9113b7",
   "specialists/build/graph_structural_gate.py": "bd1f2ad3b8ef9058e1b7d2b5b9adb42e081017dec841c4b7f02056b9a39fca14",
   "tools_odoo/graph_queries.py": "eceeba1fb540195e8480fff3f391724237a52eaf5c411431eef95bf14286ed88",
   "tools_odoo/knowledge_graph/build_safety_grounding.py": "2dfc6de798122ee0356a48d3c6947fbda66f8e018f86b4e8a5a5e41656ee8deb"

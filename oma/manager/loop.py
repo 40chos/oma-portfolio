@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
 # summaries, which need coherent prose, not just a fast label). See
 # infra/gateway_client.py's own BACKEND_FAST_EXTRACTION comment for the
 # full infra-side rationale.
-FAST_EXTRACTION_MODEL = "qwen3-9b-fast-extraction"
+FAST_EXTRACTION_MODEL = os.environ.get("OMA_MODEL_FAST_EXTRACTION", "qwen3-9b-fast-extraction")
 
 from contracts.goal_facts import extract_goal_field_facts
 from contracts.module_identity import resolve_module_identity

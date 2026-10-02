@@ -260,6 +260,98 @@ through the actual app code paths (`infra/settings.py`, `infra/neo4j_client.py`,
   `infra.odoo_jit_apikey` (through `docker exec`, no SSH), and
   `toolchain._run_in_container()` returning real container output.
 
+## Stage 6 evidence: one real, clean, fully-passing end-to-end run
+
+Submitted through the real chat API (`POST /api/message`), running `app`
+on the host (not in Docker -- see the Docker-socket tradeoff note below),
+against the full stack (Postgres, Redis, Neo4j, Odoo CE, Gitea, LiteLLM
+in cloud mode): **"On res.partner, please add a simple text field for
+storing a LinkedIn profile URL."**
+
+Real, verified result -- `status: completed`, task_id `228a280d-a26e-45c9-bc98-c3661368ef40`:
+- Full real pipeline, in order: correction-check → risk classification
+  (tier 1, module_dev) → intake grounding against the real Neo4j graph →
+  memory read (50 relevant rows) → decomposition/blast-radius check →
+  delegate → Build (round 1) → safety-net filestore backup → Code-Review
+  → Testing/QA, independently reproducing the result → post-install graph
+  diff → branch summary.
+- Real commit on the self-hosted Gitea instance: branch
+  `task/228a280d-a26e-45c9-bc98-c3661368ef40`, commit `7d7181edab`.
+- Real module `oma_on_res_partner_please_ca9bb3eb` genuinely `installed`
+  (confirmed via `ir_module_module`) in the real duplicate Odoo database,
+  with the real `linkedin_profile_url` column physically present on
+  `res_partner` (confirmed via `information_schema.columns`) -- not a
+  claim, an actual schema change.
+- Full 240-event trace saved to `demo-capture/trace_228a280d.json` for
+  the static replay page.
+
+Real bugs found and fixed by actually running this (not by reading the
+code), each a config/path-config landmine of the same class as Stage 1-5's,
+not a logic bug in the preserved mechanisms themselves:
+- `toolchain.py`'s `_run_in_container()` required `OMA_ODOO_CONTAINER`
+  unconditionally with no default -- added to `docker-compose.yml`'s `app`
+  service environment (and `.env` for the host-run path).
+- `toolchain.py`'s `_BASE_ADDONS_PATH` still hardcoded the original
+  deployment's real OCA/custom addon repo paths (`/opt/site/16/addons`,
+  `/opt/site/extra_addons/*`, etc.) -- replaced with the real addons path
+  confirmed via `docker-compose.yml`'s own `odoo.conf` generation
+  (`/usr/lib/python3/dist-packages/odoo/addons`). This was the actual
+  root cause of "`res.partner` does not exist" -- the schema-check tool's
+  `odoo shell` invocation was failing at the `--addons-path` CLI arg
+  itself, not finding a real schema mismatch.
+- `specialists/build/specialist.py`'s `_SANDBOX_CONTAINER` hardcoded the
+  original deployment's separate physical sandbox container
+  (`odoo16-dev2`) -- made env-configurable
+  (`OMA_ODOO_SANDBOX_CONTAINER`), defaulting to the single `oma-odoo-1`
+  container this port actually has. Real, disclosed tradeoff: the
+  original used a SEPARATE container for sandbox isolation; this port
+  isolates sandbox installs by database name only, sharing the same
+  Odoo process/container as the main demo -- acceptable for a
+  single-operator portfolio demo, not something to silently claim is
+  equivalent.
+- `SANDBOX_TEMPLATE_DB` (`odoo16_sandbox_golden_template`, a Postgres
+  `-T` clone-template speed optimization with `base` pre-installed)
+  didn't exist yet in a fresh environment -- created for real via
+  `infra.odoo_admin.create_database()`, same mechanism Build itself uses.
+- `tools_odoo/odoo_schema_client.py`'s ~20 functions default to
+  `login="Admin"` (confirmed to exist on the original `odoo16_dev` only);
+  correctly gated behind `is_fast_path_eligible(db)` / `_FAST_PATH_ELIGIBLE_DBS`
+  (a real allow-list already built for exactly this), so the universal
+  fallback path in `toolchain.py` is what actually runs against this
+  port's duplicate/sandbox databases -- no code change needed here, just
+  confirmed the existing gate does its job.
+- `manager/replanning.py`'s `MODEL_CONTEXT_WINDOWS` dict only had entries
+  for the two retired GPU-era model names; added real entries for the
+  Stage 3 local/cloud model names so the context-pressure safety check
+  uses their real windows instead of the conservative 32k fallback.
+- `manager/gate_tamper_protection.py`'s detect-only manifest flagged 2
+  files touched by the sanitization pass (comment-only changes, verified
+  via diff) -- re-pinned after explicit confirmation (see git history;
+  this needed its own sign-off, not something to do silently given what
+  the mechanism is for).
+- Real debug-noise cleanup: my own iterative bug-fixing tripped
+  `check_repeated_failures()`'s real 2-strikes guard on `res.partner`
+  (honest behavior -- it doesn't know the difference between "bug in my
+  port" and "bug in the generated code" until a human says so). Retired
+  those specific `agent_memory_events` outcome rows (`active=false`, the
+  same supersession mechanism the schema already provides) after explicit
+  confirmation -- not deleted, not hidden, just marked with a real
+  `root_cause` note distinguishing port-infra bugs from capability gaps.
+
+**Docker-socket tradeoff, decided explicitly**: running `app` fully
+containerized requires mounting the host's Docker socket into it (so
+`docker exec`-based specialist tools can reach the sibling `odoo`
+container) -- that grants the container full control over the whole
+Docker daemon, a materially bigger attack surface than this app actually
+needs, in real tension with its own "sandboxed, allow-listed execution"
+design. Decided to run `app` on the host instead (plain `uvicorn`, same
+venv as every other smoke test in this log) for both this capture and as
+the documented default -- `docker exec` from the host is just the normal
+Docker CLI a developer already has, zero socket-mounting, zero added
+attack surface. The `app` Dockerfile/compose service stay in the repo,
+clearly marked opt-in, for anyone who wants full containerization and is
+comfortable with that specific tradeoff.
+
 ## Still open (tracked, not forgotten)
 
 - The two `oma-backlog-triage.service`/`.timer` systemd units were already
