@@ -210,6 +210,37 @@
   }
 
   /* ---------- Lane strip (EKG style) ---------- */
+  /* ---------- Chapter banner (cinematic scene marker) ---------- */
+  .chapter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    padding: 0 2px;
+    margin-bottom: 10px;
+    height: 20px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .chapter.show { opacity: 1; transform: translateY(0); }
+  .chapter-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-glow);
+    flex: 0 0 auto;
+    animation: pulse-dot 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chapter-dot { animation: none; }
+  }
+
   .lanes {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -292,6 +323,10 @@
   @keyframes enter {
     from { opacity: 0; transform: translateY(3px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+  .row.spotlight {
+    background: var(--accent-glow);
+    border-color: var(--accent-dim);
   }
   @media (prefers-reduced-motion: reduce) {
     .row { animation: none; }
@@ -449,6 +484,8 @@
       <option value="8">8×</option>
     </select>
   </div>
+
+  <div class="chapter" id="chapter"><span class="chapter-dot"></span><span id="chapterText"></span></div>
 
   <div class="lanes" id="lanes"></div>
 
@@ -641,27 +678,88 @@
   var playBtn = document.getElementById('playBtn');
   var speedSel = document.getElementById('speed');
   var codeSection = document.getElementById('codeSection');
+  var chapterEl = document.getElementById('chapter');
+  var chapterText = document.getElementById('chapterText');
 
   scrub.max = TOTAL_MS;
   tTotal.textContent = (TOTAL_MS / 100).toFixed(1) + 's';
 
+  // ---------- Cinematic "chapter" markers -- one scene change per actor's
+  // first appearance (mirrors how a focused product-demo tool like Arcade/
+  // Supademo would spotlight "now watch Build... now Code-Review...") plus
+  // the two real narrative beats (final verification, final summary).
+  var FIRST_SEEN_LABEL = {
+    manager: 'The Manager classifies and decomposes the request',
+    bug_fix: 'Build writes the real module code',
+    safety_net: 'Safety-net backs up before any real install',
+    code_review: 'Code-Review runs an independent pass',
+    testing_qa: 'Testing/QA verifies the result independently'
+  };
+  var seenActors = {};
+  var chapterPoints = []; // {t, text}
+  TRACE.forEach(function (e) {
+    if (FIRST_SEEN_LABEL[e.actor] && !seenActors[e.actor]) {
+      seenActors[e.actor] = true;
+      chapterPoints.push({ t: e.t, text: FIRST_SEEN_LABEL[e.actor] });
+    }
+    if (e.phase === 'task' && e.status === 'passed') {
+      chapterPoints.push({ t: e.t, text: 'Verified -- the real result is confirmed' });
+    }
+    if (e.phase === 'branch_message' && e.status === 'passed') {
+      chapterPoints.push({ t: e.t, text: 'Writing the real summary' });
+    }
+  });
+  chapterPoints.sort(function (a, b) { return a.t - b.t; });
+
   var playing = false;
   var rafId = null;
   var lastFrameTime = null;
+  var lastSpotlightRow = null;
+  var lastChapterIndex = -1;
+  var codeWasRevealed = false;
 
   function render(ms) {
     var tSec = ms / 100;
     tNow.textContent = tSec.toFixed(1) + 's';
 
     var visibleCount = 0;
+    var newestVisibleRow = null;
     rows.forEach(function (row, i) {
       var e = TRACE[i];
       var show = e.t <= tSec;
       row.style.display = show ? 'grid' : 'none';
-      if (show) visibleCount++;
+      if (show) {
+        visibleCount++;
+        newestVisibleRow = row;
+      }
     });
     logCount.textContent = visibleCount + ' / ' + TRACE.length + ' events';
     logEl.scrollTop = logEl.scrollHeight;
+
+    if (newestVisibleRow !== lastSpotlightRow) {
+      if (lastSpotlightRow) lastSpotlightRow.classList.remove('spotlight');
+      if (newestVisibleRow) newestVisibleRow.classList.add('spotlight');
+      lastSpotlightRow = newestVisibleRow;
+    }
+
+    // Chapter banner: show the most recent chapter point reached, fade out
+    // after a few real seconds of (compressed) playback time so it reads as
+    // a scene title, not a permanent caption.
+    var activeChapterIndex = -1;
+    for (var c = 0; c < chapterPoints.length; c++) {
+      if (chapterPoints[c].t <= tSec) activeChapterIndex = c;
+    }
+    if (activeChapterIndex !== lastChapterIndex) {
+      lastChapterIndex = activeChapterIndex;
+      if (activeChapterIndex >= 0) {
+        chapterText.textContent = chapterPoints[activeChapterIndex].text;
+        chapterEl.classList.add('show');
+      } else {
+        chapterEl.classList.remove('show');
+      }
+    } else if (activeChapterIndex >= 0 && tSec - chapterPoints[activeChapterIndex].t > 4) {
+      chapterEl.classList.remove('show');
+    }
 
     ACTORS.forEach(function (a) {
       var ph = document.getElementById('ph-' + a.key);
@@ -673,8 +771,13 @@
 
     if (ms >= TOTAL_MS - 5) {
       codeSection.classList.add('revealed');
+      if (!codeWasRevealed) {
+        codeWasRevealed = true;
+        codeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } else {
       codeSection.classList.remove('revealed');
+      codeWasRevealed = false;
     }
   }
 
