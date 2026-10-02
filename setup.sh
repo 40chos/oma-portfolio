@@ -12,7 +12,7 @@ say() { echo "==> $*"; }
 # ---------------------------------------------------------------------------
 if [ -n "${OMA_DOCKER_HOST_OVERRIDE:-}" ]; then
   export DOCKER_HOST="$OMA_DOCKER_HOST_OVERRIDE"
-elif [ -f "$HOME/.colima/default/docker.sock" ] && ! docker ps >/dev/null 2>&1; then
+elif [ -S "$HOME/.colima/default/docker.sock" ] && ! docker ps >/dev/null 2>&1; then
   export DOCKER_HOST="unix://$HOME/.colima/default/docker.sock"
   say "Detected Colima; using its Docker socket."
 fi
