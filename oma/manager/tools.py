@@ -878,7 +878,7 @@ def read_main_chat_history(session_id: str, limit: int = 200) -> list[dict]:
             """
             SELECT detail, created_at
             FROM agent_memory_events
-            WHERE event_type = 'main_chat_message' AND detail->>'session_id' = %s
+            WHERE event_type = 'main_chat_message' AND detail->>'session_id' = %s AND active = true
             ORDER BY id ASC
             LIMIT %s
             """,
