@@ -2136,9 +2136,9 @@ def install_module(
                 f"Install failed: the Postgres role Odoo connects as does not own "
                 f"one or more tables in {db!r} (confirmed systemic across multiple "
                 f"duplicate databases created via Odoo's own Database Manager). "
-                f"This requires a one-time table-ownership fix by whoever administers "
-                f"the actual Postgres server behind odoo-dev.int -- outside this "
-                f"project's access boundary by design. Do not attempt a workaround here."
+                f"This requires a one-time table-ownership fix on the `postgres` "
+                f"compose service -- outside this project's access boundary by "
+                f"design. Do not attempt a workaround here."
             ),
             log_tail=log_tail,
             findings=findings,

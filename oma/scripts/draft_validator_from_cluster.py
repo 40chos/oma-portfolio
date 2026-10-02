@@ -51,13 +51,13 @@ from __future__ import annotations
 
 import argparse
 import ast
+import asyncio
 import json
+import os
 import re
 import sys
 import textwrap
 from pathlib import Path
-
-import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -68,8 +68,7 @@ from scripts.rule_backlog_triage import (  # noqa: E402
     is_compound_narrative,
 )
 
-_REASONING_URL = "http://10.1.19.203:9090/v1/chat/completions"
-_REASONING_MODEL = "JA-GPU2-27B-INT4-64K"
+_REASONING_MODEL = os.environ.get("OMA_MODEL_MANAGER", "qwen2.5:7b-instruct")
 _MAX_REVISION_ATTEMPTS = 3
 _MAX_TEST_GENERATION_ATTEMPTS = 4
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
@@ -77,18 +76,15 @@ _CODE_BLOCK_RE = re.compile(r"```(?:python)?\n(.*?)```", re.DOTALL)
 
 
 def _call_llm(prompt: str, max_tokens: int = 1800) -> str:
-    resp = httpx.post(
-        _REASONING_URL,
-        json={
-            "model": _REASONING_MODEL,
-            "messages": [{"role": "user", "content": prompt + "\n\n/no_think"}],
-            "max_tokens": max_tokens,
-            "temperature": 0.2,
-        },
-        timeout=120,
-    )
-    resp.raise_for_status()
-    text = resp.json()["choices"][0]["message"]["content"]
+    from infra.gateway_client import ModelGatewayClient
+
+    client = ModelGatewayClient()
+    text = asyncio.run(client.generate(
+        model=_REASONING_MODEL,
+        messages=[{"role": "user", "content": prompt + "\n\n/no_think"}],
+        max_tokens=max_tokens,
+        temperature=0.2,
+    ))
     return _THINK_RE.sub("", text).strip()
 
 

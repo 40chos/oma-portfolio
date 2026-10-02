@@ -97,20 +97,17 @@ either fully captured or fully flagged, never a mix.
 ## How to run against real source
 
 ```
-cd /home/andrew/projects/agents/odoo
+cd oma
 python3 -m tools_odoo.knowledge_graph.driver <path-to-modules-root> <output-dir>
 ```
 
 `<path-to-modules-root>` is a local directory containing one subdirectory per
-module (each with its own `__manifest__.py`, `models/`, `views/`, `security/`) —
-e.g. a local checkout pulled down separately over your own SSH connection, following
-the same read-only pattern documented in
-`docs/reports/ODOO_MODULE_CHAINING_PILOT_HANDOFF_2026-07-16/README.md`
-("Real source scope" section) and reused throughout
-`ODOO_KNOWLEDGE_PIPELINE_PILOT_RESULTS_2026-07-17.md` §4.2-§4.5. This script does
-not open any SSH connection itself and does not know odoo-dev.int exists — point it
-at a local directory and it works the same whether that directory came from SSH,
-a git clone, or anywhere else.
+module (each with its own `__manifest__.py`, `models/`, `views/`, `security/`).
+This script never opens a network connection of any kind — it only ever reads
+a local directory, so it works identically whether that directory came from
+`docker cp` out of a running container (see `docker/seed-knowledge-graph.sh`,
+the actual mechanism this repo uses against the `odoo` compose service), a git
+clone, or anywhere else.
 
 Output: `<output-dir>/<module>.json` per module, plus `<output-dir>/store.jsonl`
 (one line per module, same records) — the file `lookup.py`'s `KnowledgeStore` reads.
