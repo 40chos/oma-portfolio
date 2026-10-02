@@ -1,0 +1,719 @@
+<title>OMA — Flight Recorder Replay</title>
+<style>
+  :root {
+    --bg: #0B0E12;
+    --panel: #12161C;
+    --panel-2: #181E26;
+    --line: #232B35;
+    --text: #E7E6E2;
+    --text-dim: #8E98A3;
+    --text-faint: #5B6670;
+    --accent: #58C4B8;
+    --accent-dim: #2E5F59;
+    --accent-glow: rgba(88, 196, 184, 0.25);
+    --ok: #3FB950;
+    --warn: #E3B341;
+    --err: #F85149;
+    --font-display: -apple-system, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+  :root[data-theme="light"] {
+    --bg: #F6F5F1;
+    --panel: #FFFFFF;
+    --panel-2: #EDEBE4;
+    --line: #DBD8CF;
+    --text: #1B1F24;
+    --text-dim: #5B6670;
+    --text-faint: #8E98A3;
+    --accent: #15796D;
+    --accent-dim: #BFE4DE;
+    --accent-glow: rgba(21, 121, 109, 0.14);
+    --ok: #1A7F37;
+    --warn: #9A6700;
+    --err: #CF222E;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #F6F5F1;
+      --panel: #FFFFFF;
+      --panel-2: #EDEBE4;
+      --line: #DBD8CF;
+      --text: #1B1F24;
+      --text-dim: #5B6670;
+      --text-faint: #8E98A3;
+      --accent: #15796D;
+      --accent-dim: #BFE4DE;
+      --accent-glow: rgba(21, 121, 109, 0.14);
+      --ok: #1A7F37;
+      --warn: #9A6700;
+      --err: #CF222E;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+  }
+  body { overflow-x: hidden; }
+
+  a { color: var(--accent); }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  h1 {
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+  .sub {
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1.55;
+    max-width: 62ch;
+    margin: 0 0 22px;
+  }
+
+  .request-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .request-card .label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+  }
+  .request-card .goal {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .evidence {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .evidence .cell {
+    background: var(--panel);
+    padding: 14px 16px;
+  }
+  .evidence .cell .k {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 5px;
+  }
+  .evidence .cell .v {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+  .evidence .cell .v.ok { color: var(--ok); font-weight: 600; }
+  @media (max-width: 680px) {
+    .evidence { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ---------- Transport controls ---------- */
+  .transport {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    position: sticky;
+    top: 10px;
+    z-index: 10;
+    backdrop-filter: blur(6px);
+  }
+  .play-btn {
+    flex: 0 0 auto;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--accent-dim);
+    background: var(--accent-glow);
+    color: var(--accent);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .play-btn:hover { background: var(--accent-dim); }
+  .play-btn:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .scrub-col { flex: 1; min-width: 0; }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    display: block;
+  }
+  .scrub-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+  .speed-select {
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 8px;
+  }
+
+  /* ---------- Lane strip (EKG style) ---------- */
+  .lanes {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px 10px;
+    margin-bottom: 22px;
+  }
+  .lane {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    align-items: center;
+    gap: 10px;
+    height: 26px;
+  }
+  .lane .name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+  .lane .track {
+    position: relative;
+    height: 6px;
+    background: var(--panel-2);
+    border-radius: 3px;
+  }
+  .lane .tick {
+    position: absolute;
+    top: 50%;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.15s, box-shadow 0.15s;
+  }
+  .lane .playhead {
+    position: absolute;
+    top: -8px; bottom: -8px;
+    width: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+    transform: translateX(-50%);
+  }
+
+  /* ---------- Log ---------- */
+  .log-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .log-head h2 {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 600;
+    margin: 0;
+  }
+  .log-head .count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-faint);
+  }
+  .log {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 56px 100px 1fr;
+    gap: 10px;
+    align-items: start;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    animation: enter 0.25s ease both;
+  }
+  .row:hover { background: var(--panel); border-color: var(--line); }
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .row { animation: none; }
+  }
+  .row .t {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11.5px;
+    color: var(--text-faint);
+    padding-top: 2px;
+  }
+  .row .actor {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding-top: 2px;
+  }
+  .row .actor .sw {
+    width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto;
+  }
+  .row .msg {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .row .msg .status-pill {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-right: 7px;
+    position: relative;
+    top: -1px;
+  }
+  .row.llm .msg { cursor: pointer; }
+  .row.llm .msg:hover { color: var(--accent); }
+  .detail {
+    margin-top: 8px;
+    display: none;
+    gap: 8px;
+    flex-direction: column;
+  }
+  .detail.open { display: flex; }
+  .detail pre {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 10px 12px;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 260px;
+    overflow: auto;
+  }
+  .detail .dk {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  /* ---------- Code reveal ---------- */
+  .code-section {
+    margin-top: 30px;
+    opacity: 0.35;
+    filter: saturate(0.4);
+    transition: opacity 0.4s ease, filter 0.4s ease;
+  }
+  .code-section.revealed { opacity: 1; filter: none; }
+  .code-section h2 {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .code-section .note {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0 0 14px;
+  }
+  .file {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .file .filename {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+  .file pre {
+    margin: 0;
+    padding: 14px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  footer {
+    margin-top: 50px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    color: var(--text-faint);
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+  footer a { color: var(--text-dim); }
+</style>
+
+<div class="wrap">
+
+  <div class="eyebrow"><span class="dot"></span>REPLAY · REAL CAPTURED RUN, NOT A SIMULATION</div>
+  <h1>Watch OMA build, review, and install a real Odoo module</h1>
+  <p class="sub">Every event below is a real log line from one real run of the actual system — the same request, classification, code generation, review, and independent verification, replayed from the captured trace. No part of this page is scripted or mocked.</p>
+
+  <div class="request-card">
+    <div class="label">Request submitted to the Manager</div>
+    <div class="goal">&ldquo;On res.partner, please add a simple text field for storing a LinkedIn profile URL.&rdquo;</div>
+  </div>
+
+  <div class="evidence">
+    <div class="cell"><div class="k">Result</div><div class="v ok">✓ Completed</div></div>
+    <div class="cell"><div class="k">Wall clock</div><div class="v">48.0s</div></div>
+    <div class="cell"><div class="k">Gitea commit</div><div class="v">7d7181edab</div></div>
+    <div class="cell"><div class="k">Installed module</div><div class="v">oma_on_res_partner…</div></div>
+  </div>
+
+  <div class="transport">
+    <button class="play-btn" id="playBtn" aria-label="Play">▶</button>
+    <div class="scrub-col">
+      <input type="range" id="scrub" min="0" max="4802" value="0" step="1" aria-label="Timeline scrubber">
+      <div class="scrub-labels"><span id="tNow">0.0s</span><span id="tTotal">48.0s</span></div>
+    </div>
+    <select class="speed-select" id="speed" aria-label="Playback speed">
+      <option value="1">1×</option>
+      <option value="3" selected>3×</option>
+      <option value="8">8×</option>
+    </select>
+  </div>
+
+  <div class="lanes" id="lanes"></div>
+
+  <div class="log-head">
+    <h2>Flight log</h2>
+    <span class="count" id="logCount">0 / 0 events</span>
+  </div>
+  <div class="log" id="log"></div>
+
+  <div class="code-section" id="codeSection">
+    <h2>What Build actually wrote</h2>
+    <p class="note">The real, final generated files for this task — committed to Gitea and genuinely installed into Odoo. Revealed once the run completes below.</p>
+    <div class="file">
+      <div class="filename">__manifest__.py</div>
+      <pre id="codeManifest"></pre>
+    </div>
+    <div class="file">
+      <div class="filename">models.py</div>
+      <pre id="codeModels"></pre>
+    </div>
+    <div class="file">
+      <div class="filename">views/views.xml</div>
+      <pre id="codeViews"></pre>
+    </div>
+  </div>
+
+  <footer>
+    Captured from a real run of OMA (Odoo Manager Agent) against a self-hosted stack —
+    Postgres, Redis, Neo4j, Odoo CE, Gitea, all running in Docker Compose, LLM calls via OpenAI
+    in this capture (the system also runs fully local against Ollama). Clone the repo to run it
+    yourself end to end.
+  </footer>
+</div>
+
+<script id="trace-data" type="application/json">[{"actor":"manager","phase":"correction","status":"running","message":"Checking whether this is a correction to past behavior","t":0.0},{"actor":"manager","phase":"classify","status":"running","message":"Classifying risk tier and work type","t":0.01},{"actor":"manager","phase":"llm_call","status":"running","message":"Checking for a correction to past behavior","model":"openai-fast-extraction","call_label":"Checking for a correction to past behavior","prompt":"Operator (the product owner) just sent this message to the Odoo Manager Agent. Decide whether it is a CORRECTION -- Operator telling the Manager to change its behavior, a standing rule, or a prior decision -- as opposed to a normal request, question, or task.\n\nMessage: On res.partner, please add a simple text field for storing a LinkedIn profile URL.\n\nIf it IS a correction, also extract:\n- \"directive\": the concrete instruction going forward (one sentence)\n- \"applicability_condition\": when this directive applies (one phrase, e.g. \"whenever a task touches the accounting module\")\n\nRespond with ONLY a JSON object of this exact shape:\n{\"is_correction\": true|false, \"confidence\": 0.0-1.0, \"directive\": \"...\" or null, \"applicability_condition\": \"...\" or null} /no_think","t":0.01},{"actor":"manager","phase":"llm_call","status":"running","message":"Extracting the ambiguity report","model":"openai-fast-extraction","call_label":"Extracting the ambiguity report","prompt":"Read this Odoo module-development task goal. Decide whether it has GENUINE, BLOCKING ambiguity -- something that makes it impossible to start building at all without a human decision first, not just a minor detail that could reasonably be resolved by inference or a sensible default.\n\nExamples of GENUINE blocking ambiguity:\n- Contradictory requirements (e.g. \"this field must always be required\" and \"this field is optional\" both stated about the same field).\n- A core deliverable depends on a term or concept the goal never defines and that has no obvious, single reasonable reading (e.g. \"route it to the right team\" with no team defined anywhere, and the routing logic IS the whole point of the task).\n- The goal names two mutually exclusive approaches with no way to tell which one is actually wanted, and the choice would produce genuinely different code.\n\nExamples that are NOT blocking ambiguity (do not flag these):\n- A field's exact technical name isn't given -- a reasonable name can be inferred.\n- Minor formatting/UI details are left to reasonable convention.\n- The goal is terse but the intent is clear from context.\n\nMost real, ordinary task goals have NO blocking ambiguity. Only flag it when you are genuinely confident a human decision is required before ANY code could be written.\n\nTask goal: On res.partner, please add a simple text field for storing a LinkedIn profile URL.\n\nRespond with a structured AmbiguityReport. /no_think","t":0.02},{"actor":"manager","phase":"llm_call","status":"running","message":"intake_grounding","model":"openai-fast-extraction","call_label":"intake_grounding","prompt":"Read this task goal for an Odoo development system. Extract any Odoo technical names it concretely mentions or clearly implies -- model technical names (dotted lowercase, e.g. \"crm.lead\", \"oma.badge.scan.log\"), field names (snake_case), and view xml_ids, if any. Only extract names actually present or unambiguously implied by the text -- never invent one. If the goal describes creating something brand new with a name that doesn't yet exist, still extract that name as a candidate_model (this check's job is to verify whether it already exists, not to assume it doesn't).\n\n- candidate_models: real or plausible Odoo model technical names mentioned or implied.\n- candidate_fields: field names mentioned or implied.\n- candidate_views: view xml_ids mentioned or implied (rare -- usually empty).\n- confidence: your confidence (0.0-1.0) that you extracted the goal's real target entities correctly and completely. Low confidence (<0.3) if the goal is vague, non-technical, or you couldn't find any clear entity names.\n\nTask goal:\nOn res.partner, please add a simple text field for storing a LinkedIn profile URL.\n\nRespond with ONLY a single JSON object matching the schema. /no_think","t":0.02},{"actor":"manager","phase":"llm_call","status":"passed","message":"intake_grounding","model":"openai-fast-extraction","call_label":"intake_grounding","response":"{\n  \"candidate_models\": [\n    \"res.partner\"\n  ],\n  \"candidate_fields\": [\n    \"linkedin_profile_url\"\n  ],\n  \"candidate_views\": [],\n  \"confidence\": 0.9\n}","t":1.2},{"actor":"manager","phase":"intake_grounding","status":"running","message":"[log_only] intake_grounding_gate: The following candidate model(s) already exist in the real graph: ['res.partner']. (mode=log_only -- informational only, this task proceeds unchanged)","t":1.71},{"actor":"manager","phase":"llm_call","status":"passed","message":"Extracting the ambiguity report","model":"openai-fast-extraction","call_label":"Extracting the ambiguity report","response":"{\"has_blocking_ambiguity\":false,\"blocking_questions\":[],\"reasoning\":\"The task goal is clear and specifies the addition of a text field for a LinkedIn profile URL on the res.partner model. There are no contradictory requirements or undefined terms that would prevent starting the development.\"}","t":1.75},{"actor":"manager","phase":"llm_call","status":"passed","message":"Checking for a correction to past behavior","model":"openai-fast-extraction","call_label":"Checking for a correction to past behavior","response":"{\"is_correction\": true, \"confidence\": 0.9, \"directive\": \"Add a simple text field for storing a LinkedIn profile URL on res.partner.\", \"applicability_condition\": \"whenever a task involves modifying the res.partner model\"}","t":1.76},{"actor":"manager","phase":"llm_call","status":"running","message":"Detecting existing-module target","model":"openai-fast-extraction","call_label":"Detecting existing-module target","prompt":"A user submitted this request to an Odoo development assistant:\n\n\"On res.partner, please add a simple text field for storing a LinkedIn profile URL.\"\n\nHere is the REAL, current list of custom modules already installed in this Odoo\nsystem:\n- oma_add_a_twitter_handle_38f6c144\n- oma_add_a_twitter_handle_8fad33c9\n- oma_on_res_partner_please_4efcf449\n- oma_on_res_partner_please_af72cd5d\n- oma_on_the_product_template_663a8832\n\nDoes this request describe modifying, extending, or adding something to a\nrecord type that belongs to ONE of the modules in this exact list? If so,\nreturn that module's exact name, copied character-for-character from the list\nabove.\n\nIf the request is clearly about building something genuinely NEW that doesn't\nbelong to any of these modules, or you're not sure, return null.\n /no_think","t":1.95},{"actor":"manager","phase":"llm_call","status":"passed","message":"Detecting existing-module target","model":"openai-fast-extraction","call_label":"Detecting existing-module target","response":"{\n  \"module_name\": null\n}","t":2.69},{"actor":"manager","phase":"correction","status":"passed","message":"proposed_rule_pending_confirmation","t":2.69},{"actor":"manager","phase":"memory","status":"running","message":"Reading memory for relevant history","t":2.7},{"actor":"manager","phase":"memory","status":"passed","message":"Found 50 relevant memory row(s).","t":2.72},{"actor":"manager","phase":"classify","status":"passed","message":"Risk tier 1 -- work type: module_dev.","t":2.75},{"actor":"manager","phase":"contract","status":"passed","message":"On res.partner, please add a simple text field for storing a LinkedIn profile URL.","t":2.75},{"actor":"manager","phase":"delegate","status":"running","message":"Delegating to a specialist","t":2.89},{"actor":"manager","phase":"llm_call","status":"running","message":"Checking whether the goal touches an unsupported domain","model":"openai-reasoning","call_label":"Checking whether the goal touches an unsupported domain","prompt":"Read this task goal and decide whether it asks for anything in the following list of domains this system has ZERO real generation support for today. Judge by real MEANING, not literal keyword matching -- ordinary phrasing that doesn't use a domain's own name still counts if it describes the same real thing (e.g. \"send a confirmation email when approved\" describes a one-off templated email even though it never says \"email template\"; \"print a PDF for the customer\" describes a QWeb report even though it never says \"QWeb\"). Only flag a domain that is GENUINELY, materially part of what the goal asks for -- never flag a domain just because a loosely related word appears in passing, and never force a match onto a domain that doesn't really fit just because nothing else in the list fits better; most real, ordinary Odoo field/model/view/security work touches NONE of these domains at all, and that is the normal, expected answer.\n\nThe same discipline applies in the OPPOSITE direction too: the word \"wizard\" appearing in a goal does NOT by itself mean wizard_transient_model applies. \"Open the email compose wizard pre-loaded with our template, let the employee edit it before sending\" does NOT touch wizard_transient_model -- it describes returning an action that points at Odoo's own already-built-in mail.compose.message wizard, which needs no new TransientModel generated at all, only an ordinary method (already fully supported). Only flag wizard_transient_model when the goal genuinely needs a NEW, custom transient model built from scratch.\n\nThe same discipline applies to automation_trigger too: an ordinary time-based scheduled task does NOT touch automation_trigger. \"Every night at midnight, automatically change all records that have been in X state for more than 30 days\" does NOT touch automation_trigger -- it describes an ordinary ir.cron scheduled action (Odoo's own built-in periodic-task mechanism), which is fully supported and needs no base.automation rule, webhook, or contro","t":2.9},{"actor":"manager","phase":"llm_call","status":"passed","message":"Checking whether the goal touches an unsupported domain","model":"openai-reasoning","call_label":"Checking whether the goal touches an unsupported domain","response":"{\"touches\":[]}","t":3.55},{"actor":"manager","phase":"llm_call","status":"running","message":"Decomposing task goal into independent constraints (with artifacts)","model":"openai-reasoning","call_label":"Decomposing task goal into independent constraints (with artifacts)","prompt":"Read this task goal and list the INDEPENDENT requirements it actually contains -- each one a short, distinct thing that could in principle be verified separately from the others by checking that one specific field, model, or relation exists and works (e.g. a goal to 'add scheduling fields, enforce a double-booking rule, and add a product-scoping relation' contains three independent requirements). Use short, snake_case labels, 2-3 words each (e.g. 'scheduling_fields', 'double_booking_rule'). A goal describing only ONE real requirement must return a list with exactly one item -- never invent extra items just to pad the list.\n\nTwo real mistakes to avoid, both confirmed live on a real task:\n1. Do NOT split a single new record's own set of display/summary fields into multiple constraints just because the goal lists them as several bullet points -- e.g. 'a visit should display the customer, project, date, and status' is ONE requirement (one new model carrying those fields), not four. Group every field that belongs to the SAME new model or relation into a single constraint, one constraint per genuinely distinct model/relation/rule, never one constraint per field of an already-scoped model.\n2. Do NOT invent constraints that restate general build instructions or non-functional guidance rather than naming one concrete, checkable field/model/relation -- e.g. 'keep custom code minimal', 'build the module', or 'follow best practices' are guidance, not independent requirements, and must never appear as their own label. Every label must name something a later step could look up and confirm exists on a specific model.\n\nFor each constraint, ALSO extract (only what the goal text concretely states -- never invent or infer a value that isn't clearly present):\n- creates: real Odoo identifiers (model names, field names, view/action/menu names, security group names) this constraint concretely BUILDS. Empty list if none clearly named.\n- requires: real Odoo identifiers this constraint's own","t":3.56},{"actor":"manager","phase":"llm_call","status":"passed","message":"Decomposing task goal into independent constraints (with artifacts)","model":"openai-reasoning","call_label":"Decomposing task goal into independent constraints (with artifacts)","response":"{\"constraints\":[{\"label\":\"linkedin_profile_field\",\"creates\":[\"linkedin_profile_url\"],\"requires\":[]},{\"label\":\"res_partner_model\",\"creates\":[],\"requires\":[\"res.partner\"]}]}","t":4.76},{"actor":"manager","phase":"decomposition_blast_radius","status":"running","message":"[log_only] decomposition_blast_radius: plan touches ['res.partner'], real graph shows 15 existing module(s) already reference these (['account', 'account_check_printing', 'auth_signup', 'base', 'base_address_extended', 'base_geolocalize', 'base_vat', 'bus', 'calendar', 'crm', 'delivery', 'delivery_mondialrelay', 'event', 'fleet', 'hr']) -- informational only at this rollout stage, plan proceeds unchanged.","t":5.07},{"actor":"manager","phase":"llm_call","status":"running","message":"Extracting structured goal field facts","model":"openai-fast-extraction","call_label":"Extracting structured goal field facts","prompt":"Read this Odoo module-development task goal. It describes adding ONE field to an Odoo model. Extract ONLY facts the goal ACTUALLY STATES -- never invent, guess, or infer a value that isn't concretely present in the text, even if it seems like a reasonable default.\n\n\n- field_name: the exact snake_case Odoo field name, if the goal states one (e.g. \"order_priority\", \"is_vip_client\"). null if none is stated.\n- field_type: the Odoo field type word, one of: Text, Char, Boolean, Integer, Float, Monetary, Date, Datetime, Selection, Html, Binary, Image, Many2one, One2many, Many2many. null if the goal doesn't state or clearly imply one of these.\n- is_computed: true if the goal says this field is COMPUTED, RELATED, or auto-filled via ONCHANGE (e.g. \"compute=\", \"related=\", \"onchange=\", \"computed automatically from other fields\", \"auto-fill\", \"calculated\") -- false for a plain, directly-editable field.\n- selection_options: ONLY if field_type is Selection AND the goal states concrete option values -- the exact list of option value slugs in the order given (lowercase, underscore-separated, e.g. [\"low\", \"normal\", \"high\"]). Empty list if field_type isn't Selection, or if the goal doesn't state concrete option values.\n- selection_default: the default option value, ONLY if the goal states one explicitly AND it is one of selection_options. null otherwise.\n- is_sequence_assigned: true ONLY if the goal describes this field as an auto-generated REFERENCE NUMBER assigned from a SEQUENCE the first time a record is created (e.g. \"sequence-generated\", \"auto-numbered reference\", \"assign automatically using ir.sequence\", \"like INV2026-0042\", \"auto-assign a reference number\"). This is a plain, directly-editable stored field once set, NOT a compute= field -- if is_sequence_assigned is true, is_computed must be false.\n\nTask goal:\nOn res.partner, please add a simple text field for storing a LinkedIn profile URL.\n\nRespond with ONLY a single JSON object matching the schema. /no_think","t":5.09},{"actor":"manager","phase":"llm_call","status":"passed","message":"Extracting structured goal field facts","model":"openai-fast-extraction","call_label":"Extracting structured goal field facts","response":"{\"field_name\":\"linkedin_profile_url\",\"field_type\":\"Text\",\"is_computed\":false,\"selection_options\":[],\"selection_default\":null,\"is_sequence_assigned\":false}","t":5.98},{"actor":"manager","phase":"delegate","status":"passed","message":"Delegating to a specialist","t":5.99},{"actor":"manager","phase":"round","status":"running","message":"Round 1","t":6.0},{"actor":"bug_fix","phase":null,"status":"running","message":"Running\u2026","t":6.0},{"actor":"bug_fix","phase":null,"status":"running","message":"Scaffolding module oma_on_res_partner_please_ca9bb3eb\u2026","t":6.01},{"actor":"bug_fix","phase":null,"status":"running","message":"Stripped 4 unused scaffold file(s): ['demo/demo.xml', 'controllers/__init__.py', 'controllers/controllers.py', 'views/templates.xml']","t":6.84},{"actor":"bug_fix","phase":"llm_call","status":"running","message":"Writing the module's manifest and model code","model":"openai-coder","call_label":"Writing the module's manifest and model code","prompt":"\\# Odoo Development Agent Constitution\n\n\\#\\# Purpose\n\nYou are the primary Odoo Development Agent responsible for optimizing, maintaining, extending, and continuously improving our existing Odoo environment.\n\nYour objective is not simply to implement requested features, but to continuously improve the overall quality of the ERP system while keeping it maintainable, upgradeable, secure, and reliable for many years.\n\nYou should think like both a senior Odoo architect and an enterprise software engineer.\n\n\\---\n\n\\# Core Philosophy\n\nOur goal is to keep Odoo as standard as reasonably possible.\n\nHowever, \"standard\" is not a goal by itself.\n\nThe real goal is to minimize long-term complexity while maximizing maintainability, reliability, performance and upgradeability.\n\nNever blindly choose standard Odoo over a better engineered solution.\n\nAlways evaluate the complete picture.\n\n\\---\n\n\\# Odoo First\n\nBefore introducing customization, always ask:\n\n\\- Can standard Odoo solve this?  \n\\- Can configuration solve this?  \n\\- Can automation solve this?  \n\\- Can an existing module solve this?  \n\\- Can the frontend layer solve this?\n\nOnly introduce customization when there is a clear long-term benefit.\n\n\\---\n\n\\# Community Modules\n\nBe careful with community modules.\n\nDo not assume community modules are well designed simply because they already exist.\n\nEvaluate every community module critically.\n\nReview:\n\n\\- code quality  \n\\- maintainability  \n\\- documentation  \n\\- security  \n\\- activity  \n\\- architecture  \n\\- dependencies  \n\\- upgrade history  \n\\- community support\n\nReject community modules that introduce unnecessary complexity or technical debt.\n\nSometimes writing a small custom module is a much better long-term solution.\n\n\\---\n\n\\# Custom Development\n\nCustom code is not forbidden.\n\nPoor custom code is.\n\nIf custom development significantly improves the architecture, reduces complexity or reduces the overall codebase, it is often the preferred solution.\n\nFor example:\n\nIf a custom module re","t":6.91},{"actor":"bug_fix","phase":"llm_call","status":"passed","message":"Writing the module's manifest and model code","model":"openai-coder","call_label":"Writing the module's manifest and model code","response":"{\"manifest_fields\":{\"name\":\"oma_on_res_partner_please_ca9bb3eb\",\"version\":\"1.0.0\",\"category\":\"Customizations\",\"summary\":\"Add LinkedIn profile URL to res.partner\",\"author\":\"Your Name\",\"depends\":[\"base\"],\"data\":[\"views/views.xml\"],\"installable\":true,\"auto_install\":false,\"license\":\"LGPL-3\"},\"models_py\":\"from odoo import fields, models\\n\\nclass ResPartner(models.Model):\\n    _inherit = 'res.partner'\\n\\n    linkedin_profile_url = fields.Char(string='LinkedIn Profile URL')\",\"views_xml\":\"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\\n<odoo>\\n    <record id=\\\"view_res_partner_form_inherit\\\" model=\\\"ir.ui.view\\\">\\n        <field name=\\\"name\\\">res.partner.form.inherit.linkedin</field>\\n        <field name=\\\"model\\\">res.partner</field>\\n        <field name=\\\"inherit_id\\\" ref=\\\"base.view_partner_form\\\"/>\\n        <field name=\\\"arch\\\" type=\\\"xml\\\">\\n            <xpath expr=\\\"//field[@name='email']\\\" position=\\\"after\\\">\\n                <field name=\\\"linkedin_profile_url\\\"/>\\n            </xpath>\\n        </field>\\n    </record>\\n</odoo>\",\"security_csv\":\"id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\\n\"}","t":10.26},{"actor":"bug_fix","phase":"llm_call","status":"running","message":"Writing the module's manifest and model code","model":"openai-coder","call_label":"Writing the module's manifest and model code","prompt":"\\# Odoo Development Agent Constitution\n\n\\#\\# Purpose\n\nYou are the primary Odoo Development Agent responsible for optimizing, maintaining, extending, and continuously improving our existing Odoo environment.\n\nYour objective is not simply to implement requested features, but to continuously improve the overall quality of the ERP system while keeping it maintainable, upgradeable, secure, and reliable for many years.\n\nYou should think like both a senior Odoo architect and an enterprise software engineer.\n\n\\---\n\n\\# Core Philosophy\n\nOur goal is to keep Odoo as standard as reasonably possible.\n\nHowever, \"standard\" is not a goal by itself.\n\nThe real goal is to minimize long-term complexity while maximizing maintainability, reliability, performance and upgradeability.\n\nNever blindly choose standard Odoo over a better engineered solution.\n\nAlways evaluate the complete picture.\n\n\\---\n\n\\# Odoo First\n\nBefore introducing customization, always ask:\n\n\\- Can standard Odoo solve this?  \n\\- Can configuration solve this?  \n\\- Can automation solve this?  \n\\- Can an existing module solve this?  \n\\- Can the frontend layer solve this?\n\nOnly introduce customization when there is a clear long-term benefit.\n\n\\---\n\n\\# Community Modules\n\nBe careful with community modules.\n\nDo not assume community modules are well designed simply because they already exist.\n\nEvaluate every community module critically.\n\nReview:\n\n\\- code quality  \n\\- maintainability  \n\\- documentation  \n\\- security  \n\\- activity  \n\\- architecture  \n\\- dependencies  \n\\- upgrade history  \n\\- community support\n\nReject community modules that introduce unnecessary complexity or technical debt.\n\nSometimes writing a small custom module is a much better long-term solution.\n\n\\---\n\n\\# Custom Development\n\nCustom code is not forbidden.\n\nPoor custom code is.\n\nIf custom development significantly improves the architecture, reduces complexity or reduces the overall codebase, it is often the preferred solution.\n\nFor example:\n\nIf a custom module re","t":10.27},{"actor":"bug_fix","phase":"llm_call","status":"passed","message":"Writing the module's manifest and model code","model":"openai-coder","call_label":"Writing the module's manifest and model code","response":"{\"manifest_fields\":{\"name\":\"oma_on_res_partner_please_ca9bb3eb\",\"version\":\"1.0.0\",\"category\":\"Customizations\",\"summary\":\"Add LinkedIn profile URL to res.partner\",\"author\":\"Your Name\",\"depends\":[\"base\"],\"data\":[\"views/views.xml\"],\"installable\":true,\"auto_install\":false,\"license\":\"LGPL-3\"},\"models_py\":\"from odoo import fields, models\\n\\nclass ResPartner(models.Model):\\n    _inherit = 'res.partner'\\n\\n    linkedin_profile_url = fields.Char(string='LinkedIn Profile URL')\",\"views_xml\":\"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\\n<odoo>\\n    <record id=\\\"view_res_partner_form_inherit\\\" model=\\\"ir.ui.view\\\">\\n        <field name=\\\"name\\\">res.partner.form.inherit.linkedin</field>\\n        <field name=\\\"model\\\">res.partner</field>\\n        <field name=\\\"inherit_id\\\" ref=\\\"base.view_partner_form\\\"/>\\n        <field name=\\\"arch\\\" type=\\\"xml\\\">\\n            <xpath expr=\\\"//field[@name='email']\\\" position=\\\"after\\\">\\n                <field name=\\\"linkedin_profile_url\\\"/>\\n            </xpath>\\n        </field>\\n    </record>\\n</odoo>\",\"security_csv\":\"id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\\n\",\"notes\":\"This module adds a LinkedIn profile URL field to the res.partner model.\"}","t":13.77},{"actor":"bug_fix","phase":null,"status":"info","message":"Internal loop: Keep (step 1, no narrow-validator findings)","t":13.78},{"actor":"bug_fix","phase":null,"status":"running","message":"Built views_xml deterministically (form) for 'res.partner' (field(s) ['linkedin_profile_url']) -- bypassing freeform generation for this mechanical insertion.","t":14.53},{"actor":"bug_fix","phase":null,"status":"running","message":"Built security_csv deterministically for (no new models) -- bypassing freeform generation for this mechanical access-row shape.","t":14.53},{"actor":"bug_fix","phase":null,"status":"running","message":"Running the pre-write validator/autofix chain\u2026","t":14.54},{"actor":"bug_fix","phase":null,"status":"info","message":"_validate_no_new_field_collides_with_real_target_field took 1.0s","t":15.57},{"actor":"bug_fix","phase":null,"status":"info","message":"validate_no_blast_radius_collisions_or_breakage took 4.8s","t":24.39},{"actor":"bug_fix","phase":null,"status":"passed","message":"Validator/autofix chain finished in 9.9s.","t":24.39},{"actor":"bug_fix","phase":null,"status":"running","message":"Sandbox pre-flight: testing this round's changes in isolation\u2026","t":25.79},{"actor":"bug_fix","phase":null,"status":"running","message":"Sandbox pre-flight: creating odoo16_sandbox_20261002_053709 on oma-odoo-1\u2026","t":25.79},{"actor":"bug_fix","phase":null,"status":"running","message":"Sandbox pre-flight passed -- promoting to the real dev target\u2026","t":29.38},{"actor":"bug_fix","phase":null,"status":"running","message":"This module adds a LinkedIn profile URL field to the res.partner model.","t":29.87},{"actor":"bug_fix","phase":null,"status":"running","message":"Linting\u2026","t":29.88},{"actor":"safety_net","phase":null,"status":"failed","message":"Security lint FAILED to run (non-blocking): bandit produced no output (rc=127): bash: line 1: bandit: command not found\n","t":29.99},{"actor":"safety_net","phase":null,"status":"running","message":"Backing up Odoo filestore before install\u2026","t":30.0},{"actor":"safety_net","phase":null,"status":"failed","message":"Pre-install backup FAILED (non-blocking): pg_dump failed: pg_dump: error: server version: 16.15; pg_dump version: 14.20 (Homebrew)\npg_dump: error: aborting because of server version mismatch\n\n","t":30.89},{"actor":"bug_fix","phase":null,"status":"running","message":"Installing into odoo16_dev_dup_20261001_235608\u2026","t":31.51},{"actor":"safety_net","phase":null,"status":"running","message":"Running post-install regression smoke check\u2026","t":34.11},{"actor":"safety_net","phase":null,"status":"failed","message":"REGRESSION SIGNAL: 2/3 core smoke checks failed after this install: ['check_create_sale_order', 'check_create_project_task']","t":41.22},{"actor":"bug_fix","phase":null,"status":"passed","message":"Scaffolded, wrote, and linted module 'oma_on_res_partner_please_ca9bb3eb'; install succeeded","t":41.24},{"actor":"bug_fix","phase":null,"status":"passed","message":"Code changes","t":41.24},{"actor":"code_review","phase":null,"status":"running","message":"Reviewing the diff\u2026","t":41.25},{"actor":"testing_qa","phase":null,"status":"running","message":"Reproducing independently\u2026","t":41.25},{"actor":"code_review","phase":"llm_call","status":"running","message":"Reviewing the diff","model":"openai-reasoning","call_label":"Reviewing the diff","prompt":"\\# Odoo Development Agent Constitution\n\n\\#\\# Purpose\n\nYou are the primary Odoo Development Agent responsible for optimizing, maintaining, extending, and continuously improving our existing Odoo environment.\n\nYour objective is not simply to implement requested features, but to continuously improve the overall quality of the ERP system while keeping it maintainable, upgradeable, secure, and reliable for many years.\n\nYou should think like both a senior Odoo architect and an enterprise software engineer.\n\n\\---\n\n\\# Core Philosophy\n\nOur goal is to keep Odoo as standard as reasonably possible.\n\nHowever, \"standard\" is not a goal by itself.\n\nThe real goal is to minimize long-term complexity while maximizing maintainability, reliability, performance and upgradeability.\n\nNever blindly choose standard Odoo over a better engineered solution.\n\nAlways evaluate the complete picture.\n\n\\---\n\n\\# Odoo First\n\nBefore introducing customization, always ask:\n\n\\- Can standard Odoo solve this?  \n\\- Can configuration solve this?  \n\\- Can automation solve this?  \n\\- Can an existing module solve this?  \n\\- Can the frontend layer solve this?\n\nOnly introduce customization when there is a clear long-term benefit.\n\n\\---\n\n\\# Community Modules\n\nBe careful with community modules.\n\nDo not assume community modules are well designed simply because they already exist.\n\nEvaluate every community module critically.\n\nReview:\n\n\\- code quality  \n\\- maintainability  \n\\- documentation  \n\\- security  \n\\- activity  \n\\- architecture  \n\\- dependencies  \n\\- upgrade history  \n\\- community support\n\nReject community modules that introduce unnecessary complexity or technical debt.\n\nSometimes writing a small custom module is a much better long-term solution.\n\n\\---\n\n\\# Custom Development\n\nCustom code is not forbidden.\n\nPoor custom code is.\n\nIf custom development significantly improves the architecture, reduces complexity or reduces the overall codebase, it is often the preferred solution.\n\nFor example:\n\nIf a custom module re","t":41.58},{"actor":"testing_qa","phase":"llm_call","status":"running","message":"Extracting the reproduction target","model":"openai-fast-extraction","call_label":"Extracting the reproduction target","prompt":"Task goal: On res.partner, please add a simple text field for storing a LinkedIn profile URL.\nDeliverables: []\n\nThe module's own real, generated code (for resolving the exact technical name only):\n--- /mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/__manifest__.py ---\n{'name': 'oma_on_res_partner_please_ca9bb3eb', 'version': '16.0.1.0.0', 'category': 'Customizations', 'summary': 'Add LinkedIn profile URL to res.partner', 'description': '', 'author': 'Your Name', 'depends': ['base'], 'data': ['views/views.xml', 'security/ir.model.access.csv'], 'installable': True, 'auto_install': False, 'license': 'LGPL-3'}\n\n--- /mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/__init__.py ---\nfrom . import models\n\n\n--- /mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/models/__init__.py ---\n# -*- coding: utf-8 -*-\n\nfrom . import models\n\n--- /mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/models/models.py ---\nfrom odoo import fields, models\n\nclass ResPartner(models.Model):\n    _inherit = 'res.partner'\n\n    linkedin_profile_url = fields.Char(string='LinkedIn Profile URL')\n\nExtract which Odoo model and field name this task's reproduction case should check for. Priority order, strict: (1) if the goal or deliverables literally name a specific technical field (e.g. quoted, like 'preferred_language', or 'should_not_exist_field'), use EXACTLY that name -- this is a claim being verified, not a hint to improve on, even if that exact name doesn't appear in the code above (that mismatch is precisely what this check exists to catch). (2) Only if the goal describes a field relationally, without ever literally naming it (e.g. 'linking to project.project'), use the real code above to resolve which actual field satisfies that description. /no_think","t":41.82},{"actor":"testing_qa","phase":"llm_call","status":"running","message":"Extracting the security access claim","model":"openai-fast-extraction","call_label":"Extracting the security access claim","prompt":"Task goal: On res.partner, please add a simple text field for storing a LinkedIn profile URL.\nDeliverables: []\n\nDetermine whether this goal makes a checkable claim about ONE of these three shapes (set applicable=true and fill in exactly the relevant fields; if none apply, set applicable=false and leave everything else null):\n\nSHAPE 1 -- a NEW security group with model-level access: if the goal names a new security group (quoted or clearly named) and states what CRUD access it should have on a model, set group_name (exact name), model (technical name, e.g. 'res.partner'), and expects_read/expects_write/expects_create/expects_unlink to true/false based on exactly what the goal states (e.g. 'full read, write, create, and delete access' -> all four true; 'read and write access, but not create or delete' -> read=true, write=true, create=false, unlink=false; 'read-only access' -> read=true, write=false, create=false, unlink=false). Only set a expects_* field you're confident the goal actually states -- leave uncertain ones null rather than guessing. Leave restricted_field_name and restricted_button_name null.\n\nSHAPE 2 -- restricting an EXISTING field's visibility to a group: if the goal says an existing field on a model should only be visible to members of a new/named group (everyone else should not see it), set model, restricted_field_name (the exact technical field name), and EITHER restricted_group_xmlid (when the goal literally states a group as 'module.group_name', e.g. 'groups=base.group_system' or 'mis_base_extend.group_x' -- ALWAYS prefer this over group_name when a literal xmlid is stated) OR group_name (a plain display name like 'Managers', only when no literal xmlid is given). Leave expects_* and restricted_button_name all null.\n\nSHAPE 3 -- restricting an EXISTING button's visibility to a group: if the goal says a named button (e.g. 'Send to customer') on a form should only be visible to a specific group, set model, restricted_button_name (the exact technical `","t":41.83},{"actor":"testing_qa","phase":"llm_call","status":"running","message":"Extracting the menu structure claim","model":"openai-fast-extraction","call_label":"Extracting the menu structure claim","prompt":"Task goal: On res.partner, please add a simple text field for storing a LinkedIn profile URL.\nDeliverables: []\n\nDetermine whether this goal makes a checkable claim about a SPECIFIC, NAMED menu structure being created (e.g. a line like 'Menu structure: School -> Students', 'Add a menu item under Sales', 'a new top-level menu called X with a sub-menu Y'). If so, set applicable=true and menu_names to the real menu labels in top-to-bottom hierarchy order, exactly as stated in the goal (e.g. 'School -> Students' -> [\"School\", \"Students\"]; a single menu with no explicit parent -> just that one name). If the goal also names or clearly implies which model the LEAF menu's own list/form view should open (e.g. the module's own new model), set action_model to that model's real technical name (e.g. 'school.student') if you can confidently resolve it from the goal text alone, otherwise leave it null.\n\nIMPORTANT: a goal that merely asks for 'a menu item' / 'a menu' to exist so a model is 'reachable from the main menu' -- WITHOUT ever literally stating what that menu should be titled/labeled/called -- makes NO checkable NAME claim, even though it does require a menu to exist. In that case set applicable=false and leave menu_names empty: inventing a plausible-sounding name that the goal never actually stated would not be verifying a real claim, just guessing one, and a real menu under ANY reasonable title still genuinely satisfies a goal phrased this way. Only set applicable=true when a SPECIFIC title/label is explicitly written in the goal text itself. /no_think","t":41.84},{"actor":"testing_qa","phase":"llm_call","status":"running","message":"Self-reporting coverage","model":"openai-reasoning","call_label":"Self-reporting coverage","prompt":"The Odoo Development Agent Constitution (the real standard this change is checked against):\n\\# Odoo Development Agent Constitution\n\n\\#\\# Purpose\n\nYou are the primary Odoo Development Agent responsible for optimizing, maintaining, extending, and continuously improving our existing Odoo environment.\n\nYour objective is not simply to implement requested features, but to continuously improve the overall quality of the ERP system while keeping it maintainable, upgradeable, secure, and reliable for many years.\n\nYou should think like both a senior Odoo architect and an enterprise software engineer.\n\n\\---\n\n\\# Core Philosophy\n\nOur goal is to keep Odoo as standard as reasonably possible.\n\nHowever, \"standard\" is not a goal by itself.\n\nThe real goal is to minimize long-term complexity while maximizing maintainability, reliability, performance and upgradeability.\n\nNever blindly choose standard Odoo over a better engineered solution.\n\nAlways evaluate the complete picture.\n\n\\---\n\n\\# Odoo First\n\nBefore introducing customization, always ask:\n\n\\- Can standard Odoo solve this?  \n\\- Can configuration solve this?  \n\\- Can automation solve this?  \n\\- Can an existing module solve this?  \n\\- Can the frontend layer solve this?\n\nOnly introduce customization when there is a clear long-term benefit.\n\n\\---\n\n\\# Community Modules\n\nBe careful with community modules.\n\nDo not assume community modules are well designed simply because they already exist.\n\nEvaluate every community module critically.\n\nReview:\n\n\\- code quality  \n\\- maintainability  \n\\- documentation  \n\\- security  \n\\- activity  \n\\- architecture  \n\\- dependencies  \n\\- upgrade history  \n\\- community support\n\nReject community modules that introduce unnecessary complexity or technical debt.\n\nSometimes writing a small custom module is a much better long-term solution.\n\n\\---\n\n\\# Custom Development\n\nCustom code is not forbidden.\n\nPoor custom code is.\n\nIf custom development significantly improves the architecture, reduces complexity or reduces th","t":41.84},{"actor":"testing_qa","phase":"llm_call","status":"passed","message":"Extracting the menu structure claim","model":"openai-fast-extraction","call_label":"Extracting the menu structure claim","response":"{\"applicable\":false,\"menu_names\":[],\"action_model\":null}","t":42.59},{"actor":"testing_qa","phase":"llm_call","status":"passed","message":"Extracting the reproduction target","model":"openai-fast-extraction","call_label":"Extracting the reproduction target","response":"{\"model\":\"res.partner\",\"field_name\":\"linkedin_profile_url\"}","t":42.74},{"actor":"testing_qa","phase":"llm_call","status":"passed","message":"Extracting the security access claim","model":"openai-fast-extraction","call_label":"Extracting the security access claim","response":"{\"applicable\":false,\"group_name\":null,\"model\":null,\"expects_read\":null,\"expects_write\":null,\"expects_create\":null,\"expects_unlink\":null,\"restricted_field_name\":null,\"restricted_button_name\":null,\"restricted_group_xmlid\":null}","t":43.54},{"actor":"testing_qa","phase":"llm_call","status":"passed","message":"Self-reporting coverage","model":"openai-reasoning","call_label":"Self-reporting coverage","response":"{\"believed_fully_covered\":false,\"claimed_uncovered_paths\":[\"Check if the LinkedIn URL field is correctly saved when creating a new partner\",\"Verify the behavior when the LinkedIn URL field is left empty\",\"Test the display of the LinkedIn URL field in the partner form view\"],\"reasoning\":\"While the field is added and can be installed, there are specific scenarios such as saving, validation, and display that need to be explicitly tested to ensure full coverage.\"}","t":43.54},{"actor":"testing_qa","phase":null,"status":"running","message":"Reproducing res.partner.linkedin_profile_url\u2026","t":43.55},{"actor":"testing_qa","phase":null,"status":"passed","message":"Reproduction confirmed for res.partner.linkedin_profile_url.","t":44.03},{"actor":"testing_qa","phase":null,"status":"running","message":"Final round -- re-verifying every earlier constraint's own claimed field, not just this round's\u2026","t":44.04},{"actor":"testing_qa","phase":"llm_call","status":"running","message":"Extracting every field claimed by the full original goal (final-round widening)","model":"openai-fast-extraction","call_label":"Extracting every field claimed by the full original goal (final-round widening)","prompt":"Full original task goal (all parts, not just the most recent round's own focus): On res.partner, please add a simple text field for storing a LinkedIn profile URL.\nDeliverables: []\n\nThe module's own real, generated code (for resolving exact technical names only):\n--- /mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/__manifest__.py ---\n{'name': 'oma_on_res_partner_please_ca9bb3eb', 'version': '16.0.1.0.0', 'category': 'Customizations', 'summary': 'Add LinkedIn profile URL to res.partner', 'description': '', 'author': 'Your Name', 'depends': ['base'], 'data': ['views/views.xml', 'security/ir.model.access.csv'], 'installable': True, 'auto_install': False, 'license': 'LGPL-3'}\n\n--- /mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/__init__.py ---\nfrom . import models\n\n\n--- /mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/models/__init__.py ---\n# -*- coding: utf-8 -*-\n\nfrom . import models\n\n--- /mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/models/models.py ---\nfrom odoo import fields, models\n\nclass ResPartner(models.Model):\n    _inherit = 'res.partner'\n\n    linkedin_profile_url = fields.Char(string='LinkedIn Profile URL')\n\nThis is the FINAL round of a multi-part task. List EVERY distinct Odoo model+field pair the FULL goal above claims should exist anywhere -- one entry per real field described, not just the most recently worked-on one. Same technical-name resolution rules as always: if a field is literally named (quoted or otherwise exact), use EXACTLY that name; only resolve from the real code above when the goal describes a field relationally, without ever literally naming it.\n\nIMPORTANT, real bug found live (2026-08-08, site_50 benchmark task 007): a quoted name attached to a BUTTON, FILTER, or MENU ITEM label is NOT a field claim -- e.g. \"a quick filter button called 'Accepted'\" describes a UI control's own display label, filtering by an EXISTING status/state field's value, never a requirement that a field literally named 'accepted' (or any other f","t":44.29},{"actor":"code_review","phase":"llm_call","status":"passed","message":"Reviewing the diff","model":"openai-reasoning","call_label":"Reviewing the diff","response":"{\"findings\":[{\"location\":\"/mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/models/models.py:5\",\"severity\":\"info\",\"explanation\":\"The addition of the linkedin_profile_url field is a simple and appropriate solution for the task.\"},{\"location\":\"/mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/views/views.xml:5\",\"severity\":\"info\",\"explanation\":\"The inheritance of the res.partner form view respects existing patterns and integrates the new field correctly.\"},{\"location\":\"/mnt/extra-addons/oma_on_res_partner_please_ca9bb3eb/security/ir.model.access.csv\",\"severity\":\"major\",\"explanation\":\"The access control file is empty, which may lead to security issues as no permissions are defined for the new field.\"}],\"overall_assessment\":\"The proposed change is mostly well-implemented but lacks necessary access control definitions.\"}","t":44.65},{"actor":"code_review","phase":null,"status":"running","message":"The addition of the linkedin_profile_url field is a simple and appropriate solution for the task.","t":44.94},{"actor":"code_review","phase":null,"status":"running","message":"The inheritance of the res.partner form view respects existing patterns and integrates the new field correctly.","t":44.94},{"actor":"code_review","phase":null,"status":"running","message":"The access control file is empty, which may lead to security issues as no permissions are defined for the new field.","t":44.95},{"actor":"code_review","phase":null,"status":"info","message":"Code-Review finished in 3.7s (real completion time).","t":44.95},{"actor":"testing_qa","phase":"llm_call","status":"passed","message":"Extracting every field claimed by the full original goal (final-round widening)","model":"openai-fast-extraction","call_label":"Extracting every field claimed by the full original goal (final-round widening)","response":"{\"targets\":[{\"model\":\"res.partner\",\"field_name\":\"linkedin_profile_url\"}]}","t":45.23},{"actor":"testing_qa","phase":null,"status":"passed","message":"Final-round widening: every earlier constraint's own claimed field still confirmed.","t":45.24},{"actor":"testing_qa","phase":null,"status":"running","message":"Running the deterministic coverage spot-check\u2026","t":45.24},{"actor":"testing_qa","phase":null,"status":"passed","message":"Spot-check matches the self-report.","t":45.62},{"actor":"testing_qa","phase":null,"status":"info","message":"Testing/QA finished in 4.4s (real completion time).","t":45.63},{"actor":"code_review","phase":null,"status":"passed","message":"The proposed change is mostly well-implemented but lacks necessary access control definitions.","t":45.63},{"actor":"code_review","phase":null,"status":"passed","message":"The proposed change is mostly well-implemented but lacks necessary access control definitions.","t":45.64},{"actor":"testing_qa","phase":null,"status":"passed","message":"Reproduction confirmed for res.partner.linkedin_profile_url. Spot-check matches the self-report.","t":45.64},{"actor":"testing_qa","phase":null,"status":"passed","message":"Reproduction confirmed for res.partner.linkedin_profile_url. Spot-check matches the self-report.","t":45.64},{"actor":"manager","phase":"round","status":"passed","message":"Round 1","t":45.65},{"actor":"manager","phase":"post_install_graph_diff","status":"running","message":"[log_only] post_install_graph_diff: real graph already reflects 'res.partner' (84 field(s), defined by ['account', 'account_check_printing', 'auth_signup', 'base', 'base_address_extended', 'base_geolocalize', 'base_vat', 'bus', 'calendar', 'crm', 'delivery', 'delivery_mondialrelay', 'event', 'fleet', 'hr', 'oma_on_res_partner_please_ca9bb3eb']) -- graph freshness confirmed at task-completion time.","t":47.11},{"actor":"manager","phase":"task","status":"passed","message":"Reproduction confirmed for res.partner.linkedin_profile_url. Spot-check matches the self-report.","t":47.27},{"actor":"manager","phase":"branch_message","status":"running","message":"Writing up what actually happened\u2026","t":47.28},{"actor":"manager","phase":"llm_call","status":"running","message":"Writing the success digest for Operator","model":"openai-reasoning","call_label":"Writing the success digest for Operator","prompt":"A real automated task just succeeded after 1 round(s).\n\nOriginal goal: On res.partner, please add a simple text field for storing a LinkedIn profile URL.\n\nWhat the final, passing attempt actually produced: Reproduction confirmed for res.partner.linkedin_profile_url. Spot-check matches the self-report.\n\nRound-by-round history (if more than one round was needed):\n(passed on the first round)\n\nRespond with ONLY a JSON object of the exact shape: {\"headline\": \"one concise sentence naming what was ultimately built/found and, if relevant, where it lives (e.g. the real module name)\", \"notable_moment\": \"one sentence naming a real, genuinely noteworthy problem that was hit and fixed along the way, OR null if this task passed cleanly with nothing noteworthy to call out -- never invent one\"} /no_think","t":47.28},{"actor":"manager","phase":"llm_call","status":"passed","message":"Writing the success digest for Operator","model":"openai-reasoning","call_label":"Writing the success digest for Operator","response":"{\"headline\":\"Added a LinkedIn profile URL field to res.partner\",\"notable_moment\":null}","t":48.01},{"actor":"manager","phase":"branch_message","status":"passed","message":"Added a LinkedIn profile URL field to res.partner","t":48.02}]</script>
+<script>
+(function () {
+  "use strict";
+  var TRACE = JSON.parse(document.getElementById('trace-data').textContent);
+  var TOTAL_MS = Math.round(TRACE[TRACE.length - 1].t * 100);
+
+  var ACTORS = [
+    { key: 'manager', label: 'Manager', color: '#58C4B8' },
+    { key: 'bug_fix', label: 'Build', color: '#E3B341' },
+    { key: 'code_review', label: 'Code-Review', color: '#9D7CD8' },
+    { key: 'testing_qa', label: 'Testing/QA', color: '#3FB950' },
+    { key: 'safety_net', label: 'Safety-Net', color: '#F85149' }
+  ];
+  var ACTOR_MAP = {};
+  ACTORS.forEach(function (a) { ACTOR_MAP[a.key] = a; });
+
+  function statusColor(status) {
+    if (status === 'passed') return 'var(--ok)';
+    if (status === 'failed') return 'var(--err)';
+    if (status === 'running') return 'var(--warn)';
+    return 'var(--text-faint)';
+  }
+
+  // ---------- Build lane strip ----------
+  var lanesEl = document.getElementById('lanes');
+  ACTORS.forEach(function (a) {
+    var lane = document.createElement('div');
+    lane.className = 'lane';
+    var name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = a.label;
+    var track = document.createElement('div');
+    track.className = 'track';
+    track.id = 'track-' + a.key;
+    TRACE.forEach(function (e) {
+      if (e.actor !== a.key) return;
+      var tick = document.createElement('div');
+      tick.className = 'tick';
+      tick.style.left = (e.t / TRACE[TRACE.length - 1].t * 100) + '%';
+      tick.style.background = statusColor(e.status);
+      tick.dataset.t = Math.round(e.t * 100);
+      track.appendChild(tick);
+    });
+    var playhead = document.createElement('div');
+    playhead.className = 'playhead';
+    playhead.id = 'ph-' + a.key;
+    playhead.style.left = '0%';
+    track.appendChild(playhead);
+    lane.appendChild(name);
+    lane.appendChild(track);
+    lanesEl.appendChild(lane);
+  });
+
+  // ---------- Build log rows (all, hidden until revealed) ----------
+  var logEl = document.getElementById('log');
+  var rows = TRACE.map(function (e, i) {
+    var row = document.createElement('div');
+    var isLlm = e.phase === 'llm_call' && (e.prompt || e.response);
+    row.className = 'row' + (isLlm ? ' llm' : '');
+    row.style.display = 'none';
+    row.dataset.index = i;
+
+    var tCol = document.createElement('div');
+    tCol.className = 't';
+    tCol.textContent = 't+' + e.t.toFixed(2) + 's';
+
+    var actorCol = document.createElement('div');
+    actorCol.className = 'actor';
+    var sw = document.createElement('div');
+    sw.className = 'sw';
+    var meta = ACTOR_MAP[e.actor] || { label: e.actor || '—', color: '#777' };
+    sw.style.background = meta.color;
+    actorCol.appendChild(sw);
+    var label = document.createElement('span');
+    label.textContent = meta.label;
+    actorCol.appendChild(label);
+
+    var msgCol = document.createElement('div');
+    msgCol.className = 'msg';
+    var pill = document.createElement('span');
+    pill.className = 'status-pill';
+    pill.textContent = e.status || '';
+    pill.style.color = statusColor(e.status);
+    pill.style.background = 'color-mix(in srgb, ' + statusColor(e.status) + ' 16%, transparent)';
+    msgCol.appendChild(pill);
+    var msgText = document.createElement('span');
+    var labelText = e.call_label ? (e.call_label + (e.model ? ' · ' + e.model : '')) : (e.message || '');
+    msgText.textContent = labelText;
+    msgCol.appendChild(msgText);
+
+    if (isLlm) {
+      var detail = document.createElement('div');
+      detail.className = 'detail';
+      if (e.prompt) {
+        var pk = document.createElement('div');
+        pk.className = 'dk';
+        pk.textContent = 'Prompt (truncated)';
+        var pp = document.createElement('pre');
+        pp.textContent = e.prompt;
+        detail.appendChild(pk);
+        detail.appendChild(pp);
+      }
+      if (e.response) {
+        var rk = document.createElement('div');
+        rk.className = 'dk';
+        rk.textContent = 'Response';
+        var rp = document.createElement('pre');
+        var respText = e.response;
+        try { respText = JSON.stringify(JSON.parse(e.response), null, 2); } catch (err) {}
+        rp.textContent = respText;
+        detail.appendChild(rk);
+        detail.appendChild(rp);
+      }
+      msgCol.addEventListener('click', function () {
+        detail.classList.toggle('open');
+      });
+      row.appendChild(tCol);
+      row.appendChild(actorCol);
+      var wrap = document.createElement('div');
+      wrap.appendChild(msgCol);
+      wrap.appendChild(detail);
+      row.appendChild(wrap);
+    } else {
+      row.appendChild(tCol);
+      row.appendChild(actorCol);
+      row.appendChild(msgCol);
+    }
+
+    logEl.appendChild(row);
+    return row;
+  });
+
+  // ---------- Final code reveal ----------
+  var finalCode = null;
+  for (var i = TRACE.length - 1; i >= 0; i--) {
+    if (TRACE[i].call_label === "Writing the module's manifest and model code" && TRACE[i].response) {
+      try { finalCode = JSON.parse(TRACE[i].response); } catch (e) {}
+      if (finalCode) break;
+    }
+  }
+  if (finalCode) {
+    var manifestText = '{\n' + Object.keys(finalCode.manifest_fields).map(function (k) {
+      return '    "' + k + '": ' + JSON.stringify(finalCode.manifest_fields[k]);
+    }).join(',\n') + '\n}';
+    document.getElementById('codeManifest').textContent = manifestText;
+    document.getElementById('codeModels').textContent = finalCode.models_py || '';
+    document.getElementById('codeViews').textContent = finalCode.views_xml || '';
+  }
+
+  // ---------- Playback engine ----------
+  var scrub = document.getElementById('scrub');
+  var tNow = document.getElementById('tNow');
+  var tTotal = document.getElementById('tTotal');
+  var logCount = document.getElementById('logCount');
+  var playBtn = document.getElementById('playBtn');
+  var speedSel = document.getElementById('speed');
+  var codeSection = document.getElementById('codeSection');
+
+  scrub.max = TOTAL_MS;
+  tTotal.textContent = (TOTAL_MS / 100).toFixed(1) + 's';
+
+  var playing = false;
+  var rafId = null;
+  var lastFrameTime = null;
+
+  function render(ms) {
+    var tSec = ms / 100;
+    tNow.textContent = tSec.toFixed(1) + 's';
+
+    var visibleCount = 0;
+    rows.forEach(function (row, i) {
+      var e = TRACE[i];
+      var show = e.t <= tSec;
+      row.style.display = show ? 'grid' : 'none';
+      if (show) visibleCount++;
+    });
+    logCount.textContent = visibleCount + ' / ' + TRACE.length + ' events';
+    logEl.scrollTop = logEl.scrollHeight;
+
+    ACTORS.forEach(function (a) {
+      var ph = document.getElementById('ph-' + a.key);
+      ph.style.left = (Math.min(tSec, TRACE[TRACE.length - 1].t) / TRACE[TRACE.length - 1].t * 100) + '%';
+      document.querySelectorAll('#track-' + a.key + ' .tick').forEach(function (tick) {
+        tick.style.opacity = (parseInt(tick.dataset.t, 10) <= ms) ? '1' : '0.25';
+      });
+    });
+
+    if (ms >= TOTAL_MS - 5) {
+      codeSection.classList.add('revealed');
+    } else {
+      codeSection.classList.remove('revealed');
+    }
+  }
+
+  function step(now) {
+    if (!playing) return;
+    if (lastFrameTime === null) lastFrameTime = now;
+    var deltaMs = (now - lastFrameTime) * parseFloat(speedSel.value) / 10;
+    lastFrameTime = now;
+    var next = Math.min(parseFloat(scrub.value) + deltaMs, TOTAL_MS);
+    scrub.value = next;
+    render(next);
+    if (next >= TOTAL_MS) {
+      playing = false;
+      playBtn.textContent = '▶';
+      return;
+    }
+    rafId = requestAnimationFrame(step);
+  }
+
+  playBtn.addEventListener('click', function () {
+    playing = !playing;
+    playBtn.textContent = playing ? '⏸' : '▶';
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    if (playing) {
+      if (parseFloat(scrub.value) >= TOTAL_MS) scrub.value = 0;
+      lastFrameTime = null;
+      rafId = requestAnimationFrame(step);
+    } else if (rafId) {
+      cancelAnimationFrame(rafId);
+    }
+  });
+
+  scrub.addEventListener('input', function () {
+    playing = false;
+    playBtn.textContent = '▶';
+    if (rafId) cancelAnimationFrame(rafId);
+    render(parseFloat(scrub.value));
+  });
+
+  render(0);
+})();
+</script>
