@@ -352,6 +352,39 @@ attack surface. The `app` Dockerfile/compose service stay in the repo,
 clearly marked opt-in, for anyone who wants full containerization and is
 comfortable with that specific tradeoff.
 
+## Stage 7 evidence: secret scan + real clean-clone verification
+
+- `gitleaks detect --log-opts="--all"` and `trufflehog git file://.` both
+  run against the full history (9 commits): zero findings in either,
+  every run. The two gitleaks hits that ever appeared were always the
+  same untracked, gitignored `oma/.env` on disk (confirmed via
+  `git status --short` before every commit) -- never staged, never
+  committed.
+- One real credential materialization incident during this build, not a
+  repo issue: the operator's real Anthropic and OpenAI API keys appeared
+  in plaintext in this session's own chat transcript (the `!`-prefixed
+  shell-injection mechanism didn't fully suppress the echoed command).
+  Neither key was written to any tracked file. Flagged to the operator
+  live, with a recommendation to rotate both afterward.
+- Final sweep for the class of bug Stage 1-6 kept finding (hardcoded
+  values from the original deployment that are live code, not just
+  comments) found two more: a raw `httpx` call in
+  `scripts/draft_validator_from_cluster.py` bypassing
+  `infra.gateway_client` entirely with the old GPU host baked in, and a
+  live user-facing error string in `toolchain.py` naming a host that
+  doesn't exist in this topology. Both fixed.
+- Real clean-clone test: cloned the repo fresh into `/tmp`, under a
+  separate Compose project name (`-p oma-clonetest`) so it couldn't
+  touch the real demo stack's volumes, and brought up Postgres/Redis/
+  Neo4j/Odoo CE from nothing but `cp .env.example .env` + `docker compose
+  up`. Fresh volumes, zero prior state: Postgres auto-created
+  `odoo16_dev` with real demo data (40 `res.partner` rows, same as
+  Stage 1), Odoo answered `HTTP 200`. No absolute paths from the
+  development machine found anywhere in the cloned tree. Confirmed the
+  real demo stack (and its captured evidence -- the installed module,
+  the Gitea commits, the seeded knowledge graph) was untouched
+  throughout and afterward.
+
 ## Still open (tracked, not forgotten)
 
 - The two `oma-backlog-triage.service`/`.timer` systemd units were already

@@ -122,8 +122,9 @@ specialist internals, the manager's autonomy-tier model in
 
 ## Status
 
-Stages 1–6 (infra, knowledge graph, LLM gateway, Git versioning, SSH
-removal, full end-to-end wiring) are done and verified against a real run
-— see `DECISIONS.md` for evidence at each stage. Secret-scanning and a
-from-scratch clean-clone verification (Stage 7) are the last step before
-this goes public.
+All 7 stages — infra, knowledge graph, LLM gateway, Git versioning, SSH
+removal, full end-to-end wiring, and final secret-scan + clean-clone
+verification — are done. `DECISIONS.md` has real evidence for each one:
+command output, real database/Gitea state, and the real bugs found by
+actually running this rather than just reading it. Gitleaks and
+TruffleHog both report zero findings across the full git history.
