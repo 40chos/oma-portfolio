@@ -9,11 +9,12 @@ cd "$(dirname "$0")/.."
 OMA_DIR="oma"
 KG_DIR="${OMA_DIR}/var/knowledge_graph"
 PY="${OMA_VENV_PYTHON:-python3}"
+ODOO_CONTAINER="${OMA_ODOO_CONTAINER:-oma-odoo-1}"
 
 echo "[seed-kg] copying Odoo CE's own addons out of the running container..."
 rm -rf "${KG_DIR}/addons_src"
 mkdir -p "${KG_DIR}/addons_src"
-docker cp oma-odoo-1:/usr/lib/python3/dist-packages/odoo/addons "${KG_DIR}/addons_src/odoo_addons"
+docker cp "${ODOO_CONTAINER}:/usr/lib/python3/dist-packages/odoo/addons" "${KG_DIR}/addons_src/odoo_addons"
 rm -rf "${KG_DIR}/addons_src/odoo_addons/__pycache__"
 
 cd "${OMA_DIR}"

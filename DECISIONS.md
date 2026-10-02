@@ -385,6 +385,59 @@ comfortable with that specific tradeoff.
   the Gitea commits, the seeded knowledge graph) was untouched
   throughout and afterward.
 
+## Stage 8: one-command setup, tested to a genuinely clean run
+
+The documented multi-command setup worked, but didn't match how real OSS
+projects onboard (confirmed via research: the convention is a single
+`./setup.sh`/`make up`, not a sequence of manual steps a stranger has to
+get right unaided). Built `setup.sh` as that single entrypoint, and
+found four more real gaps by actually running it against a from-scratch
+clone under an isolated Compose project name (so it couldn't touch the
+real demo stack's volumes/evidence):
+
+- **The sandbox-isolation database and the golden-template database were
+  never actually automated** -- I'd created both by hand while debugging
+  Stage 6 and never wrote that down as a setup step. A fresh clone would
+  have hit the exact same `createdb` failures I hit. Wrote
+  `docker/provision-odoo-databases.sh` (idempotent, called by `setup.sh`)
+  to create both for real via the same `infra.odoo_admin` mechanism Build
+  itself uses.
+- **`.env.example` never documented `OMA_ODOO_CONTAINER`** -- `toolchain.py`'s
+  `_run_in_container()` requires it with no default, so a fresh clone
+  would crash with the exact `KeyError('OMA_ODOO_CONTAINER')` I hit
+  during Stage 6. Added it, plus `OMA_ODOO_SANDBOX_CONTAINER` and
+  `OMA_GITEA_CONTAINER` for the same reason.
+- **`docker/gitea-bootstrap.sh` and `docker/seed-knowledge-graph.sh` both
+  hardcoded their target container names** (`oma-gitea-1`, `oma-odoo-1`)
+  instead of reading them from env like every other docker-exec call site
+  in this codebase. Harmless under the single documented default (the
+  compose file pins `name: oma`, so these always happen to be right) --
+  but caught two real, silent cross-talk bugs during testing: the test
+  run's Gitea bootstrap actually talked to the *real* demo stack's Gitea
+  instance (wrong port fell back to the default, which belonged to a
+  different running stack on the same machine) before this was fixed.
+  Fixed for real env-driven consistency, not just to unblock the test.
+- **The default `.env.example` addresses assumed the app runs inside a
+  container** (`http://odoo:8069`, `http://ollama:11434`) but `setup.sh`'s
+  whole point is running the app on the *host* by default (see the
+  Docker-socket tradeoff above) -- host-side code can't resolve a
+  compose-network service name. Flipped the defaults to host-published
+  ports (`127.0.0.1:*`) and moved the container-network overrides onto
+  the opt-in containerized `app` compose service instead (inverting what
+  Stage 6 had), including `infra/settings.py`'s own gateway-URL default.
+
+Verified for real, end to end, zero manual steps beyond pasting a cloud
+API key: full teardown (`docker compose down -v`, deleting `oma/.env`
+and `.venv`), one `./setup.sh` invocation, and a fresh, genuinely
+isolated stack came up with real demo data (40 `res.partner` rows) and a
+freshly-seeded 544-module knowledge graph -- not a copy, confirmed via
+direct Postgres/Neo4j queries against the isolated instance. Two
+unrelated flakes hit during testing and are *not* repo bugs: a transient
+Colima networking error on a container recreated immediately after
+`down -v` (resolved on retry), and a leftover `uvicorn` process from an
+earlier manual test run squatting on a port (killed, unrelated to
+`setup.sh` itself).
+
 ## Still open (tracked, not forgotten)
 
 - The two `oma-backlog-triage.service`/`.timer` systemd units were already

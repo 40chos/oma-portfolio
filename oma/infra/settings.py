@@ -138,18 +138,24 @@ def load_redis_settings() -> RedisSettings:
 def _default_gateway_base_url() -> str:
     """Stage 3 port: the original three GPU-host base URLs are replaced by a
     single OMA_LLM_MODE switch -- `local` (default) points every backend pool
-    at the self-hosted `ollama` compose service; `cloud` points them at the
-    self-hosted `litellm` compose service instead, which proxies to the real
-    Anthropic API using a key the operator supplies. Either way, all three
-    backend pools in infra/gateway_client.py still exist and still speak the
-    same OpenAI-compatible wire protocol -- only which real server sits
-    behind each pool changes. Explicit OMA_MODEL_GATEWAY_URL_* env vars
+    at Ollama; `cloud` points them at LiteLLM instead, which proxies to the
+    real OpenAI/Anthropic API using a key the operator supplies. Either way,
+    all three backend pools in infra/gateway_client.py still exist and still
+    speak the same OpenAI-compatible wire protocol -- only which real server
+    sits behind each pool changes. Explicit OMA_MODEL_GATEWAY_URL_* env vars
     always override this, same as before.
+
+    Defaults to the host-published ports (127.0.0.1), matching this repo's
+    default setup (`setup.sh` runs the app on the host, not in its own
+    container -- see README's "Why no app container by default"). The
+    opt-in containerized `app` compose service overrides these to the
+    container-network service names (`ollama`/`litellm`) explicitly in
+    docker-compose.yml instead of relying on this default.
     """
     mode = os.environ.get("OMA_LLM_MODE", "local").strip().lower()
     if mode == "cloud":
-        return "http://litellm:4000/v1"
-    return "http://ollama:11434/v1"
+        return "http://127.0.0.1:4000/v1"
+    return "http://127.0.0.1:11434/v1"
 
 
 def load_gateway_settings() -> GatewaySettings:

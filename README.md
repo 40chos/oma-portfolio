@@ -59,34 +59,33 @@ free, forever, no server required.
 
 ## Run it yourself
 
-Needs Docker Compose and ~10GB free for images/models. Everything runs
-on demand — nothing stays running permanently; this is designed to come
-up for a session (a demo, an interview screen-share) and tear down after.
+Needs Docker (Desktop, or Colima/similar) and ~10GB free for images/models.
+Everything runs on demand — nothing stays running permanently; this is
+designed to come up for a session (a demo, an interview screen-share) and
+tear down after.
 
 ```bash
 git clone <this-repo>
 cd oma-portfolio
-cp oma/.env.example oma/.env   # fill in the few real values the comments ask for
-
-docker compose up -d postgres redis neo4j odoo-init odoo gitea
-./docker/gitea-bootstrap.sh              # one-time: provisions Gitea org/repo/token
-./docker/seed-knowledge-graph.sh         # one-time: seeds Neo4j from Odoo's own demo modules
-
-# LLM backend: local (default, free, needs ~6GB RAM free for the models) or cloud
-docker compose up -d ollama ollama-init                      # local
-# -- or --
-# set OMA_LLM_MODE=cloud and OMA_CLOUD_ESCALATION_API_KEY in oma/.env, then:
-docker compose --profile cloud up -d litellm                 # cloud
-
-# the app itself runs on the host, not in its own container -- see "Why no
-# app container by default" below
-cd oma && source .env && export DOCKER_HOST=unix:///var/run/docker.sock  # or your runtime's socket
-uvicorn ui.chat.server:app --host 0.0.0.0 --port 8000
+./setup.sh
 ```
+
+That's it. `setup.sh` brings up Postgres/Redis/Neo4j/Odoo CE/Gitea, waits
+for everything to report healthy, provisions Gitea (org/repo/token) and
+the two Odoo databases Build/Testing-QA actually write into, pulls and
+starts a local LLM via Ollama (the default — free, fully self-hosted; set
+`OMA_LLM_MODE=cloud` and `OMA_CLOUD_ESCALATION_API_KEY` in `oma/.env`
+first if you'd rather use a cloud model), seeds the knowledge graph from
+Odoo's own demo modules, and starts the app — printing the URL to open
+when it's ready. Safe to re-run; every step checks whether it's already
+done before doing it again.
 
 Open `http://localhost:8000`, type a request (e.g. *"On res.partner, add a
 field for a LinkedIn profile URL"*), and watch it classify, build, review,
 test, and install — against a real Odoo CE instance with real demo data.
+
+Verified end to end from a genuinely clean clone (fresh volumes, no prior
+state) as part of this port — see `DECISIONS.md`, Stage 8.
 
 ### Why no `app` container by default
 

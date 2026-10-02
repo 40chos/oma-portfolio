@@ -200,11 +200,13 @@ services:
       OMA_ODOO_URL: http://odoo:8069
       OMA_ODOO_CONTAINER: oma-odoo-1
       DEV_AGENT_GITEA_URL: http://gitea:3000
-      # Deliberately NOT overriding OMA_MODEL_GATEWAY_URL_* here --
-      # infra/settings.py's _default_gateway_base_url() already resolves
-      # the right compose service name (`ollama` or `litellm`) from
-      # OMA_LLM_MODE alone, so an explicit override here would hardcode
-      # one mode and silently defeat the switch for the other.
+      # infra/settings.py's _default_gateway_base_url() defaults to the
+      # host-published ports (127.0.0.1), matching setup.sh's host-run app --
+      # override to the container-network service names here since this
+      # (opt-in, containerized) app runs inside the compose network instead.
+      OMA_MODEL_GATEWAY_URL_CODER: http://ollama:11434/v1
+      OMA_MODEL_GATEWAY_URL_REASONING: http://ollama:11434/v1
+      OMA_MODEL_GATEWAY_URL_FAST_EXTRACTION: http://ollama:11434/v1
     ports:
       - "127.0.0.1:${APP_HOST_PORT:-8000}:8000"
 

@@ -11,6 +11,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 GITEA_URL="${GITEA_URL:-http://127.0.0.1:${GITEA_HOST_PORT:-3000}}"
+GITEA_CONTAINER="${OMA_GITEA_CONTAINER:-oma-gitea-1}"
 ADMIN_USER="${GITEA_ADMIN_USER:-oma_admin}"
 ADMIN_PASSWORD="${GITEA_ADMIN_PASSWORD:-oma_dev_password}"
 ORG="${DEV_AGENT_GITEA_ORG:-oma}"
@@ -20,9 +21,9 @@ ENV_FILE="${OMA_ENV_FILE:-oma/.env}"
 echo "[gitea-bootstrap] waiting for gitea at ${GITEA_URL}..."
 until curl -sf "${GITEA_URL}/api/healthz" >/dev/null 2>&1; do sleep 1; done
 
-if ! docker exec -u git oma-gitea-1 gitea admin user list 2>/dev/null | grep -q "${ADMIN_USER}"; then
+if ! docker exec -u git "${GITEA_CONTAINER}" gitea admin user list 2>/dev/null | grep -q "${ADMIN_USER}"; then
   echo "[gitea-bootstrap] creating admin user ${ADMIN_USER}..."
-  docker exec -u git oma-gitea-1 gitea admin user create \
+  docker exec -u git "${GITEA_CONTAINER}" gitea admin user create \
     --username "${ADMIN_USER}" --password "${ADMIN_PASSWORD}" \
     --email "${ADMIN_USER}@oma.local" --admin --must-change-password=false
 else
@@ -66,7 +67,7 @@ for key in DEV_AGENT_GITEA_URL DEV_AGENT_GITEA_TOKEN DEV_AGENT_GITEA_ORG DEV_AGE
   mv "${ENV_FILE}.tmp" "${ENV_FILE}"
 done
 {
-  echo "DEV_AGENT_GITEA_URL=http://gitea:3000"
+  echo "DEV_AGENT_GITEA_URL=${GITEA_URL}"
   echo "DEV_AGENT_GITEA_TOKEN=${TOKEN}"
   echo "DEV_AGENT_GITEA_ORG=${ORG}"
   echo "DEV_AGENT_GITEA_GENERATED_MODULES_REPO=${REPO}"
