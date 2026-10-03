@@ -29,12 +29,14 @@ it, and the real result — the real generated `models.py`/`views.xml` and
 the real commit. No video, no slides — the real captured data, replayable
 in your browser, free, forever, no server required.
 
-<!--
-  RECORDING NOTE (remove once captured): a 20-30s GIF goes here, above this
-  comment, showing: type a request into the chat -> the Task Plan panel
-  opens live -> real node/round events streaming in -> the passed result.
-  See "Recording your own demo GIF" below for the exact capture steps.
--->
+<video src="docs/demo/full-task-walkthrough.mp4" controls width="100%"></video>
+
+*Shared with employer approval: a real multi-node task completing on the
+original production instance this repo is ported from — a genuinely
+complex request split into 9 real pieces with real dependencies between
+them, built, reviewed, and verified. This is the real production system,
+not this repo's own sanitized demo instance, which is why it looks
+different from (and has more history than) what `./setup.sh` gives you.*
 
 `DECISIONS.md` is the full, honest log of every judgment call made during
 this port — including the real bugs found by actually running it, not
@@ -142,10 +144,12 @@ test, and install — against a real Odoo CE instance with real demo data.
 Verified end to end from a genuinely clean clone (fresh volumes, no prior
 state) as part of this port — see `DECISIONS.md`, Stage 8.
 
-### Recording your own demo GIF
+### Recording your own demo from this repo's own instance
 
-If you want to capture a live run yourself (for a resume link, an
-interview follow-up, whatever):
+The video above is from the original production system this is ported
+from. If you also want a clip of *this* repo's own sanitized, self-hosted
+instance running (e.g. to prove the clone itself genuinely works, not just
+describe it):
 
 1. `./setup.sh`, open `http://localhost:8000`.
 2. Start screen recording (macOS: Cmd+Shift+5; or any screen-to-GIF tool —
