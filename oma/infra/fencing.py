@@ -1,8 +1,5 @@
-"""The fencing-token lock primitive, per the technical document's §6 and
-the build plan's Phase 1 step 5 -- built and tested here, in full, before
-any real specialist exists to use it (Phase 9's Build specialist is
-required to call check_fence() immediately before every real Odoo write,
-with no exceptions).
+"""The fencing-token lock primitive. The Build specialist calls check_fence()
+immediately before every real Odoo write, with no exceptions.
 
 Pattern (Kleppmann's canonical fix for the "lock expired mid-write" race):
   - acquire_module_lock: SET NX PX for the mutual-exclusion lock itself,
@@ -96,31 +93,25 @@ async def acquire_module_lock_same_task_aware(
     poll_interval_sec: float = 0.5,
     client: redis.Redis | None = None,
 ) -> LockHandle:
-    """Phase 31 §6/Phase B (2026-08-08): the real fix for a genuine bug found live during the
-    Phase B controlled concurrency experiment -- `acquire_module_lock()`'s own `SET NX` is a
-    plain mutual-exclusion lock with NO concept of "the current holder is actually my own sibling
-    node, not a different task." Before this fix, two concurrent nodes of the SAME decomposed
-    task (Phase 31 §2's own graph scheduler, at OMA_GRAPH_MAX_CONCURRENT_NODES > 1) racing on the
-    same generated module would have the SECOND one hard-rejected outright
-    (`specialists/build/specialist.py`'s own `lock_rejected: True` failure path) even though
-    they belong to the exact same task and are not a genuine cross-task collision at all --
-    confirmed live: `"Model 'product.template' is currently locked by another task -- refusing
-    to proceed concurrently"` fired for two sibling nodes of ONE task.
+    """`acquire_module_lock()`'s plain `SET NX` lock has no concept of "the current
+    holder is actually my own sibling node, not a different task" -- two concurrent
+    nodes of the same decomposed task racing on the same generated module would have
+    the second one hard-rejected outright, even though they belong to the same task
+    and are not a genuine cross-task collision at all.
 
-    Fixed here, not by making the lock silently reentrant (letting both siblings hold it and
-    proceed fully concurrently would reopen exactly the concurrent-generation race §6's own
-    per-node branch isolation + serialized apply were built to prevent -- see this module's own
-    fencing discipline) -- instead, a same-task collision now WAITS (bounded, async, real
-    `asyncio.sleep` between polls so this never blocks the event loop the way a blocking
-    `time.sleep` retry loop would) for the sibling to finish and release, then re-acquires,
-    rather than failing the round outright. A genuinely DIFFERENT task's collision is untouched
-    -- detected on the FIRST failed attempt (by checking who the real, current lock holder is)
-    and returned as an immediate rejection, exactly as `acquire_module_lock()` always did; this
-    function only ever waits for a lock held by `task_id` itself.
+    Rather than making the lock silently reentrant (letting both siblings hold it and
+    proceed fully concurrently would reopen the concurrent-generation race the
+    per-node branch isolation and serialized-apply mechanism were built to prevent),
+    a same-task collision now waits (bounded, async, real `asyncio.sleep` between
+    polls so this never blocks the event loop) for the sibling to finish and release,
+    then re-acquires, rather than failing the round outright. A genuinely different
+    task's collision is untouched -- detected on the first failed attempt and
+    returned as an immediate rejection, exactly as `acquire_module_lock()` always
+    did; this function only ever waits for a lock held by `task_id` itself.
 
-    `max_wait_sec` bounds the wait -- if the sibling doesn't release within it (a genuinely stuck
-    or unusually slow round), this returns the same `acquired=False` rejection the caller already
-    knows how to handle, never hangs forever.
+    `max_wait_sec` bounds the wait -- if the sibling doesn't release within it (a
+    genuinely stuck or unusually slow round), this returns the same `acquired=False`
+    rejection the caller already knows how to handle, never hangs forever.
     """
     r = client or get_redis_client()
     lock_key = _LOCK_KEY.format(module=module_name)
@@ -181,35 +172,30 @@ def acquire_db_install_lock(
     poll_interval_sec: float = 1.0,
     client: redis.Redis | None = None,
 ) -> LockHandle:
-    """Real fix, 2026-08-09 (the project owner's own explicit request: "smart" concurrency that "takes into
-    account... installation of sandbox platform"). Closes the ONE genuinely open gap named in
-    `tools_odoo/module_dev/toolchain.py's own `install_module()` comment (Phase 31 §9/Phase B,
-    2026-08-08): two constraint nodes correctly non-colliding on the per-target-model lock above
-    (different real Odoo models) can still launch two `odoo-bin -i` registry-bootstrap
-    subprocesses CONCURRENTLY against the SAME physical database -- a real, live-confirmed
-    `psycopg2.errors.SerializationFailure` on shared core metadata tables (ir_model_fields/
-    ir_model_data/etc.), regardless of which model each install targets. That comment explicitly
-    (and correctly) rejects widening `acquire_module_lock()`'s own per-module scope to cover this
-    -- doing so would re-serialize genuinely independent nodes' own expensive LLM generation just
-    to protect a real but much cheaper ~10-50s install step. This is a deliberately SEPARATE lock
-    namespace (`{_DB_INSTALL_LOCK_PREFIX}:{{db}}`, never `{{module}}` -- reuses the exact same
-    proven SET-NX-PX + real Redis key machinery `acquire_module_lock()` already provides, just
-    keyed by the real shared resource -- the physical database's own registry bootstrap -- not
-    the generated module's own git-tracked files) so a caller only ever waits behind another
-    install targeting the SAME real db, never a sibling targeting a different one.
+    """Closes a gap the per-target-model lock above doesn't cover: two constraint nodes
+    correctly non-colliding on the per-model lock (different Odoo models) can still
+    launch two `odoo-bin -i` registry-bootstrap subprocesses concurrently against the
+    same physical database -- a genuine `psycopg2.errors.SerializationFailure` on
+    shared core metadata tables (ir_model_fields/ir_model_data/etc.), regardless of
+    which model each install targets. Widening `acquire_module_lock()`'s own
+    per-module scope to cover this would re-serialize genuinely independent nodes'
+    expensive LLM generation just to protect a much cheaper ~10-50s install step, so
+    this is a deliberately separate lock namespace (`{_DB_INSTALL_LOCK_PREFIX}:{{db}}`,
+    never `{{module}}`) keyed by the shared resource -- the database's own registry
+    bootstrap -- not the generated module's own files. A caller only ever waits behind
+    another install targeting the same database, never a sibling targeting a
+    different one.
 
-    Synchronous (blocking `time.sleep` poll, not `asyncio.sleep`) on purpose: `install_module()`
-    itself is synchronous (its own existing SerializationFailure retry-backoff already blocks the
-    same way, right next to this call's own use site) -- matching the surrounding code's real
-    concurrency model instead of introducing an async/sync mismatch. `ttl_ms` defaults generously
-    above `install_module()`'s own real worst-case subprocess timeout (300s plain / 480s
-    test-enabled) so a slow-but-genuinely-still-running install is never preempted mid-write by
-    its own lock expiring. On a genuine `max_wait_sec` timeout (something is stuck, or this is a
-    very long real queue), returns `acquired=False` rather than blocking forever -- the caller
-    proceeds with the install anyway, falling back to the EXISTING retry-on-SerializationFailure
-    safety net, so this is a real, load-bearing speed/collision-avoidance optimization for the
-    common case, never a new way to deadlock or hard-fail a round that would have succeeded
-    without it.
+    Synchronous (blocking `time.sleep` poll, not `asyncio.sleep`) on purpose:
+    `install_module()` itself is synchronous, matching the surrounding code's
+    concurrency model instead of introducing an async/sync mismatch. `ttl_ms`
+    defaults generously above the install subprocess's own worst-case timeout so a
+    slow-but-genuinely-still-running install is never preempted mid-write by its own
+    lock expiring. On a `max_wait_sec` timeout, returns `acquired=False` rather than
+    blocking forever -- the caller proceeds with the install anyway, falling back to
+    the existing retry-on-SerializationFailure safety net, so this is a load-bearing
+    speed/collision-avoidance optimization for the common case, never a new way to
+    deadlock or hard-fail a round that would have succeeded without it.
     """
     r = client or get_redis_client()
     lock_name = f"{_DB_INSTALL_LOCK_PREFIX}:{db}"
@@ -230,44 +216,37 @@ def release_db_install_lock(db: str, task_id: str, client: redis.Redis | None = 
 
 
 # ---------------------------------------------------------------------------
-# Heartbeat-renewed lease (Item A, 2026-08-22 -- warehouse-arrival fenced
-# write). Extends this module rather than duplicating it, per this file's
-# own stated design intent ("this module owns both halves so a caller never
-# has to reason about the race directly"). None of the locks above are
-# heartbeat-renewed (all fixed-TTL SET NX PX); this is new machinery for a
-# caller that needs to hold a lock across a longer-than-TTL operation
-# (confirm_arrived_fenced()'s XML-RPC round trip) without picking an
-# unreasonably long fixed TTL.
+# Heartbeat-renewed lease. Extends this module rather than duplicating it, per
+# this file's own stated design intent ("this module owns both halves so a
+# caller never has to reason about the race directly"). None of the locks
+# above are heartbeat-renewed (all fixed-TTL SET NX PX); this is machinery for
+# a caller that needs to hold a lock across a longer-than-TTL operation (an
+# XML-RPC round trip to an external system) without picking an unreasonably
+# long fixed TTL.
 #
-# Full design + its own 5-round sequential audit trail:
-# docs/planning/DIRECTION3_SUPPLIERS_2026-08-21.md, "Warehouse-Arrival
-# Fenced Write + Linphone Call-Link -- Final Plan" section, Step 4 (final
-# plan). Three real concurrency-safety bugs were found and fixed across
-# that audit, in order:
-#   round 1: SupervisedLease's original "lease loss cancels the protected
-#     work" claim is false -- asyncio.to_thread-wrapped blocking XML-RPC
-#     calls cannot be cancelled once dispatched (documented CPython
-#     behavior, python/cpython#107505, closed "not planned"). Fixed by
-#     making the real safety net confirm_arrived_fenced()'s own Postgres
-#     row-lock + already_done idempotency check (never cancellation), and
-#     bounding the abandoned thread via TimeoutTransport at the XML-RPC
-#     client layer (see an XML-RPC caller's own _call() construction for an example).
-#   round 2: the "prompt unblock via __aexit__" claim was also false --
-#     `async with`'s body must finish before __aexit__ runs at all, so
-#     nothing inside __aexit__ can race a still-pending body statement.
-#     Fixed by moving the race to the only place a real await point exists:
-#     `run_protected()`, called AT the with-block body, not from __aexit__.
-#   round 3: `asyncio.wait(..., return_when=FIRST_COMPLETED)`'s `done` set
-#     is not guaranteed to contain only one task -- if the heartbeat task
-#     and the work task finish in the same event-loop pass, both land in
-#     `done` together, and code that only checks "did the task I expected
-#     win" leaves the other task's exception unretrieved (a real
-#     "Task exception was never retrieved" warning at GC time). Fixed via
-#     `_drain_heartbeat()`, called unconditionally from both
-#     `run_protected()` and `__aexit__()` whenever the heartbeat task is in
-#     `done`, regardless of which branch is otherwise taken.
-# Rounds 4 and 5 both came back clean (genuine convergence, not a round-cap
-# stop) -- the code below matches the final, round-3-corrected design.
+# Three real concurrency-safety properties this design depends on, each
+# worth stating explicitly since they're easy to get subtly wrong:
+#   - "Lease loss cancels the protected work" is not actually true --
+#     asyncio.to_thread-wrapped blocking I/O cannot be cancelled once
+#     dispatched (documented CPython behavior). The real safety net is the
+#     protected write's own idempotency check at the far end (a row lock plus
+#     an already-done guard), never cancellation, with an abandoned thread
+#     bounded by a client-side timeout so it terminates rather than running
+#     forever.
+#   - "Prompt unblock via __aexit__" is also not how `async with` works --
+#     the body must finish before __aexit__ runs at all, so nothing inside
+#     __aexit__ can race a still-pending body statement. The race has to
+#     happen at the only real await point that exists: `run_protected()`,
+#     called from inside the with-block body, not from __aexit__.
+#   - `asyncio.wait(..., return_when=FIRST_COMPLETED)`'s `done` set is not
+#     guaranteed to contain only one task -- if the heartbeat task and the
+#     work task finish in the same event-loop pass, both land in `done`
+#     together, and code that only checks "did the task I expected win"
+#     leaves the other task's exception unretrieved (an "exception was never
+#     retrieved" warning at GC time). `_drain_heartbeat()` is called
+#     unconditionally from both `run_protected()` and `__aexit__()` whenever
+#     the heartbeat task is in `done`, regardless of which branch is
+#     otherwise taken, to guarantee this never happens.
 # ---------------------------------------------------------------------------
 
 _LEASE_KEY = "oma:lease:{resource}"
@@ -454,17 +433,10 @@ class SupervisedLease:
         return self.handle.fence_token
 
     async def __aenter__(self) -> "SupervisedLease":
-        # Real bug found and fixed here, 2026-08-22 (during unit-test
-        # writing, not caught by the design's own 5-round audit): the
-        # design's own docstring/usage always calls `lease.acquired` and
-        # `lease.run_protected(...)`/`lease.fence_token` on the `as lease`
-        # binding -- but returning `self.handle` (a plain LeaseHandle
-        # dataclass, no methods) instead of `self` would make
-        # `lease.run_protected(...)` raise AttributeError on the very
-        # first real call. Returns `self` -- the `acquired`/`fence_token`
-        # properties above delegate to `self.handle` so every documented
-        # call-site usage (`lease.acquired`, `lease.fence_token`,
-        # `lease.run_protected(...)`) actually works.
+        # Returns self, not self.handle -- the documented usage calls
+        # lease.acquired / lease.run_protected(...) / lease.fence_token on the
+        # `as lease` binding, and the properties above delegate to self.handle
+        # so each of those actually works against the returned object.
         self.handle = acquire_heartbeat_lease(
             self.resource, self.task_id, ttl_ms=self.ttl_ms, client=self.client,
         )

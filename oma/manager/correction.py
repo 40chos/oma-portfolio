@@ -199,20 +199,15 @@ def confirm_proposed_rule(rule_row_id: int) -> None:
 
 
 def supersede_proposed_rule(rule_row_id: int, validator_name: str) -> None:
-    """Phase 28D (2026-07-29): the third real state a proposed rule can
-    land in, alongside confirm/reject -- built for real per the
-    root-cause investigation into why 637 of 639 self-detected
-    'pattern_worth_a_rule' catches were sitting unconfirmed: cross-
-    referencing their own failure shape against this project's already-
-    existing `_validate_*`/`_autofix_*` catalog found the large
-    majority were NOT waiting to become code at all -- they already
-    HAD a deterministic check covering their exact claim shape,
-    written independently (during live debugging, the same way every
-    fix this session was built), and the proposed-rule row was simply
-    never marked as closed. `superseded` is a genuinely different
-    outcome from `rejected` (rejected means "this was wrong/not worth
-    doing"; superseded means "this was RIGHT, and it's already
-    handled") -- conflating the two would misrepresent the historical
+    """The third real state a proposed rule can land in, alongside
+    confirm/reject. Many self-detected "pattern worth a rule" catches turn out
+    not to be waiting to become code at all -- cross-referencing a catch's
+    failure shape against the existing `_validate_*`/`_autofix_*` catalog
+    often finds a deterministic check already covers that exact claim shape,
+    and the proposed-rule row was simply never marked as closed. `superseded`
+    is a genuinely different outcome from `rejected` (rejected means "this was
+    wrong/not worth doing"; superseded means "this was right, and it's
+    already handled") -- conflating the two would misrepresent the historical
     record of what was actually caught and why.
 
     Same targeted-UPDATE shape as confirm_proposed_rule()/reject_
