@@ -559,6 +559,37 @@ rather than display, and changing them without verifying each one
 individually risks a real behavior change to core production logic. Noted
 here as a real, open question, not silently fixed or silently ignored.
 
+## Stage 11: "M" didn't reset to a clean slate, and a second active-flag-class bug
+
+The operator's own report: clicking "M" (the main-conversation rail button, meant to be the
+"start fresh, nothing selected" affordance) correctly reset the left conversation panel back
+to main chat, but the center Task Plan graph panel kept showing whatever task had last been
+viewed via the task list -- not the empty "No task selected" state `renderTaskDetail()`
+already had built in and ready to use.
+
+Root cause: `selectMainChat()` (`ui/chat/index.html`) reset `state.activeBranchId` but never
+touched `state.selectedTaskId` -- the actual, separate piece of state `renderTaskDetail()`
+reads to decide what to render. `selectBranch()` sets it; nothing ever cleared it. Fixed by
+clearing `state.selectedTaskId` and calling `renderTaskDetail()` in `selectMainChat()`, so its
+existing empty-state branch (header: "No task selected") actually fires. No new UI needed --
+the correct empty state already existed, it just never got triggered from this path.
+
+Investigating this surfaced a second, different instance of the "missing `active` filter" bug
+class from Stage 10: `manager/escalations.py`'s `list_pending_escalations()` doesn't read
+`agent_memory_events`/Postgres at all -- pending escalations live in Redis
+(`oma:pending_escalation:index` + per-task keys), a completely separate store the Postgres
+`active=false` archival mechanism never touches. Two of this session's own rehearsal tasks
+stayed visible in the "Needs attention" list/badge count long after being archived in Postgres,
+because their Redis escalation entries were never cleared. Not a bug in the escalation system
+itself (`clear_pending_escalation()` already exists and works correctly) -- the gap is that
+archiving a task in Postgres and clearing its Redis escalation entry were never the same
+operation. Fixed for this session's own leftover entries by calling the existing
+`clear_pending_escalation()` directly, scoped to the exact two task_ids confirmed as this
+session's own test artifacts (left the operator's own real, legitimately-pending escalation
+untouched). Worth a real fix later: task archival should probably call
+`clear_pending_escalation()` itself rather than leaving this a manual, easy-to-forget two-step
+process -- noted here, not silently fixed by inventing new scope beyond what was reported.
+
 ## Still open (tracked, not forgotten)
 
 - The two `oma-backlog-triage.service`/`.timer` systemd units were already

@@ -4209,9 +4209,18 @@ function renderBranchActions(taskId){
 
 function selectMainChat(){
   state.activeBranchId = null;
+  // Real bug fixed (the project owner's own report): clicking "M" reset the left
+  // conversation panel back to main chat, but never cleared state.selectedTaskId --
+  // the single source of truth renderTaskDetail() reads -- so the center Task Plan
+  // graph and its "NEEDS ATTENTION"/node-detail state kept showing whatever task
+  // was last viewed via selectBranch(), even though "M" is specifically the
+  // "start fresh, nothing selected" affordance. Clearing it here lets
+  // renderTaskDetail()'s own existing "No task selected" empty state do its job.
+  state.selectedTaskId = null;
   closeStream();
   renderConversation();
   renderTaskListPanel();
+  renderTaskDetail();
 }
 async function selectBranch(taskId){
   state.activeBranchId = taskId;
