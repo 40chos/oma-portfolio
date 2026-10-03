@@ -14,12 +14,9 @@ sensitive.
 > ### 📌 Portfolio Scope & Production Context
 > **What this repository is:** A functional, sanitized, and self-contained **architectural slice** of a commercial multi-agent system I built and operated in production. Rebuilt from the ground up on an open-source Docker/Odoo stack with explicit employer permission, this codebase serves as a public portfolio showcase of the core multi-agent orchestration, review, and verification pipeline.
 > 
-> **What this repository is not:** This is **not the final production version** currently running in the company's enterprise infrastructure. Due to NDA constraints, proprietary IP protections, and security policies, the complete enterprise state cannot be publicly shared.
+> **What this repository is not:** This is **not the final production version** currently running in the company's enterprise infrastructure. Due to NDA constraints, proprietary IP protections, and security policies, the complete enterprise production state cannot be publicly shared.
 > 
-> **Deliberately excluded enterprise layers:**
-> - **Distributed Queues & Worker Topologies:** Enterprise production uses asynchronous message queues (e.g. RabbitMQ / dedicated worker pools), whereas this portable showcase uses synchronous execution with Redis pub/sub live streaming.
-> - **Observability & Monitoring Stacks:** Full telemetry platforms (e.g., Prometheus metrics, Grafana dashboards, APM tracing, alerting pipelines) have been omitted.
-> - **Proprietary Infrastructure & Internal Integrations:** Client-specific data models, NAS storage backups, internal authentication providers, and subsequent proprietary commercial iterations remain private to the company.
+> **Production differences & partial implementations:** Because this repository represents an authorized subset of an evolving, multi-faceted commercial system rather than the full enterprise deployment, **various components, operational tooling, configurations, or downstream features may be absent, omitted, or only partially implemented. That is intentional and expected.** This portfolio piece is purposefully focused on demonstrating the core multi-agent mechanics and engineering trade-offs, rather than replicating every production moving part.
 >
 > **What is fully functional and verifiable here:** Every core agent mechanism showcased below — the constraint-graph scheduler with Tarjan cycle detection, the three-specialist review pipeline (Build → Code-Review → Testing/QA), the Neo4j schema knowledge graph, the Kleppmann distributed fencing lock, and human-in-the-loop safety gates — is real, fully implemented, and executable on any standard machine via `./setup.sh`.
 
