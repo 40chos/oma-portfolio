@@ -10,33 +10,35 @@ installing it in an isolated sandbox, verifying the result independently,
 and only then promoting it. A human-approval gate sits in front of anything
 sensitive.
 
-This is a from-scratch reimplementation of a system I built and ran in
-production, ported — with my employer's permission — to a fully
-self-hosted, open-source stack so anyone can run the real thing. All
-client data, names, and proprietary code have been removed or replaced.
-Every mechanism below — the scheduler, the fencing lock, the knowledge
-graph, the three-specialist review pipeline, the certification system, the
-failure-recovery logic — is the real, unmodified code, not a simplified
-rewrite. Only the environment it talks to changed.
+> [!IMPORTANT]
+> ### 📌 Portfolio Scope & Production Context
+> **What this repository is:** A functional, sanitized, and self-contained **architectural slice** of a commercial multi-agent system I built and operated in production. Rebuilt from the ground up on an open-source Docker/Odoo stack with explicit employer permission, this codebase serves as a public portfolio showcase of the core multi-agent orchestration, review, and verification pipeline.
+> 
+> **What this repository is not:** This is **not the final production version** currently running in the company's enterprise infrastructure. Due to NDA constraints, proprietary IP protections, and security policies, the complete enterprise state cannot be publicly shared.
+> 
+> **Deliberately excluded enterprise layers:**
+> - **Distributed Queues & Worker Topologies:** Enterprise production uses asynchronous message queues (e.g. RabbitMQ / dedicated worker pools), whereas this portable showcase uses synchronous execution with Redis pub/sub live streaming.
+> - **Observability & Monitoring Stacks:** Full telemetry platforms (e.g., Prometheus metrics, Grafana dashboards, APM tracing, alerting pipelines) have been omitted.
+> - **Proprietary Infrastructure & Internal Integrations:** Client-specific data models, NAS storage backups, internal authentication providers, and subsequent proprietary commercial iterations remain private to the company.
+>
+> **What is fully functional and verifiable here:** Every core agent mechanism showcased below — the constraint-graph scheduler with Tarjan cycle detection, the three-specialist review pipeline (Build → Code-Review → Testing/QA), the Neo4j schema knowledge graph, the Kleppmann distributed fencing lock, and human-in-the-loop safety gates — is real, fully implemented, and executable on any standard machine via `./setup.sh`.
 
 ## See it work
 
-**[→ Watch a real run replay](https://claude.ai/code/artifact/2aa5e7f5-bf07-4066-bdb5-af4ea9fcea0f)** —
-a scrubbable flight-recorder timeline built from the actual trace of one
-real execution: the request going in, classification, Build writing code
-live (token by token), Code-Review and Testing/QA independently checking
-it, and the real result — the real generated `models.py`/`views.xml` and
-the real commit. No video, no slides — the real captured data, replayable
-in your browser, free, forever, no server required.
+### 🎬 Production Walkthrough Demo
+*Shared with employer approval: a real multi-node task (decomposed into 9 interdependent sub-contracts) executing on the original production system.*
+
+- 📥 **[Download Walkthrough Video (MP4, ~4.6 MB)](docs/demo/full-task-walkthrough.mp4)** — direct link to download the raw recording file for offline viewing.
+- 🌐 **[Direct Raw Video Stream](https://github.com/40chos/oma-portfolio/raw/main/docs/demo/full-task-walkthrough.mp4)** — watch directly via GitHub raw file stream.
 
 <video src="docs/demo/full-task-walkthrough.mp4" controls width="100%"></video>
 
-*Shared with employer approval: a real multi-node task completing on the
-original production instance this repo is ported from — a genuinely
-complex request split into 9 real pieces with real dependencies between
-them, built, reviewed, and verified. This is the real production system,
-not this repo's own sanitized demo instance, which is why it looks
-different from (and has more history than) what `./setup.sh` gives you.*
+*Note: This video demonstrates a complex execution on the original production environment, which is why its visual theme and historical volume differ from the clean, sanitized demo instance spun up by `./setup.sh`.*
+
+---
+
+### ⏱️ Interactive Flight-Recorder Replay
+- 📊 **[Open Flight-Recorder Replay (docs/index.html)](docs/index.html)** — a scrubbable timeline built from an actual execution trace: watch the initial request, classification, token-by-token code generation in Build, Code-Review's AST/schema verification, Testing/QA's sandbox execution, and the final git commit. Works directly in any web browser without needing a running server.
 
 `DECISIONS.md` is the full, honest log of every judgment call made during
 this port — including the real bugs found by actually running it, not

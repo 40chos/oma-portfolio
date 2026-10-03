@@ -4,18 +4,8 @@ This is a technical companion to the [README](README.md) — more detail on how 
 pieces actually fit together, for anyone deciding whether to clone and run it rather
 than just skim it.
 
-**Scope note, stated plainly once:** this repo is a partial, sanitized, self-hosted
-port of a real system built in production — not the complete original. It's scoped to
-what demonstrates the core engineering (the scheduler, the review pipeline, the
-knowledge graph, the safety mechanisms) running against a fully open-source stack
-anyone can clone and run. It does not include the production system's observability
-stack (structured logging/tracing, metrics, alerting), its message-queue-based job
-orchestration, or its multi-service NAS-backed backup topology — those are real
-operational concerns for a 24/7 production deployment that don't change what's
-interesting about the agent architecture itself, so they were left out rather than
-rebuilt as set-dressing. Where this document says a mechanism is "real," it means real
-in this repo, verified by actually running it — see [DECISIONS.md](DECISIONS.md) for
-the evidence trail.
+> [!NOTE]
+> **Scope note:** As highlighted in the [README](README.md), this repository represents a functional, sanitized, and self-hosted **architectural slice** of a commercial system — not the final enterprise production state. It is scoped to what demonstrates the core agent engineering (the constraint-graph scheduler, the review/verification pipeline, the knowledge graph, and safety mechanisms) running against an open-source stack. Enterprise production layers — such as distributed asynchronous message queues (e.g. RabbitMQ), centralized observability and monitoring (e.g. Prometheus, Grafana), and proprietary multi-service backup topologies — are commercial operational concerns that cannot be shared under NDA and are omitted here. Where this document says a mechanism is "real," it refers to fully verifiable execution within this repository; see [DECISIONS.md](DECISIONS.md) for the complete engineering and verification log.
 
 ## Request lifecycle
 
