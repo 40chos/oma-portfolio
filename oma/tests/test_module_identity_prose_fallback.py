@@ -23,9 +23,9 @@ def test_flagship_example_from_the_plan_text_now_resolves_correctly():
 
 
 def test_structured_model_line_still_takes_priority_over_prose():
-    goal = "Model: project.meerwerk (inherit)\nAlso touches res.partner in passing."
+    goal = "Model: project.fieldjob (inherit)\nAlso touches res.partner in passing."
     result = resolve_module_identity(goal)
-    assert result == "project.meerwerk", "the structured Model: line must still win over any prose fallback"
+    assert result == "project.fieldjob", "the structured Model: line must still win over any prose fallback"
     print("PASS: an existing structured Model: line still takes priority, unchanged behavior")
 
 
@@ -42,8 +42,8 @@ def test_purely_descriptive_goal_with_no_dotted_identifier_returns_none():
 
 
 def test_file_path_mentioned_alongside_a_real_model_does_not_win():
-    result = resolve_module_identity("Update oma_x/models/models.py -- also touches project.meerwerk directly.")
-    assert result == "project.meerwerk"
+    result = resolve_module_identity("Update oma_x/models/models.py -- also touches project.fieldjob directly.")
+    assert result == "project.fieldjob"
     print("PASS: a file path (models.py) mentioned first does not win over a real model name later in the same goal")
 
 

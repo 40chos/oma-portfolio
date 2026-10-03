@@ -39,7 +39,7 @@ def _make_generated(views_xml: str | None = None, security_xml: str | None = Non
     )
 
 
-# The EXACT real broken content pulled live off odoo-dev.int's own disk
+# The EXACT real broken content pulled live off the dev host's own disk
 # (/mnt/extra-addons/oma_simple_custom_module_task_595ad7bc/views/views.xml)
 # after it caused a genuine odoo.tools.convert.ParseError at install time.
 _REAL_BROKEN_CONTENT = (

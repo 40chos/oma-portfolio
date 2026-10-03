@@ -502,11 +502,11 @@ def _filter_hallucinated_method_missing_findings(
     sibling to `_filter_hallucinated_scope_findings` above, same
     philosophy: don't trust an LLM's unverified claim when it's cheap
     to check deterministically. Confirmed live on task 020
-    (`project.meerwerk`): Code-Review blocked a valid
+    (`project.fieldjob`): Code-Review blocked a valid
     `super().action_accept()` override for 3 straight rounds insisting
-    "action_accept is not defined in the base model project.meerwerk",
+    "action_accept is not defined in the base model project.fieldjob",
     when a direct grep of the real source
-    (`/opt/site/site16/project_meerwerk/models/project_meerwerk.py:121`)
+    (`/opt/site/site16/project_fieldjob/models/project_fieldjob.py:121`)
     shows the method plainly exists -- Code-Review has no tool access
     at all, so this was pure, ungrounded guessing, and it happened to
     guess wrong. Unlike the scope-hallucination case, this can ALSO
@@ -638,12 +638,12 @@ def _filter_hallucinated_xmlid_missing_findings(
     third sibling to `_filter_hallucinated_scope_findings` and
     `_filter_hallucinated_method_missing_findings`, same philosophy.
     Confirmed live on task 020: Code-Review blocked a round with a
-    HEDGED, unverified claim -- "The model_id ref project_meerwerk.
-    model_project_meerwerk must exist in the base module
-    project_meerwerk; if it doesn't, this will fail to load, causing
+    HEDGED, unverified claim -- "The model_id ref project_fieldjob.
+    model_project_fieldjob must exist in the base module
+    project_fieldjob; if it doesn't, this will fail to load, causing
     install failure" -- for TWO real, genuinely-existing xmlids
-    (`project_meerwerk.model_project_meerwerk`,
-    `project_meerwerk.view_project_meerwerk_form`, both confirmed live
+    (`project_fieldjob.model_project_fieldjob`,
+    `project_fieldjob.view_project_fieldjob_form`, both confirmed live
     via a direct grep of the real base module's own source). Code-Review
     has no tool access at all, so a hedged "if it doesn't exist" claim
     is exactly as ungrounded as a flat hallucinated assertion -- it just
@@ -730,7 +730,7 @@ _TEMPLATE_FIELD_REF_RE = re.compile(r"\b(?:object|record)\.(\w+)\b")
 # task 020's 20th resume attempt): once the Jinja-syntax invented field
 # was finally fixed, Code-Review immediately hallucinated that the
 # REAL fields `date_finish`/`amount_total` "are not defined... nor are
-# they part of the base project.meerwerk model" -- referenced via
+# they part of the base project.fieldjob model" -- referenced via
 # `<field name="date_finish">` in views_xml, a syntax this filter never
 # looked at (it only ever scanned `object.<field>`/`record.<field>`).
 _ARCH_BLOCK_RE = re.compile(r'<field\s+name="arch"[^>]*>(.*?)</field>', re.DOTALL)
@@ -741,7 +741,7 @@ _FIELD_UNCERTAIN_CLAIM_RE = re.compile(
     r"nor (?:is|are) (?:it|they) part of|"
     # Real, general fix (2026-07-26, Phase 25D, task 004): a fourth,
     # live-observed wording of the same underlying claim -- "'currency_id'
-    # is not declared in this model or inherited from 'project.meerwerk'"
+    # is not declared in this model or inherited from 'project.fieldjob'"
     # -- naming neither "does not exist" nor "not defined" verbatim.
     r"is not declared (?:in|on) (?:this|the) model|"
     # Real, general fix (2026-08-03, full-30-task sweep): a fifth, live-observed family of
@@ -772,7 +772,7 @@ _FIELD_UNCERTAIN_CLAIM_RE = re.compile(
 )
 # Real, confirmed bug found live (2026-07-26, Phase 25D, task 004's own
 # resubmission): Code-Review flagged "'currency_id' is not declared in
-# this model or inherited from 'project.meerwerk'... causing a runtime
+# this model or inherited from 'project.fieldjob'... causing a runtime
 # error" -- `currency_id` is a real, live field on the actual base
 # model (independently confirmed via a direct fields_get() call). The
 # reference here is neither `object.<field>` nor `<field name="X">` --
@@ -883,7 +883,7 @@ def _filter_hallucinated_direct_field_missing_findings(
     """Real, general, deterministic guard (2026-07-24, Group C re-run) --
     fourth sibling in this same family. Confirmed live on task 020's
     15th resume attempt: Code-Review flagged "The template body
-    references object.name, but the model project.meerwerk may not
+    references object.name, but the model project.fieldjob may not
     have a name field; verify field existence to prevent rendering
     errors" -- `name` is a real, directly-declared field on the actual
     base model (confirmed live: `name = fields.Char(string='Reference',
@@ -1411,11 +1411,11 @@ def _filter_hallucinated_inherit_target_missing_findings(
 
 
 # Real bug found live (2026-08-06, task042 of the SITE 50-task fix-pass): Code-Review claimed
-# "the previous attempt error indicates the base class 'project.meerwerk' itself was missing
+# "the previous attempt error indicates the base class 'project.fieldjob' itself was missing
 # _name/_inherit, causing registry build failure; this diff assumes the base model is fixed, but
 # if the base model is still broken, this module will fail to load" -- a genuine hallucination,
-# confirmed via direct SSH read of the REAL, live, always-stable project_meerwerk module
-# (`_name = 'project.meerwerk'` has been correct there the whole session). Code-Review conflated
+# confirmed via direct SSH read of the REAL, live, always-stable project_fieldjob module
+# (`_name = 'project.fieldjob'` has been correct there the whole session). Code-Review conflated
 # an EARLIER ROUND's own separate, never-installed, failed scaffold (a genuinely different module
 # that round 1 itself cleaned up on failure) with the real, live `_inherit` target this round
 # extends -- a round-failure's own transient in-memory defect never touches the real base model at
@@ -2953,7 +2953,7 @@ def _filter_hallucinated_goal_spec_context_key_findings(
     """Real, general fix (2026-08-06, Phase 30 backlog pass, task030, real task_id
     b2e48922-828d-41d3-8e5c-2df8c7b6ab98): a genuinely different shape from the two filters above
     -- not about implementing a deferred method/field, but Code-Review objecting to a context-dict
-    KEY the round's own method sets (e.g. `mark_meerwerk_as_sent=True`), on the theory that setting
+    KEY the round's own method sets (e.g. `mark_fieldjob_as_sent=True`), on the theory that setting
     a key some LATER round's hook will eventually read counts as "a partial implementation of a
     future constraint". Confirmed false against the real goal: the task's own explicit "Context
     keys:" specification literally lists that exact key as part of THIS method's own required

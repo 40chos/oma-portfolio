@@ -4,7 +4,7 @@ asyncio.gather(), each running its own OS thread via asyncio.to_thread())
 raced on `_get_or_create_shared_key()`'s cold-cache path, each
 independently kicking off an 8-20s `create_task_api_key()` odoo-bin-shell
 call. Confirmed live: a real, genuinely-existing `_inherit` target
-(`project.meerwerk`, independently confirmed to have 49 real fields) was
+(`project.fieldjob`, independently confirmed to have 49 real fields) was
 reported as "does not exist as a real model anywhere" -- consistent with
 one of the racing threads' work failing/timing out and
 `_read_real_field_rows()`'s own broad `except Exception: return None`

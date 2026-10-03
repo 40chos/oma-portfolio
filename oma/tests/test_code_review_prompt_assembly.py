@@ -20,7 +20,7 @@ from specialists.code_review.specialist import CodeReviewSpecialist
 
 _DB = "odoo16_dev"
 
-_MEERWERK_FIELD_ROWS = [
+_FIELDJOB_FIELD_ROWS = [
     {"name": "name", "ttype": "char", "relation": None, "required": True},
     {"name": "amount_total", "ttype": "monetary", "relation": None, "required": False},
 ]
@@ -32,7 +32,7 @@ def _make_contract(**overrides) -> TaskContract:
         specialist_type=SpecialistType.code_review,
         capability_class=CapabilityClass.readonly_investigation,
         tier=AutonomyTier.tier_1_readonly,
-        goal="On the project.meerwerk record, review the total field.",
+        goal="On the project.fieldjob record, review the total field.",
         inputs=["diff_module:oma_test_module"],
         rules=[],
         deliverables=["A structured list of findings"],
@@ -54,7 +54,7 @@ def _capture_prompt(specialist, contract, files):
         return '{"findings": [], "overall_assessment": "clean"}'
 
     with patch.object(schema_client_module, "is_fast_path_eligible", return_value=True), \
-         patch.object(schema_client_module, "_read_real_field_rows", return_value=_MEERWERK_FIELD_ROWS), \
+         patch.object(schema_client_module, "_read_real_field_rows", return_value=_FIELDJOB_FIELD_ROWS), \
          patch.object(schema_client_module, "get_relation_fields_fast", return_value={}), \
          patch.object(code_review_module, "generate_checked", _fake_generate_checked):
         asyncio.run(specialist._review(contract, files, mode="diff"))
@@ -65,10 +65,10 @@ def test_schema_block_injected_for_code_review():
     """Item 1 analog: Code-Review previously had ZERO live schema access anywhere -- confirmed
     the fix now injects the same curated block Build's own prompt gets."""
     specialist = CodeReviewSpecialist(client=None, db=_DB)
-    contract = _make_contract(module_identity="project.meerwerk")
+    contract = _make_contract(module_identity="project.fieldjob")
     prompt = _capture_prompt(specialist, contract, {"models/models.py": "class X: pass"})
     assert "<current_schema>" in prompt
-    assert "project.meerwerk:" in prompt
+    assert "project.fieldjob:" in prompt
     assert "amount_total: monetary" in prompt
 
 
@@ -78,7 +78,7 @@ def test_schema_block_absent_when_no_db_configured():
     here (unlike _capture_prompt's default) -- the REAL function must itself reject an empty db
     string, which is the actual behavior under test."""
     specialist = CodeReviewSpecialist(client=None)  # db defaults to ""
-    contract = _make_contract(module_identity="project.meerwerk")
+    contract = _make_contract(module_identity="project.fieldjob")
 
     captured = {}
 
@@ -95,7 +95,7 @@ def test_schema_block_absent_when_no_db_configured():
 def test_previous_round_raw_failure_text_appears_verbatim_in_code_review_prompt():
     """Item 3 analog: the exact same field Build now reads, rendered the same way."""
     specialist = CodeReviewSpecialist(client=None, db=_DB)
-    raw_text = "Sandbox install failed: ValueError: The _name attribute ProjectMeerwerk is not valid."
+    raw_text = "Sandbox install failed: ValueError: The _name attribute ProjectFieldjob is not valid."
     contract = _make_contract(previous_round_raw_failure_text=raw_text)
     prompt = _capture_prompt(specialist, contract, {"models/models.py": "class X: pass"})
     assert raw_text in prompt
@@ -113,7 +113,7 @@ def test_code_review_prompt_section_order():
     """Item 4/5 analog: same order as Build's own fixed prompt."""
     specialist = CodeReviewSpecialist(client=None, db=_DB)
     contract = _make_contract(
-        module_identity="project.meerwerk",
+        module_identity="project.fieldjob",
         rules=["some prior rule"],
         previous_round_raw_failure_text="literal prior failure text",
     )

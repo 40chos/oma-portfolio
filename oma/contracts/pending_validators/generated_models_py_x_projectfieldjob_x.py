@@ -1,11 +1,11 @@
 """Phase 29B auto-draft (2026-07-29). NOT imported or executed by the live pipeline.
-Drafted from cluster: generated models_py'X'ProjectMeerwerk'X's own actual field/method content is missing.
+Drafted from cluster: generated models_py'X'ProjectFieldjob'X's own actual field/method content is missing.
 Real instance row IDs this is meant to close: [11690, 11692, 11694, 11696, 12856, 12858, 12950, 12952, 14287, 14854, 15808, 16237, 16578, 17742, 18346, 19445, 19633, 19631, 19644]
 Passed self-test (real behavioral self-test passed: fires on a genuinely new (never-seen) bad example, stays silent on a legitimate one) and the genericity gate on attempt 1.
 Requires human review before promotion -- see Phase 29C.
 """
 
-# PHASE29_DRAFT_META: {"target_spec": "build", "cluster_sig": "generated models_py'X'ProjectMeerwerk'X's own actual field/method content is missing.", "source_row_ids": [11690, 11692, 11694, 11696, 12856, 12858, 12950, 12952, 14287, 14854, 15808, 16237, 16578, 17742, 18346, 19445, 19633, 19631, 19644], "drafted_attempt": 1, "has_real_behavioral_self_test": true}
+# PHASE29_DRAFT_META: {"target_spec": "build", "cluster_sig": "generated models_py'X'ProjectFieldjob'X's own actual field/method content is missing.", "source_row_ids": [11690, 11692, 11694, 11696, 12856, 12858, 12950, 12952, 14287, 14854, 15808, 16237, 16578, 17742, 18346, 19445, 19633, 19631, 19644], "drafted_attempt": 1, "has_real_behavioral_self_test": true}
 
 import ast
 

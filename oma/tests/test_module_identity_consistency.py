@@ -37,24 +37,24 @@ _GOAL_SHAPES = {
     ),
     "decomposed_multi_field": (
         "Add scheduling fields, enforce a double-booking rule, and add a product-scoping relation.\n\n"
-        "Module: mis_base_extend\nModel: project.meerwerk\n"
+        "Module: mis_base_extend\nModel: project.fieldjob\n"
         "Field: start_time (Datetime)\nField: end_time (Datetime)\n"
     ),
     "inherit_edit": (
-        "On the meerwerk form, I want an internal notes field only developers can see.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\nField: developer_notes (Text)\n"
+        "On the fieldjob form, I want an internal notes field only developers can see.\n\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\nField: developer_notes (Text)\n"
     ),
     "new_model": (
         "Create a new model to track extra work lines.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk.line\nField: hours (Float)\n"
+        "Module: project_fieldjob\nModel: project.fieldjob.line\nField: hours (Float)\n"
     ),
 }
 
 _EXPECTED_MODEL = {
     "single_field": "crm.lead",
-    "decomposed_multi_field": "project.meerwerk",
-    "inherit_edit": "project.meerwerk",
-    "new_model": "project.meerwerk.line",
+    "decomposed_multi_field": "project.fieldjob",
+    "inherit_edit": "project.fieldjob",
+    "new_model": "project.fieldjob.line",
 }
 
 
@@ -123,17 +123,17 @@ def test_two_different_contracts_touching_the_same_real_model_get_the_same_ident
     construction, so two tasks on the same model could never collide).
     """
     goal_a = (
-        "I want an internal notes field only developers can see on the meerwerk form.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\nField: developer_notes (Text)\n"
+        "I want an internal notes field only developers can see on the fieldjob form.\n\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\nField: developer_notes (Text)\n"
     )
     goal_b = (
-        "Every meerwerk record should get a unique reference number automatically.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Every fieldjob record should get a unique reference number automatically.\n\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: name (Char, readonly, copy=False, default='New')\n"
     )
     identity_a = resolve_module_identity(goal_a, hint=None)
     identity_b = resolve_module_identity(goal_b, hint=None)
-    assert identity_a == identity_b == "project.meerwerk", (
+    assert identity_a == identity_b == "project.fieldjob", (
         f"two different tasks editing the same real model must resolve to the same identity -- "
         f"got {identity_a!r} and {identity_b!r}"
     )

@@ -219,10 +219,10 @@ def test_read_only_enforced_structurally_not_just_by_instruction():
 
 def test_hallucinated_method_missing_filter_survives_decoy_init_file():
     """Real bugs found live (2026-07-24, task 020's Group C re-run,
-    project_meerwerk): Code-Review repeatedly, flatly asserted
-    `action_accept` "is not defined in the base model project.meerwerk"
+    project_fieldjob): Code-Review repeatedly, flatly asserted
+    `action_accept` "is not defined in the base model project.fieldjob"
     -- false; it's defined at
-    /opt/site/site16/project_meerwerk/models/project_meerwerk.py:121 --
+    /opt/site/site16/project_fieldjob/models/project_fieldjob.py:121 --
     blocking 7+ real rounds before this was caught. Two separate,
     independent bugs had to be fixed before the downgrade actually
     fired in production, even though isolated hand-built-input testing
@@ -257,18 +257,18 @@ def test_hallucinated_method_missing_filter_survives_decoy_init_file():
         "/mnt/extra-addons/oma_x/models/__init__.py": "from . import models\n",
         "/mnt/extra-addons/oma_x/models/models.py": (
             "from odoo import models\n\n"
-            "class ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "class ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    def action_accept(self):\n"
-            "        if hasattr(super(ProjectMeerwerk, self), 'action_accept'):\n"
-            "            super(ProjectMeerwerk, self).action_accept()\n"
+            "        if hasattr(super(ProjectFieldjob, self), 'action_accept'):\n"
+            "            super(ProjectFieldjob, self).action_accept()\n"
         ),
     }
     findings = [
         ReviewFinding(
             location="models/models.py:5", severity="blocking",
             explanation=(
-                "The method action_accept is not defined in the base model project.meerwerk, "
+                "The method action_accept is not defined in the base model project.fieldjob, "
                 "so super() will raise an AttributeError and the email will never send."
             ),
         ),
@@ -287,11 +287,11 @@ def test_hallucinated_method_missing_filter_survives_decoy_init_file():
 def test_hallucinated_xmlid_missing_filter_downgrades_verified_ref():
     """Real bug found live (2026-07-24, task 020's 14th resume attempt):
     Code-Review blocked a round with a HEDGED, unverified claim -- "The
-    model_id ref project_meerwerk.model_project_meerwerk must exist in
-    the base module project_meerwerk; if it doesn't, this will fail to
+    model_id ref project_fieldjob.model_project_fieldjob must exist in
+    the base module project_fieldjob; if it doesn't, this will fail to
     load, causing install failure" -- for a real, genuinely-existing
     xmlid (confirmed live via a direct grep of the real base module's
-    own source: /opt/site/site16/project_meerwerk/security/ir.model.
+    own source: /opt/site/site16/project_fieldjob/security/ir.model.
     access.csv and several other files all reference it). A hedged
     "if it doesn't exist" claim is exactly as ungrounded as a flat
     hallucinated assertion when Code-Review has no tool access to
@@ -305,7 +305,7 @@ def test_hallucinated_xmlid_missing_filter_downgrades_verified_ref():
     files = {
         "/mnt/extra-addons/oma_x/data/mail_template_data.xml": (
             '<odoo>\n  <record id="x" model="mail.template">\n'
-            '    <field name="model_id" ref="project_meerwerk.model_project_meerwerk"/>\n'
+            '    <field name="model_id" ref="project_fieldjob.model_project_fieldjob"/>\n'
             "  </record>\n</odoo>"
         ),
     }
@@ -313,8 +313,8 @@ def test_hallucinated_xmlid_missing_filter_downgrades_verified_ref():
         ReviewFinding(
             location="data/mail_template_data.xml:3", severity="blocking",
             explanation=(
-                "The model_id ref project_meerwerk.model_project_meerwerk must exist in the "
-                "base module project_meerwerk; if it doesn't, this will fail to load, causing "
+                "The model_id ref project_fieldjob.model_project_fieldjob must exist in the "
+                "base module project_fieldjob; if it doesn't, this will fail to load, causing "
                 "install failure."
             ),
         ),
@@ -338,7 +338,7 @@ def test_hallucinated_xmlid_missing_filter_also_checks_security_csv_model_id():
     only ever scanned `.xml` files' own `ref="module.xmlid"` attributes -- `security/ir.model.
     access.csv`'s `model_id:id` column is a completely different real Odoo reference syntax for
     the same underlying concept, never covered before this fix. Uses a real, live-confirmed-
-    existing model_id (project_meerwerk's own model), same "no mocks, real DB" discipline as
+    existing model_id (project_fieldjob's own model), same "no mocks, real DB" discipline as
     every other test in this file.
     """
     from specialists.code_review.specialist import ReviewFinding, _filter_hallucinated_xmlid_missing_findings
@@ -346,21 +346,21 @@ def test_hallucinated_xmlid_missing_filter_also_checks_security_csv_model_id():
     os.environ.setdefault("OMA_ODOO_DB_DUPLICATE_FOR_BUILD", "odoo16_dev")
 
     files = {
-        "/mnt/extra-addons/project_meerwerk/security/ir.model.access.csv": (
+        "/mnt/extra-addons/project_fieldjob/security/ir.model.access.csv": (
             "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-            "access_project_meerwerk,project.meerwerk,model_project_meerwerk,base.group_user,1,1,1,0\n"
+            "access_project_fieldjob,project.fieldjob,model_project_fieldjob,base.group_user,1,1,1,0\n"
         ),
     }
     findings = [
         ReviewFinding(
             location="security/ir.model.access.csv:2", severity="blocking",
             explanation=(
-                "model_id:id='model_project_meerwerk' does not resolve to a real external id "
+                "model_id:id='model_project_fieldjob' does not resolve to a real external id "
                 "in the live registry, causing module installation failure."
             ),
         ),
     ]
-    out = _filter_hallucinated_xmlid_missing_findings(findings, files, "project_meerwerk")
+    out = _filter_hallucinated_xmlid_missing_findings(findings, files, "project_fieldjob")
     assert out[0].severity == "info", (
         f"expected the unverified CSV model_id claim to be downgraded once confirmed real -- "
         f"got severity {out[0].severity!r}"
@@ -403,7 +403,7 @@ def test_hallucinated_xmlid_missing_filter_csv_check_still_flags_a_genuine_miss(
 def test_hallucinated_direct_field_missing_filter_downgrades_verified_field():
     """Real bug found live (2026-07-24, task 020's 15th resume attempt):
     Code-Review flagged "The template body references object.name, but
-    the model project.meerwerk may not have a name field; verify field
+    the model project.fieldjob may not have a name field; verify field
     existence to prevent rendering errors" -- `name` is a real,
     directly-declared field on the actual base model (confirmed live:
     `name = fields.Char(string='Reference', readonly=True, copy=False,
@@ -421,8 +421,8 @@ def test_hallucinated_direct_field_missing_filter_downgrades_verified_field():
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "from odoo import models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
         ),
         "/mnt/extra-addons/oma_x/data/mail_template_data.xml": (
             '<odoo><record><field name="body_html">{{ object.name }}</field></record></odoo>'
@@ -432,7 +432,7 @@ def test_hallucinated_direct_field_missing_filter_downgrades_verified_field():
         ReviewFinding(
             location="data/mail_template_data.xml:1", severity="blocking",
             explanation=(
-                "The template body references object.name, but the model project.meerwerk "
+                "The template body references object.name, but the model project.fieldjob "
                 "may not have a name field; verify field existence to prevent rendering errors."
             ),
         ),
@@ -444,7 +444,7 @@ def test_hallucinated_direct_field_missing_filter_downgrades_verified_field():
     )
     assert "DOES exist" in out[0].explanation
     print("PASS: the direct-field-existence filter correctly verifies object.name is real on "
-          "project.meerwerk and downgrades the unfounded uncertainty")
+          "project.fieldjob and downgrades the unfounded uncertainty")
 
 
 def test_hallucinated_duplicate_field_declaration_filter_downgrades_local_variable_claim():
@@ -590,7 +590,7 @@ def test_hallucinated_direct_field_missing_filter_also_checks_view_syntax():
     the close-match suggestion in specialists/build/specialist.py),
     Code-Review immediately hallucinated that the REAL fields
     `date_finish`/`amount_total` "are not defined... nor are they part
-    of the base project.meerwerk model" -- referenced via `<field
+    of the base project.fieldjob model" -- referenced via `<field
     name="date_finish">` inside a view's `<arch>` block, a completely
     different syntax this filter never scanned. Mirrors the exact same
     views_xml-vs-Jinja gap already found and fixed once on the Build
@@ -606,12 +606,12 @@ def test_hallucinated_direct_field_missing_filter_also_checks_view_syntax():
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "from odoo import models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
         ),
         "/mnt/extra-addons/oma_x/views/views.xml": (
             '<odoo>\n  <record id="v1" model="ir.ui.view">\n'
-            '    <field name="model">project.meerwerk</field>\n'
+            '    <field name="model">project.fieldjob</field>\n'
             '    <field name="arch" type="xml">\n'
             '      <field name="date_finish"/>\n'
             '      <field name="amount_total"/>\n'
@@ -624,7 +624,7 @@ def test_hallucinated_direct_field_missing_filter_also_checks_view_syntax():
             explanation=(
                 "The view inherits and adds fields date_finish and amount_total, but these "
                 "fields are not defined in the models_py file nor are they part of the base "
-                "project.meerwerk model, causing Odoo to fail to load the view."
+                "project.fieldjob model, causing Odoo to fail to load the view."
             ),
         ),
     ]
@@ -641,7 +641,7 @@ def test_hallucinated_direct_field_missing_filter_also_checks_view_syntax():
 def test_hallucinated_direct_field_missing_filter_also_checks_currency_field_kwarg():
     """Real, confirmed bug found live (2026-07-26, Phase 25D, task 004's
     own resubmission): Code-Review flagged "'currency_id' is not
-    declared in this model or inherited from 'project.meerwerk'...
+    declared in this model or inherited from 'project.fieldjob'...
     causing a runtime error" -- `currency_id` is a real, live field on
     the actual base model. Neither Jinja `object.<field>` nor `<field
     name="X">` view syntax -- a THIRD real Odoo field-reference shape,
@@ -657,8 +657,8 @@ def test_hallucinated_direct_field_missing_filter_also_checks_currency_field_kwa
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import api, fields, models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "from odoo import api, fields, models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
             "    amount_total = fields.Monetary(string='Amount Total', "
             "compute='_compute_amount_total', store=True, currency_field='currency_id')\n"
         ),
@@ -668,7 +668,7 @@ def test_hallucinated_direct_field_missing_filter_also_checks_currency_field_kwa
             location="models.py:5", severity="blocking",
             explanation=(
                 "Field 'amount_total' uses 'currency_field=currency_id' but 'currency_id' is not "
-                "declared in this model or inherited from 'project.meerwerk' in the provided "
+                "declared in this model or inherited from 'project.fieldjob' in the provided "
                 "context, causing a runtime error."
             ),
         ),
@@ -739,7 +739,7 @@ def test_hallucinated_direct_field_missing_filter_catches_does_not_define_phrasi
 
 def test_hallucinated_direct_field_missing_filter_catches_defines_no_fields_phrasing():
     """Real task002/021 phrasing -- 'defines no fields' (sometimes naming several fields at
-    once). Using task021's own real model/field (`project.meerwerk`/`customer_response`,
+    once). Using task021's own real model/field (`project.fieldjob`/`customer_response`,
     confirmed real on the live odoo16_dev target).
     """
     from specialists.code_review.specialist import (
@@ -749,12 +749,12 @@ def test_hallucinated_direct_field_missing_filter_catches_defines_no_fields_phra
 
     os.environ.setdefault("OMA_ODOO_DB_DUPLICATE_FOR_BUILD", "odoo16_dev")
 
-    files = _view_files_referencing("project.meerwerk", "customer_response")
+    files = _view_files_referencing("project.fieldjob", "customer_response")
     findings = [
         ReviewFinding(
             location="views.xml:1", severity="blocking",
             explanation=(
-                "Model class inherits 'project.meerwerk' but defines no fields "
+                "Model class inherits 'project.fieldjob' but defines no fields "
                 "(customer_response, customer_response_date, customer_response_user_id) "
                 "required by the view and task goal."
             ),
@@ -772,7 +772,7 @@ def test_hallucinated_direct_field_missing_filter_catches_defines_no_new_fields_
     """Real task004 phrasing (2026-08-03 full-30-task sweep) -- 'defines no NEW fields', one word
     inserted between 'no' and 'fields' from the already-covered 'defines no fields' alternative,
     the exact same 'new phrasing dodges the regex' failure this filter family keeps hitting.
-    Using task004's own real model/field (`project.meerwerk`/`amount_total`, confirmed real on the
+    Using task004's own real model/field (`project.fieldjob`/`amount_total`, confirmed real on the
     live odoo16_dev target).
     """
     from specialists.code_review.specialist import (
@@ -782,12 +782,12 @@ def test_hallucinated_direct_field_missing_filter_catches_defines_no_new_fields_
 
     os.environ.setdefault("OMA_ODOO_DB_DUPLICATE_FOR_BUILD", "odoo16_dev")
 
-    files = _view_files_referencing("project.meerwerk", "amount_total")
+    files = _view_files_referencing("project.fieldjob", "amount_total")
     findings = [
         ReviewFinding(
             location="views.xml:1", severity="blocking",
             explanation=(
-                "The model class inherits 'project.meerwerk' but defines no new fields, leaving "
+                "The model class inherits 'project.fieldjob' but defines no new fields, leaving "
                 "the view's reference to 'amount_total' undefined and causing a runtime error."
             ),
         ),
@@ -834,7 +834,7 @@ def test_hallucinated_direct_field_missing_filter_catches_does_not_exist_on_the_
 
 def test_hallucinated_direct_field_missing_filter_catches_never_defined_and_missing_from_phrasings():
     """Real task003/013 phrasings -- 'never defined in the model' and 'field is missing from the
-    ... model definition'. Using task013's own real model/field (`project.meerwerk`/
+    ... model definition'. Using task013's own real model/field (`project.fieldjob`/
     `invoice_id`, confirmed real on the live odoo16_dev target).
     """
     from specialists.code_review.specialist import (
@@ -844,7 +844,7 @@ def test_hallucinated_direct_field_missing_filter_catches_never_defined_and_miss
 
     os.environ.setdefault("OMA_ODOO_DB_DUPLICATE_FOR_BUILD", "odoo16_dev")
 
-    files = _view_files_referencing("project.meerwerk", "invoice_id")
+    files = _view_files_referencing("project.fieldjob", "invoice_id")
     findings = [
         ReviewFinding(
             location="views.xml:1", severity="blocking",
@@ -899,7 +899,7 @@ def test_hallucinated_direct_field_missing_filter_still_flags_a_genuinely_missin
 def test_hallucinated_already_exists_filter_downgrades_task019_real_shape():
     """Real bug found live (2026-08-06, fix-pass task 019): Code-Review flagged "The field
     'customer_grouping_rule' is already defined in the provided <current_schema> for
-    'project.meerwerk', making this inheritance and field definition redundant..." -- but
+    'project.fieldjob', making this inheritance and field definition redundant..." -- but
     `customer_grouping_rule` is genuinely THIS round's own new field declaration (confirmed via
     direct redis inspection of the real generated models.py). `<current_schema>` is fetched live,
     AFTER this round's own successful install, so it always includes the round's own just-added
@@ -912,8 +912,8 @@ def test_hallucinated_already_exists_filter_downgrades_task019_real_shape():
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    customer_grouping_rule = fields.Boolean(string='Group by customer')\n"
         ),
     }
@@ -922,7 +922,7 @@ def test_hallucinated_already_exists_filter_downgrades_task019_real_shape():
             location="models/models.py:5", severity="blocking",
             explanation=(
                 "The field 'customer_grouping_rule' is already defined in the provided "
-                "<current_schema> for 'project.meerwerk', making this inheritance and field "
+                "<current_schema> for 'project.fieldjob', making this inheritance and field "
                 "definition redundant and likely to cause a duplicate field error or conflict."
             ),
         ),
@@ -948,8 +948,8 @@ def test_hallucinated_already_exists_filter_downgrades_task018_real_shape():
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    date_sent = fields.Datetime(string='Sent On')\n"
         ),
     }
@@ -979,8 +979,8 @@ def test_hallucinated_already_exists_filter_never_fires_for_a_field_not_in_the_d
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    some_other_field = fields.Char(string='Other')\n"
         ),
     }
@@ -989,7 +989,7 @@ def test_hallucinated_already_exists_filter_never_fires_for_a_field_not_in_the_d
             location="models/models.py:5", severity="blocking",
             explanation=(
                 "The field 'genuinely_colliding_field' is already defined in the provided "
-                "<current_schema> for 'project.meerwerk'."
+                "<current_schema> for 'project.fieldjob'."
             ),
         ),
     ]
@@ -1013,8 +1013,8 @@ def test_hallucinated_already_exists_filter_never_fires_when_multiple_fields_men
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    field_a = fields.Char(string='A')\n"
             "    field_b = fields.Char(string='B')\n"
         ),
@@ -1024,7 +1024,7 @@ def test_hallucinated_already_exists_filter_never_fires_when_multiple_fields_men
             location="models/models.py:5", severity="blocking",
             explanation=(
                 "Both 'field_a' and 'field_b' are already defined in the provided "
-                "<current_schema> for 'project.meerwerk'."
+                "<current_schema> for 'project.fieldjob'."
             ),
         ),
     ]
@@ -1046,8 +1046,8 @@ def test_hallucinated_already_exists_filter_never_fires_without_the_claim_phrasi
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    customer_grouping_rule = fields.Boolean(string='Group by customer')\n"
         ),
     }
@@ -1282,7 +1282,7 @@ def test_hallucinated_prior_round_base_model_broken_filter_downgrades_task042_re
     )
 
     def fake_get_model_fields_fast(target, db):
-        assert target == "project.meerwerk"
+        assert target == "project.fieldjob"
         return ["id", "name", "state", "project_id"]  # genuinely resolves right now
     monkeypatch.setattr(_schema_client, "get_model_fields_fast", fake_get_model_fields_fast)
     monkeypatch.setattr(_schema_client, "is_fast_path_eligible", lambda db: True)
@@ -1290,8 +1290,8 @@ def test_hallucinated_prior_round_base_model_broken_filter_downgrades_task042_re
 
     files = {
         "models/models.py": (
-            "from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    batch_invoice_allowed = fields.Boolean(default=True)\n"
         ),
     }
@@ -1299,9 +1299,9 @@ def test_hallucinated_prior_round_base_model_broken_filter_downgrades_task042_re
         ReviewFinding(
             location="models/models.py", severity="blocking",
             explanation=(
-                "Class 'ProjectMeerwerk' declares _inherit but not _name, which is correct for "
+                "Class 'ProjectFieldjob' declares _inherit but not _name, which is correct for "
                 "inheritance, but the previous attempt error indicates the base class "
-                "'project.meerwerk' itself was missing _name/_inherit, causing registry build "
+                "'project.fieldjob' itself was missing _name/_inherit, causing registry build "
                 "failure; this diff assumes the base model is fixed, but if the base model is "
                 "still broken, this module will fail to load."
             ),
@@ -1369,7 +1369,7 @@ def test_hallucinated_prior_round_base_model_broken_filter_never_touches_unrelat
     files = {
         "models/models.py": (
             "from odoo import models\n\nclass X(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "    _inherit = 'project.fieldjob'\n"
         ),
     }
     findings = [
@@ -1405,8 +1405,8 @@ def test_hallucinated_empty_security_csv_filter_downgrades_header_only_csv():
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models, fields, api\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields, api\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    @api.onchange('project_id')\n"
             "    def _onchange_project_id(self):\n"
             "        pass\n"
@@ -1532,14 +1532,14 @@ def test_hallucinated_empty_security_csv_filter_downgrades_false_emptiness_claim
 
     files = {
         "models/models.py": (
-            "from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    customer_grouping_rule = fields.Boolean(string='Customer Grouping Rule')\n"
         ),
         "security/ir.model.access.csv": (
             "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-            "access_project_meerwerk_customer_grouping,project.meerwerk.customer.grouping,"
-            "model_project_meerwerk,base.group_user,1,1,1,0\n"
+            "access_project_fieldjob_customer_grouping,project.fieldjob.customer.grouping,"
+            "model_project_fieldjob,base.group_user,1,1,1,0\n"
         ),
     }
     findings = [
@@ -1625,8 +1625,8 @@ def test_hallucinated_sequence_pattern_filter_downgrades_standard_idiom():
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models, fields, api\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields, api\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    name = fields.Char(\n"
             "        string='Reference',\n        readonly=True,\n        copy=False,\n"
             "        default='New',\n    )\n\n"
@@ -1635,7 +1635,7 @@ def test_hallucinated_sequence_pattern_filter_downgrades_standard_idiom():
             "        for vals in vals_list:\n"
             "            if vals.get('name', 'New') == 'New':\n"
             "                vals['name'] = self.env['ir.sequence'].next_by_code(\n"
-            "                    'project.meerwerk') or 'New'\n"
+            "                    'project.fieldjob') or 'New'\n"
             "        return super().create(vals_list)\n"
         ),
     }
@@ -2755,8 +2755,8 @@ def test_hallucinated_sequence_not_transaction_safe_filter_downgrades_standard_i
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models, fields, api\n\nclass MeerwerkRecord(models.Model):\n"
-            "    _inherit = 'meerwerk.record'\n\n"
+            "from odoo import models, fields, api\n\nclass FieldjobRecord(models.Model):\n"
+            "    _inherit = 'fieldjob.record'\n\n"
             "    reference = fields.Char(readonly=True, copy=False, index=True)\n\n"
             "    @api.model_create_multi\n"
             "    def create(self, vals_list):\n"
@@ -2766,7 +2766,7 @@ def test_hallucinated_sequence_not_transaction_safe_filter_downgrades_standard_i
             "                record._generate_reference()\n"
             "        return records\n\n"
             "    def _generate_reference(self):\n"
-            "        sequence = self.env['ir.sequence'].next_by_code('meerwerk.record.reference')\n"
+            "        sequence = self.env['ir.sequence'].next_by_code('fieldjob.record.reference')\n"
             "        if sequence:\n"
             "            self.reference = sequence\n"
         ),
@@ -2817,8 +2817,8 @@ def test_hallucinated_selection_add_not_added_filter_downgrades_standard_idiom()
 
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import api, fields, models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import api, fields, models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    state = fields.Selection(\n"
             "        selection_add=[('paid', 'Paid')],\n"
             "        string='Status',\n        required=True,\n        default='draft',\n    )\n"
@@ -3812,8 +3812,8 @@ def test_hallucinated_current_round_conflated_with_deferred_labels_filter_catche
     )
     files = {
         "models/models.py": (
-            "from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    def action_send(self):\n        self.ensure_one()\n        return {}\n"
         ),
     }
@@ -3841,8 +3841,8 @@ def test_hallucinated_current_round_conflated_with_deferred_labels_filter_catche
     # deferred label's own words -- must never be touched.
     genuine_violation_files = {
         "models/models.py": (
-            "from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    def action_send(self):\n        self.ensure_one()\n        return {}\n\n"
             "    def _message_post_after_hook(self, message, msg_vals):\n        pass\n"
         ),
@@ -3871,7 +3871,7 @@ def test_hallucinated_current_round_conflated_with_deferred_labels_filter_catche
 def test_hallucinated_goal_spec_context_key_filter_downgrades_task030_real_shape():
     """Real, general fix (2026-08-06, Phase 30 backlog pass, task030, real task_id
     b2e48922-828d-41d3-8e5c-2df8c7b6ab98): Code-Review objected to the context-dict key
-    `mark_meerwerk_as_sent` the round's own `action_send` method sets, on the theory that setting
+    `mark_fieldjob_as_sent` the round's own `action_send` method sets, on the theory that setting
     a key a LATER round's hook will eventually read is "a partial implementation of a future
     constraint" -- but the task's own real goal text explicitly lists that exact key in its
     'Context keys:' specification as part of `action_send`'s OWN required behavior, not deferred
@@ -3887,8 +3887,8 @@ def test_hallucinated_goal_spec_context_key_filter_downgrades_task030_real_shape
         "returns ir.actions.act_window for mail.compose.message. Context keys: default_model, "
         "default_res_id (NOT res_ids -- causes SQL error), default_composition_mode='comment', "
         "default_partner_ids=[partner_id.id] (plain list, NOT [(4, id)]), "
-        "mark_meerwerk_as_sent=True. State change hook: Override _message_post_after_hook -- if "
-        "context has mark_meerwerk_as_sent, set state='sent'."
+        "mark_fieldjob_as_sent=True. State change hook: Override _message_post_after_hook -- if "
+        "context has mark_fieldjob_as_sent, set state='sent'."
     )
     real_finding = [
         ReviewFinding(
@@ -3896,7 +3896,7 @@ def test_hallucinated_goal_spec_context_key_filter_downgrades_task030_real_shape
             explanation=(
                 "The task explicitly states that 'state_change_hook' (which corresponds to "
                 "_message_post_after_hook) is NOT in scope for this round, yet the context key "
-                "'mark_meerwerk_as_sent' is added, implying a dependency on a hook that is not "
+                "'mark_fieldjob_as_sent' is added, implying a dependency on a hook that is not "
                 "yet implemented, creating a partial implementation of a future constraint."
             ),
         ),
@@ -3928,7 +3928,7 @@ def test_hallucinated_goal_spec_context_key_filter_downgrades_task030_real_shape
 def test_hallucinated_goal_spec_context_key_filter_catches_4th_real_rephrasing():
     """Real, general fix (2026-08-07, full-backlog pass, task030 v22, decomposed run): a 4th
     distinct prose rephrasing of the same self-contradiction slipped past the original regex --
-    'sets 'mark_meerwerk_as_sent=True' in the context, which is the trigger for that out-of-scope
+    'sets 'mark_fieldjob_as_sent=True' in the context, which is the trigger for that out-of-scope
     hook' -- a different sentence shape (key=value inside quotes, 'trigger for' instead of
     'implies/depends on') naming the same real, goal-required context key.
     """
@@ -3942,14 +3942,14 @@ def test_hallucinated_goal_spec_context_key_filter_catches_4th_real_rephrasing()
         "returns ir.actions.act_window for mail.compose.message. Context keys: default_model, "
         "default_res_id (NOT res_ids -- causes SQL error), default_composition_mode='comment', "
         "default_partner_ids=[partner_id.id] (plain list, NOT [(4, id)]), "
-        "mark_meerwerk_as_sent=True. State change hook: Override _message_post_after_hook -- if "
-        "context has mark_meerwerk_as_sent, set state='sent'."
+        "mark_fieldjob_as_sent=True. State change hook: Override _message_post_after_hook -- if "
+        "context has mark_fieldjob_as_sent, set state='sent'."
     )
     real_finding = [
         ReviewFinding(
             location="models/models.py", severity="blocking",
             explanation=(
-                "action_send sets 'mark_meerwerk_as_sent=True' in the context, which is the "
+                "action_send sets 'mark_fieldjob_as_sent=True' in the context, which is the "
                 "trigger for that out-of-scope hook and represents a premature implementation "
                 "detail for a not-yet-built feature."
             ),
@@ -4167,8 +4167,8 @@ def test_hallucinated_incomplete_compute_dependency_filter_downgrades_invented_s
         task_id=uuid.uuid4(), specialist_type=SpecialistType.code_review,
         capability_class=CapabilityClass.readonly_investigation, tier=AutonomyTier.tier_1_readonly,
         goal=(
-            "On the meerwerk record, I want to see the total of all line prices shown "
-            "automatically in the header.\n\nModule: project_meerwerk\nModel: project.meerwerk\n"
+            "On the fieldjob record, I want to see the total of all line prices shown "
+            "automatically in the header.\n\nModule: project_fieldjob\nModel: project.fieldjob\n"
             "Field: amount_total (Monetary, compute=_compute_amount_total, depends on "
             "line_ids.price_unit, store=True)\n"
         ),
@@ -4177,8 +4177,8 @@ def test_hallucinated_incomplete_compute_dependency_filter_downgrades_invented_s
     )
     correct_files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import api, fields, models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "from odoo import api, fields, models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
             "    amount_total = fields.Monetary(string='Amount Total', "
             "compute='_compute_amount_total', store=True)\n\n"
             "    @api.depends('line_ids.price_unit')\n"

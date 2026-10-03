@@ -33,10 +33,10 @@ def _make_generated(depends: list[str], views_xml: str | None = None) -> Generat
 
 
 def test_rejects_the_real_confirmed_hallucinated_depends():
-    generated = _make_generated(depends=["base", "meerwerk"])
+    generated = _make_generated(depends=["base", "fieldjob"])
     with patch(
         "specialists.build.specialist.get_module_state_fast",
-        side_effect=lambda dep, db: "NOT_FOUND" if dep == "meerwerk" else "installed",
+        side_effect=lambda dep, db: "NOT_FOUND" if dep == "fieldjob" else "installed",
     ):
         try:
             asyncio.run(_validate_references_resolve_against_real_target(
@@ -44,12 +44,12 @@ def test_rejects_the_real_confirmed_hallucinated_depends():
             ))
             raise AssertionError("expected ValueError for a hallucinated depends= entry")
         except ValueError as exc:
-            assert "meerwerk" in str(exc)
-    print("PASS: a hallucinated depends= entry (the real confirmed 'meerwerk' vs 'project_meerwerk' case) is rejected")
+            assert "fieldjob" in str(exc)
+    print("PASS: a hallucinated depends= entry (the real confirmed 'fieldjob' vs 'project_fieldjob' case) is rejected")
 
 
 def test_real_module_depends_never_flagged():
-    generated = _make_generated(depends=["base", "project_meerwerk"])
+    generated = _make_generated(depends=["base", "project_fieldjob"])
     with patch(
         "specialists.build.specialist.get_module_state_fast",
         return_value="installed",
@@ -89,10 +89,10 @@ def test_depends_checked_even_with_no_xml_content_at_all():
     `if not all_xml_blobs: return` early-return would have silently skipped the depends= check
     entirely on a manifest-only/pure-model round with no views/security XML yet.
     """
-    generated = _make_generated(depends=["base", "meerwerk"], views_xml=None)
+    generated = _make_generated(depends=["base", "fieldjob"], views_xml=None)
     with patch(
         "specialists.build.specialist.get_module_state_fast",
-        side_effect=lambda dep, db: "NOT_FOUND" if dep == "meerwerk" else "installed",
+        side_effect=lambda dep, db: "NOT_FOUND" if dep == "fieldjob" else "installed",
     ):
         try:
             asyncio.run(_validate_references_resolve_against_real_target(
@@ -100,7 +100,7 @@ def test_depends_checked_even_with_no_xml_content_at_all():
             ))
             raise AssertionError("expected ValueError even with no XML content present")
         except ValueError as exc:
-            assert "meerwerk" in str(exc)
+            assert "fieldjob" in str(exc)
     print("PASS: a hallucinated depends= entry is caught even on a round with no XML content at all")
 
 

@@ -35,7 +35,7 @@ def test_no_mismatch_when_self_report_honestly_discloses_incomplete_coverage():
     real_uncovered = ["models/models.py:8", "models/models.py:9", "models/models.py:11"]
     claimed = [
         "The onchange logic that updates the 'Assigned to' field when a project is selected "
-        "on the meerwerk form is not executed during installation."
+        "on the fieldjob form is not executed during installation."
     ]
     assert compute_spot_check_mismatch(claimed, real_uncovered, believed_fully_covered=False) is False
     print("PASS: an honest 'not fully covered' self-report is never penalized just because its "

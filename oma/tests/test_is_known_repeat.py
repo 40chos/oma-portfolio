@@ -92,10 +92,10 @@ def test_task005_real_round4_and_round5_findings_are_caught_as_a_repeat():
     prove the whole real pipeline -- classification, then repeat detection -- catches it.
     """
     round4_finding = (
-        "views.xml is empty, so user_id/project_id are not exposed on the meerwerk form view"
+        "views.xml is empty, so user_id/project_id are not exposed on the fieldjob form view"
     )
     round5_finding = (
-        "project_id and user_id are never exposed on project.meerwerk's form view"
+        "project_id and user_id are never exposed on project.fieldjob's form view"
     )
     import uuid
 
@@ -105,7 +105,7 @@ def test_task005_real_round4_and_round5_findings_are_caught_as_a_repeat():
         task_id=uuid.uuid4(), specialist_type=SpecialistType.bug_fix,
         capability_class=CapabilityClass.module_development, tier=AutonomyTier.tier_2_notify_after,
         goal=(
-            "When I select a project on the meerwerk form, I want the 'Assigned to' field to "
+            "When I select a project on the fieldjob form, I want the 'Assigned to' field to "
             "automatically fill with the project manager."
         ),
         inputs=[], rules=[], deliverables=[], compensating_actions=[],

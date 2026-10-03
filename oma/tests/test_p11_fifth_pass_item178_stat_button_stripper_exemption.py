@@ -26,18 +26,18 @@ _MANIFEST = ManifestFields(
 
 _STAT_BUTTON_GOAL = (
     "On the project form, I want to see a button in the top-right corner that shows how many "
-    "meerwerk records exist for this project.\n\n"
-    "Field: meerwerk_count (Integer, computed)\n"
-    "Action method: action_view_meerwerk\n"
+    "fieldjob records exist for this project.\n\n"
+    "Field: fieldjob_count (Integer, computed)\n"
+    "Action method: action_view_fieldjob\n"
 )
 
 _REAL_VIEWS_XML = (
-    '<odoo><record id="view_project_meerwerk_count" model="ir.ui.view">'
-    '<field name="name">project.project.meerwerk.count</field>'
+    '<odoo><record id="view_project_fieldjob_count" model="ir.ui.view">'
+    '<field name="name">project.project.fieldjob.count</field>'
     '<field name="model">project.project</field>'
     '<field name="inherit_id" ref="project.edit_project"/>'
     '<field name="arch" type="xml"><sheet position="inside">'
-    '<field name="meerwerk_count"/>'
+    '<field name="fieldjob_count"/>'
     "</sheet></field></record></odoo>"
 )
 
@@ -58,7 +58,7 @@ def test_stat_button_goal_views_xml_is_never_stripped():
 
 def test_ordinary_pure_behavior_goal_is_still_stripped():
     """The pre-existing, correct behavior must be unchanged for a genuine pure-behavior task."""
-    goal = "When I select a project on the meerwerk form, auto-fill the 'Assigned to' field."
+    goal = "When I select a project on the fieldjob form, auto-fill the 'Assigned to' field."
     generated = _gen(_REAL_VIEWS_XML)
     _autofix_strip_unrequested_views_xml_for_pure_behavior_task(generated, goal)
     assert generated.views_xml is None

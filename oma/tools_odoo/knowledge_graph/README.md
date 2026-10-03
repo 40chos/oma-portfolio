@@ -14,9 +14,9 @@ summary, and resolving whatever Stage A flags under `needs_llm_review`.
 **This package never touches real Odoo source.** Everything here is designed and
 tested against small synthetic fixture modules written for this purpose (see
 `fixtures/`, every file headed `SYNTHETIC TEST FIXTURE -- not real Odoo source`).
-Andrew runs `driver.py` against real module checkouts himself, over his own SSH
-connection, per the data-exfiltration boundary already established in
-`docs/reports/ODOO_MODULE_CHAINING_PILOT_HANDOFF_2026-07-16/README.md`.
+The project owner runs `driver.py` against real module checkouts themselves, over
+their own SSH connection, per the data-exfiltration boundary already established
+in the project's own handoff documentation.
 
 ## What's in this package
 
@@ -124,7 +124,7 @@ store.get_hub_modules(min_indegree=3)
 ## Testing
 
 ```
-cd /home/andrew/projects/agents/odoo
+cd oma
 python3 tools_odoo/knowledge_graph/test_parser.py
 ```
 

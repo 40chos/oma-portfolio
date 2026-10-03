@@ -16,7 +16,7 @@ management, distinct from the XML-RPC API used for actual data
 operations.
 
 Stage 5 port: the original reached this channel over SSH + a remote
-`docker exec` (two real hosts: this devbox, and odoo-dev.int running the
+`docker exec` (two real hosts: this devbox, and a remote dev host running the
 actual Odoo container). In this single-host Docker Compose port, the Odoo
 container is a direct sibling on the same compose network, so this is a
 plain local `docker exec` -- same real `odoo-bin shell` invocation, same

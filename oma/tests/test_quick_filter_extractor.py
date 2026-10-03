@@ -29,7 +29,7 @@ def test_named_condition_phrasing_no_explicit_domain():
 
 def test_explicit_inline_domain_phrasing_multiple_filters():
     goal = (
-        "Add a filter to the meerwerk search view: 'Accepted' (state=accepted) and "
+        "Add a filter to the fieldjob search view: 'Accepted' (state=accepted) and "
         "'My records' (user_id=uid), with a separator."
     )
     result = extract_quick_filters(goal)
@@ -58,7 +58,7 @@ def test_single_word_label_echoing_a_state_value_resolves():
     textually-grounded signal, not a guess. Both filters in the same real goal must now resolve,
     where before the whole extraction bailed because only one of the two had a known idiom."""
     goal = (
-        "In the meerwerk list, I want a quick filter button called 'Accepted' that shows only "
+        "In the fieldjob list, I want a quick filter button called 'Accepted' that shows only "
         "accepted records, and another called 'My records' that shows only records assigned to me."
     )
     result = extract_quick_filters(goal)

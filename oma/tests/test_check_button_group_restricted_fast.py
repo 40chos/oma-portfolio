@@ -3,7 +3,7 @@
 
 Found live during task 008's own first run under the full Phase 25A-25E
 architecture: the check reported "button 'action_send' on
-'project.meerwerk' has NO group restriction at all" identically across
+'project.fieldjob' has NO group restriction at all" identically across
 5 rounds, even though the real generated view genuinely, correctly
 declared `groups="base.group_system"` -- confirmed directly by reading
 the view's raw `arch_db` via `ir.ui.view.search_read` (present) and by
@@ -75,7 +75,7 @@ def test_reads_the_real_declared_groups_attribute_not_the_acl_stripped_one():
         "tools_odoo.odoo_schema_client._models_proxy", return_value=_fake_models_proxy_acl_stripped_get_views(),
     ):
         result = check_button_group_restricted_fast(
-            "odoo16_dev", "project.meerwerk", "action_send", group_xmlid="base.group_system",
+            "odoo16_dev", "project.fieldjob", "action_send", group_xmlid="base.group_system",
         )
     assert result is not None, "must find the button via the resolved view id"
     passed, notes = result
@@ -117,7 +117,7 @@ def test_still_correctly_reports_a_genuinely_unrestricted_button():
         "tools_odoo.odoo_schema_client._models_proxy", return_value=_fake_models_proxy_genuinely_unrestricted(),
     ):
         result = check_button_group_restricted_fast(
-            "odoo16_dev", "project.meerwerk", "action_send", group_xmlid="base.group_system",
+            "odoo16_dev", "project.fieldjob", "action_send", group_xmlid="base.group_system",
         )
     assert result is not None
     passed, notes = result

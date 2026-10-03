@@ -321,7 +321,7 @@ def test_single_constraint_field_scope_rejects_over_generation():
 def test_no_premature_out_of_scope_method_rejects_early_method_write():
     """Phase 25F (2026-07-26): real, live-confirmed gap -- task 009's own
     live run burned all 5 rounds on the identical mistake (writing
-    _compute_meerwerk_count when only the meerwerk_count FIELD was in
+    _compute_fieldjob_count when only the fieldjob_count FIELD was in
     scope for that round), correctly caught by Code-Review every round
     but never pre-write, so the round never actually converged on the
     one thing it needed to do (declare the field). This validator closes
@@ -332,12 +332,12 @@ def test_no_premature_out_of_scope_method_rejects_early_method_write():
         "from odoo import models, fields\n\n"
         "class ProjectProject(models.Model):\n"
         "    _inherit = 'project.project'\n"
-        "    meerwerk_ids = fields.One2many('project.meerwerk', 'project_id')\n"
+        "    fieldjob_ids = fields.One2many('project.fieldjob', 'project_id')\n"
     )
     goal = (
-        "This round's own NEW focus is ONLY: 'meerwerk_count_field'. "
+        "This round's own NEW focus is ONLY: 'fieldjob_count_field'. "
         "The following constraints are NOT yet in scope for this round and must NOT be "
-        "implemented even partially: ['compute_meerwerk_count_method', 'action_view_meerwerk_method']."
+        "implemented even partially: ['compute_fieldjob_count_method', 'action_view_fieldjob_method']."
     )
     over_generated = GeneratedModuleFiles(
         manifest_fields=ManifestFields(
@@ -347,21 +347,21 @@ def test_no_premature_out_of_scope_method_rejects_early_method_write():
             "from odoo import models, fields, api\n\n"
             "class ProjectProject(models.Model):\n"
             "    _inherit = 'project.project'\n"
-            "    meerwerk_ids = fields.One2many('project.meerwerk', 'project_id')\n\n"
-            "    def _compute_meerwerk_count(self):\n"
+            "    fieldjob_ids = fields.One2many('project.fieldjob', 'project_id')\n\n"
+            "    def _compute_fieldjob_count(self):\n"
             "        for record in self:\n"
-            "            record.meerwerk_count = len(record.meerwerk_ids)\n"
+            "            record.fieldjob_count = len(record.fieldjob_ids)\n"
         ),
         security_csv="", notes="",
     )
     raised = False
     try:
         _validate_no_premature_out_of_scope_method(
-            over_generated, goal, old_models_py, constraint_status={"meerwerk_count_field": "pending"},
+            over_generated, goal, old_models_py, constraint_status={"fieldjob_count_field": "pending"},
         )
     except ValueError as e:
         raised = True
-        assert "compute_meerwerk_count_method" in str(e)
+        assert "compute_fieldjob_count_method" in str(e)
     assert raised, "a round writing a method a LATER constraint owns must be rejected"
 
     minimal = GeneratedModuleFiles(
@@ -372,13 +372,13 @@ def test_no_premature_out_of_scope_method_rejects_early_method_write():
             "from odoo import models, fields\n\n"
             "class ProjectProject(models.Model):\n"
             "    _inherit = 'project.project'\n"
-            "    meerwerk_ids = fields.One2many('project.meerwerk', 'project_id')\n"
-            "    meerwerk_count = fields.Integer(compute='_compute_meerwerk_count')\n"
+            "    fieldjob_ids = fields.One2many('project.fieldjob', 'project_id')\n"
+            "    fieldjob_count = fields.Integer(compute='_compute_fieldjob_count')\n"
         ),
         security_csv="", notes="",
     )
     _validate_no_premature_out_of_scope_method(
-        minimal, goal, old_models_py, constraint_status={"meerwerk_count_field": "pending"},
+        minimal, goal, old_models_py, constraint_status={"fieldjob_count_field": "pending"},
     )  # must not raise -- only a field was added, no method
 
     # An ordinary, non-decomposed task (empty constraint_status) must
@@ -402,7 +402,7 @@ def test_no_premature_out_of_scope_method_catches_descriptive_multi_word_labels(
     flagship run, service_ticket_model node): this validator used to only ever check when at
     least one NOT-yet-in-scope label literally ended with the string suffix "_method" (matching
     ONLY the one real incident it was originally built from, e.g.
-    'action_view_meerwerk_method') -- but this project's own real constraint-naming convention
+    'action_view_fieldjob_method') -- but this project's own real constraint-naming convention
     uses descriptive, multi-word labels ('ticket_workflow_and_logging',
     'ticket_access_rights') that never end with that exact suffix, so the whole validator
     silently never fired for any task using that naming convention. Confirmed live: a round
@@ -867,7 +867,7 @@ def test_no_invented_related_field_targets_rejects_nonexistent_target():
     Date(related='project_id.expected_finish_date', ...)` passed every
     existing validator and Code-Review, then crashed the real install
     with `KeyError: Field expected_finish_date referenced in related
-    field definition project.meerwerk.expected_finish_date does not
+    field definition project.fieldjob.expected_finish_date does not
     exist.` -- reproduced here with the exact same field/model shape.
     """
     from specialists.build.specialist import _validate_no_invented_related_field_targets
@@ -878,8 +878,8 @@ def test_no_invented_related_field_targets_rejects_nonexistent_target():
         ),
         models_py=(
             "from odoo import models, fields\n\n"
-            "class ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "class ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    expected_finish_date = fields.Date(related='project_id.expected_finish_date', "
             "string='Expected Finish Date')\n"
         ),
@@ -899,8 +899,8 @@ def test_no_invented_related_field_targets_rejects_nonexistent_target():
         ),
         models_py=(
             "from odoo import models, fields\n\n"
-            "class ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "class ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    customer_email = fields.Char(related='partner_id.email', string='Customer Email')\n"
         ),
         security_csv="",
@@ -1042,7 +1042,7 @@ def test_view_fields_exist_on_inherited_model_rejects_invented_field():
     field name directly in a view instead, which passed every existing
     validator and only surfaced as a real `ParseError` at sandbox
     install: `Field "expected_finish_date" does not exist in model
-    "project.meerwerk"`. This async sibling closes that gap using the
+    "project.fieldjob"`. This async sibling closes that gap using the
     real, live Odoo registry.
     """
     from specialists.build.specialist import _validate_view_fields_exist_on_inherited_model
@@ -1051,10 +1051,10 @@ def test_view_fields_exist_on_inherited_model_rejects_invented_field():
         manifest_fields=ManifestFields(
             name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
         ),
-        models_py="from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         views_xml=(
             "<odoo>\n  <record id=\"v1\" model=\"ir.ui.view\">\n"
-            "    <field name=\"model\">project.meerwerk</field>\n"
+            "    <field name=\"model\">project.fieldjob</field>\n"
             "    <field name=\"arch\" type=\"xml\">\n"
             "      <field name=\"expected_finish_date\"/>\n"
             "    </field>\n  </record>\n</odoo>"
@@ -1073,10 +1073,10 @@ def test_view_fields_exist_on_inherited_model_rejects_invented_field():
         manifest_fields=ManifestFields(
             name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
         ),
-        models_py="from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         views_xml=(
             "<odoo>\n  <record id=\"v1\" model=\"ir.ui.view\">\n"
-            "    <field name=\"model\">project.meerwerk</field>\n"
+            "    <field name=\"model\">project.fieldjob</field>\n"
             "    <field name=\"arch\" type=\"xml\">\n"
             "      <field name=\"date_finish\"/>\n"
             "    </field>\n  </record>\n</odoo>"
@@ -1154,10 +1154,10 @@ def test_view_fields_exist_on_inherited_model_ignores_nested_one2many_subview_fi
     """Real, confirmed bug found live (2026-08-06, Phase 30 root-cause pass, task034): a
     One2many field opened as an editable subview (`<field name="line_ids"><tree>...<field
     name="hours"/>...</tree></field>`) nests real fields of the RELATION'S TARGET model
-    (project.meerwerk.line's own real `hours`/`price_unit`), not the outer inherit target
-    (project.meerwerk) this validator checks against -- genuinely correct, standard Odoo XML that
-    was rejected as "doesn't exist on project.meerwerk" before this fix. Using project.meerwerk's
-    own real, live line_ids -> project.meerwerk.line relation (confirmed via
+    (project.fieldjob.line's own real `hours`/`price_unit`), not the outer inherit target
+    (project.fieldjob) this validator checks against -- genuinely correct, standard Odoo XML that
+    was rejected as "doesn't exist on project.fieldjob" before this fix. Using project.fieldjob's
+    own real, live line_ids -> project.fieldjob.line relation (confirmed via
     get_relation_fields_fast against the real database).
     """
     from specialists.build.specialist import _validate_view_fields_exist_on_inherited_model
@@ -1166,10 +1166,10 @@ def test_view_fields_exist_on_inherited_model_ignores_nested_one2many_subview_fi
         manifest_fields=ManifestFields(
             name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
         ),
-        models_py="from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         views_xml=(
             "<odoo>\n  <record id=\"v1\" model=\"ir.ui.view\">\n"
-            "    <field name=\"model\">project.meerwerk</field>\n"
+            "    <field name=\"model\">project.fieldjob</field>\n"
             "    <field name=\"arch\" type=\"xml\">\n"
             "      <field name=\"line_ids\">\n"
             "        <tree editable=\"bottom\">\n"
@@ -1191,10 +1191,10 @@ def test_view_fields_exist_on_inherited_model_ignores_nested_one2many_subview_fi
         manifest_fields=ManifestFields(
             name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
         ),
-        models_py="from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         views_xml=(
             "<odoo>\n  <record id=\"v1\" model=\"ir.ui.view\">\n"
-            "    <field name=\"model\">project.meerwerk</field>\n"
+            "    <field name=\"model\">project.fieldjob</field>\n"
             "    <field name=\"arch\" type=\"xml\">\n"
             "      <field name=\"totally_invented_field\"/>\n"
             "      <field name=\"line_ids\">\n"
@@ -1380,7 +1380,7 @@ def test_view_fields_exist_on_inherited_model_also_checks_mail_templates():
         manifest_fields=ManifestFields(
             name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
         ),
-        models_py="from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         extra_data_files={
             "data/mail_template_data.xml": (
                 '<odoo>\n  <record id="t" model="mail.template">\n'
@@ -1396,7 +1396,7 @@ def test_view_fields_exist_on_inherited_model_also_checks_mail_templates():
         asyncio.run(_validate_view_fields_exist_on_inherited_model(invented, "odoo16_dev", task_id="test"))
     except ValueError as exc:
         raised = True
-        # amount_total IS a real field on project.meerwerk (confirmed live
+        # amount_total IS a real field on project.fieldjob (confirmed live
         # earlier this session) -- only expected_finish_date is invented.
         # A correct implementation flags exactly the invented one, never
         # the real one it happens to sit next to.
@@ -1408,7 +1408,7 @@ def test_view_fields_exist_on_inherited_model_also_checks_mail_templates():
         manifest_fields=ManifestFields(
             name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
         ),
-        models_py="from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         extra_data_files={
             "data/mail_template_data.xml": (
                 '<odoo>\n  <record id="t" model="mail.template">\n'
@@ -1674,12 +1674,12 @@ def test_autofix_dedupes_duplicate_inherit_on_task016_real_shape():
         ),
         models_py=(
             "from odoo import models, fields, api\n\n"
-            "class ProjectMeerwerk(models.Model):\n"
-            "    _inherit = ['project.meerwerk', 'mail.thread']\n\n"
+            "class ProjectFieldjob(models.Model):\n"
+            "    _inherit = ['project.fieldjob', 'mail.thread']\n\n"
             "    # Track changes to state and user_id\n"
             "    state = fields.Selection(track_visibility='always')\n"
             "    user_id = fields.Many2one(track_visibility='always')\n"
-            "    _inherit = ['project.meerwerk', 'mail.thread']\n"
+            "    _inherit = ['project.fieldjob', 'mail.thread']\n"
         ),
         security_csv="", notes="",
     )
@@ -1687,7 +1687,7 @@ def test_autofix_dedupes_duplicate_inherit_on_task016_real_shape():
     assert generated.models_py.count("_inherit =") == 1, (
         f"expected exactly one surviving _inherit assignment -- got: {generated.models_py!r}"
     )
-    assert "['project.meerwerk', 'mail.thread']" in generated.models_py
+    assert "['project.fieldjob', 'mail.thread']" in generated.models_py
     import ast
     ast.parse(generated.models_py)
     _validate_no_duplicate_odoo_special_attrs(generated)
@@ -1803,7 +1803,7 @@ def test_autofix_dedupe_prefers_valid_name_over_a_later_stale_invalid_one():
     """Real, confirmed follow-on gap found live (2026-08-03, task027's own real re-test, same day
     as the fix above): a scoped edit's search_replace inserts its new lines where the matched
     class-header target was, so a genuinely stale, already-invalid earlier `_name` value (e.g. a
-    leftover 'ProjectMeerwerk' PascalCase mistake) can end up positioned AFTER the scoped edit's
+    leftover 'ProjectFieldjob' PascalCase mistake) can end up positioned AFTER the scoped edit's
     own newly-inserted, genuinely valid `_name` value. Blindly "keep the last" would then discard
     the correct one and keep the broken one -- the opposite of the fix's own intent.
     """
@@ -1818,10 +1818,10 @@ def test_autofix_dedupe_prefers_valid_name_over_a_later_stale_invalid_one():
         ),
         models_py=(
             "from odoo import api, models\n\n"
-            "class ProjectMeerwerk(models.Model):\n"
-            "    _name = 'project.meerwerk'\n"
-            "    _inherit = ['project.meerwerk', 'mail.thread']\n"
-            "    _name = 'ProjectMeerwerk'\n\n"
+            "class ProjectFieldjob(models.Model):\n"
+            "    _name = 'project.fieldjob'\n"
+            "    _inherit = ['project.fieldjob', 'mail.thread']\n"
+            "    _name = 'ProjectFieldjob'\n\n"
             "    @api.model\n"
             "    def create(self, vals):\n"
             "        pass\n"
@@ -1830,8 +1830,8 @@ def test_autofix_dedupe_prefers_valid_name_over_a_later_stale_invalid_one():
     )
     _autofix_dedupe_duplicate_special_model_attribute_assignments(generated)
     assert generated.models_py.count("_name =") == 1
-    assert "_name = 'project.meerwerk'" in generated.models_py
-    assert "_name = 'ProjectMeerwerk'" not in generated.models_py
+    assert "_name = 'project.fieldjob'" in generated.models_py
+    assert "_name = 'ProjectFieldjob'" not in generated.models_py
     import ast
     ast.parse(generated.models_py)
     _validate_new_model_name_is_valid_odoo_identifier(generated)
@@ -1879,9 +1879,9 @@ def test_second_dedup_pass_catches_a_fresh_duplicate_from_the_inherit_rewrite():
         ),
         models_py=(
             "from odoo import api, models\n\n\n"
-            "class ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
-            "    _inherit = ['project.meerwerk', 'mail.thread']\n\n"
+            "class ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
+            "    _inherit = ['project.fieldjob', 'mail.thread']\n\n"
             "    def write(self, vals):\n"
             "        pass\n"
         ),
@@ -1889,7 +1889,7 @@ def test_second_dedup_pass_catches_a_fresh_duplicate_from_the_inherit_rewrite():
     )
     _autofix_dedupe_duplicate_special_model_attribute_assignments(generated)
     assert generated.models_py.count("_inherit =") == 1
-    assert "_inherit = ['project.meerwerk', 'mail.thread']" in generated.models_py
+    assert "_inherit = ['project.fieldjob', 'mail.thread']" in generated.models_py
     _validate_no_duplicate_odoo_special_attrs(generated)
     print("PASS: a second dedup pass cleanly resolves the fresh duplicate the inherit-rewrite "
           "autofix introduced, matching task027's own real crash content")
@@ -1915,8 +1915,8 @@ def test_no_duplicate_method_definitions_rejects_duplicate_onchange():
     duplicated = GeneratedModuleFiles(
         manifest_fields=manifest,
         models_py=(
-            "from odoo import models, fields, api\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields, api\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    @api.onchange('project_id')\n"
             "    def _onchange_project_id(self):\n"
             "        if self.project_id:\n"
@@ -1937,8 +1937,8 @@ def test_no_duplicate_method_definitions_rejects_duplicate_onchange():
     single = GeneratedModuleFiles(
         manifest_fields=manifest,
         models_py=(
-            "from odoo import models, fields, api\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields, api\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    @api.onchange('project_id')\n"
             "    def _onchange_project_id(self):\n"
             "        if self.project_id:\n"
@@ -2192,7 +2192,7 @@ def test_goal_named_field_is_declared_skips_when_already_real_on_inherited_model
 
 def test_goal_named_field_is_declared_rejects_field_only_real_via_unrelated_oma_sibling():
     """Phase 26A follow-up (2026-07-27): real, live-reproduced bug --
-    task 009's own goal named `meerwerk_partner_count` on `res.partner`.
+    task 009's own goal named `fieldjob_partner_count` on `res.partner`.
     The ground-truth check queries the CLUTTERED live target (self.db),
     which had a field of that exact name only because a completely
     unrelated, already-installed module from an EARLIER, separate run
@@ -2214,9 +2214,9 @@ def test_goal_named_field_is_declared_rejects_field_only_real_via_unrelated_oma_
     from specialists.build.specialist import _validate_goal_named_field_is_declared
 
     goal = (
-        "On the customer form, show how many meerwerk records are linked.\n\n"
-        "Module: project_meerwerk\nModel: res.partner (inherit)\n"
-        "Field: meerwerk_partner_count (Integer, computed)\n"
+        "On the customer form, show how many fieldjob records are linked.\n\n"
+        "Module: project_fieldjob\nModel: res.partner (inherit)\n"
+        "Field: fieldjob_partner_count (Integer, computed)\n"
     )
     missing = GeneratedModuleFiles(
         manifest_fields=ManifestFields(
@@ -2225,19 +2225,19 @@ def test_goal_named_field_is_declared_rejects_field_only_real_via_unrelated_oma_
         models_py=(
             "from odoo import models\n\nclass ResPartner(models.Model):\n"
             "    _inherit = 'res.partner'\n\n"
-            "    def _compute_meerwerk_partner_count(self):\n"
+            "    def _compute_fieldjob_partner_count(self):\n"
             "        pass\n"
         ),
         security_csv="", notes="",
     )
     with patch(
         "tools_odoo.odoo_schema_client._read_real_field_rows",
-        return_value=[{"name": "meerwerk_partner_count", "modules": "oma_on_the_customer_contact_d7453a8c"}],
+        return_value=[{"name": "fieldjob_partner_count", "modules": "oma_on_the_customer_contact_d7453a8c"}],
     ):
         raised = False
         try:
             asyncio.run(_validate_goal_named_field_is_declared(
-                missing, goal, {}, db="odoo16_dev", task_id="test", depends_on_module="project_meerwerk",
+                missing, goal, {}, db="odoo16_dev", task_id="test", depends_on_module="project_fieldjob",
             ))
         except ValueError:
             raised = True
@@ -2251,10 +2251,10 @@ def test_goal_named_field_is_declared_rejects_field_only_real_via_unrelated_oma_
     # the original fix-40 behavior).
     with patch(
         "tools_odoo.odoo_schema_client._read_real_field_rows",
-        return_value=[{"name": "meerwerk_partner_count", "modules": "project_meerwerk"}],
+        return_value=[{"name": "fieldjob_partner_count", "modules": "project_fieldjob"}],
     ):
         asyncio.run(_validate_goal_named_field_is_declared(
-            missing, goal, {}, db="odoo16_dev", task_id="test", depends_on_module="project_meerwerk",
+            missing, goal, {}, db="odoo16_dev", task_id="test", depends_on_module="project_fieldjob",
         ))
     print("PASS: rejects a field only real via an unrelated oma_ sibling module, still accepts "
           "one owned by the round's own declared dependency")
@@ -2262,12 +2262,12 @@ def test_goal_named_field_is_declared_rejects_field_only_real_via_unrelated_oma_
 
 def test_autofix_computed_field_missing_declaration_wires_up_an_already_written_method():
     """Phase 26A follow-up (2026-07-27): real, live-reproduced bug --
-    task 009's own goal ("Field: meerwerk_partner_count (Integer,
-    computed)" + a separate "Compute method: _compute_meerwerk_
+    task 009's own goal ("Field: fieldjob_partner_count (Integer,
+    computed)" + a separate "Compute method: _compute_fieldjob_
     partner_count..." line describing a search_count()-based counter).
     Confirmed live, TWO separate fresh submissions, 5 identical rounds
     each: Build correctly wrote the real compute METHOD body every
-    time, but never declared `meerwerk_partner_count = fields.Integer(
+    time, but never declared `fieldjob_partner_count = fields.Integer(
     compute=...)` at all -- caught pre-write every round by
     `_validate_goal_named_field_is_declared()`, but the LLM never
     fixed it despite the validator's own clear, repeated message. This
@@ -2277,10 +2277,10 @@ def test_autofix_computed_field_missing_declaration_wires_up_an_already_written_
     from specialists.build.specialist import _autofix_goal_named_computed_field_missing_declaration
 
     goal = (
-        "On the customer form, show how many meerwerk records are linked.\n\n"
-        "Module: project_meerwerk\nModel: res.partner (inherit)\n"
-        "Field: meerwerk_partner_count (Integer, computed)\n"
-        "Compute method: _compute_meerwerk_partner_count, counts project.meerwerk records where "
+        "On the customer form, show how many fieldjob records are linked.\n\n"
+        "Module: project_fieldjob\nModel: res.partner (inherit)\n"
+        "Field: fieldjob_partner_count (Integer, computed)\n"
+        "Compute method: _compute_fieldjob_partner_count, counts project.fieldjob records where "
         "partner_id equals this customer via search_count\n"
     )
     generated = GeneratedModuleFiles(
@@ -2290,9 +2290,9 @@ def test_autofix_computed_field_missing_declaration_wires_up_an_already_written_
         models_py=(
             "from odoo import models\n\nclass ResPartner(models.Model):\n"
             "    _inherit = 'res.partner'\n\n"
-            "    def _compute_meerwerk_partner_count(self):\n"
+            "    def _compute_fieldjob_partner_count(self):\n"
             "        for record in self:\n"
-            "            record.meerwerk_partner_count = self.env['project.meerwerk'].search_count(\n"
+            "            record.fieldjob_partner_count = self.env['project.fieldjob'].search_count(\n"
             "                [('partner_id', '=', record.id)]\n"
             "            )\n"
         ),
@@ -2300,11 +2300,11 @@ def test_autofix_computed_field_missing_declaration_wires_up_an_already_written_
     )
     _autofix_goal_named_computed_field_missing_declaration(generated, goal, {"customer_contact_form": "pending"})
 
-    assert "meerwerk_partner_count = fields.Integer(" in generated.models_py, (
+    assert "fieldjob_partner_count = fields.Integer(" in generated.models_py, (
         f"expected the missing field declaration to be injected -- got:\n{generated.models_py}"
     )
-    assert "compute='_compute_meerwerk_partner_count'" in generated.models_py
-    assert "def _compute_meerwerk_partner_count(self):" in generated.models_py, (
+    assert "compute='_compute_fieldjob_partner_count'" in generated.models_py
+    assert "def _compute_fieldjob_partner_count(self):" in generated.models_py, (
         "must never touch/remove the already-written, real compute method body"
     )
     assert "search_count" in generated.models_py, "the real method body's own logic must survive untouched"
@@ -2322,8 +2322,8 @@ def test_autofix_computed_field_missing_declaration_never_fires_when_method_itse
     from specialists.build.specialist import _autofix_goal_named_computed_field_missing_declaration
 
     goal = (
-        "Field: meerwerk_partner_count (Integer, computed)\n"
-        "Compute method: _compute_meerwerk_partner_count, counts something\n"
+        "Field: fieldjob_partner_count (Integer, computed)\n"
+        "Compute method: _compute_fieldjob_partner_count, counts something\n"
     )
     generated = GeneratedModuleFiles(
         manifest_fields=ManifestFields(
@@ -2333,7 +2333,7 @@ def test_autofix_computed_field_missing_declaration_never_fires_when_method_itse
         security_csv="", notes="",
     )
     _autofix_goal_named_computed_field_missing_declaration(generated, goal, {})
-    assert "meerwerk_partner_count" not in generated.models_py, (
+    assert "fieldjob_partner_count" not in generated.models_py, (
         "must not inject a field wired to a compute method that was never actually written"
     )
     print("PASS: stays a no-op when the named compute method itself isn't present")
@@ -2487,18 +2487,18 @@ def test_autofix_never_injects_a_fake_field_for_a_computed_spec():
     from specialists.build.specialist import _autofix_goal_named_field_declaration_missing
 
     goal = (
-        "On the meerwerk record, I want to see the total of all line prices shown automatically "
+        "On the fieldjob record, I want to see the total of all line prices shown automatically "
         "in the header.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: amount_total (Monetary, compute=_compute_amount_total, depends on "
         "line_ids.price_unit, store=True, currency_field=currency_id)\n"
     )
     manifest = ManifestFields(
         name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["project"], data=[],
     )
-    models_py = "from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n"
+    models_py = "from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n"
     generated = GeneratedModuleFiles(manifest_fields=manifest, models_py=models_py, security_csv="", notes="")
-    _autofix_goal_named_field_declaration_missing(generated, goal, {"on_the_meerwerk": "pending"})
+    _autofix_goal_named_field_declaration_missing(generated, goal, {"on_the_fieldjob": "pending"})
     assert generated.models_py == models_py, (
         f"must never auto-inject a fake plain field for a computed-field spec: got {generated.models_py!r}"
     )
@@ -2517,9 +2517,9 @@ def test_autofix_builds_a_real_sum_aggregate_compute_field():
     from specialists.build.specialist import _autofix_goal_named_sum_compute_field_missing
 
     goal = (
-        "On the meerwerk record, I want to see the total of all line prices shown automatically "
+        "On the fieldjob record, I want to see the total of all line prices shown automatically "
         "in the header. It should update whenever I add or change a line.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: amount_total (Monetary, compute=_compute_amount_total, depends on "
         "line_ids.price_unit, store=True, currency_field=currency_id, "
         "groups=mis_base_extend.group_user_mis_see_sale_price)\n"
@@ -2529,10 +2529,10 @@ def test_autofix_builds_a_real_sum_aggregate_compute_field():
     )
     generated = GeneratedModuleFiles(
         manifest_fields=manifest,
-        models_py="from odoo import fields, models\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import fields, models\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         security_csv="", notes="",
     )
-    _autofix_goal_named_sum_compute_field_missing(generated, goal, {"on_the_meerwerk": "pending"})
+    _autofix_goal_named_sum_compute_field_missing(generated, goal, {"on_the_fieldjob": "pending"})
     assert "from odoo import api, fields, models" in generated.models_py, "api must be added to the import line"
     assert (
         "amount_total = fields.Monetary(string='Amount Total', compute='_compute_amount_total', "
@@ -2552,7 +2552,7 @@ def test_autofix_builds_a_real_sum_aggregate_compute_field():
     )
     unsignaled = GeneratedModuleFiles(
         manifest_fields=manifest,
-        models_py="from odoo import fields, models\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import fields, models\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         security_csv="", notes="",
     )
     original = unsignaled.models_py
@@ -2575,15 +2575,15 @@ def test_autofix_overwrites_a_sum_compute_field_that_depends_on_invented_subfiel
     from specialists.build.specialist import _autofix_goal_named_sum_compute_field_missing
 
     goal = (
-        "On the meerwerk record, I want to see the total of all line prices shown automatically "
+        "On the fieldjob record, I want to see the total of all line prices shown automatically "
         "in the header.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: amount_total (Monetary, compute=_compute_amount_total, depends on "
         "line_ids.price_unit, store=True, currency_field=currency_id)\n"
     )
     wrong_models_py = (
-        "from odoo import api, fields, models\n\nclass ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n\n"
+        "from odoo import api, fields, models\n\nclass ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n\n"
         "    amount_total = fields.Monetary(\n"
         "        string='Total',\n"
         "        compute='_compute_amount_total',\n"
@@ -2598,7 +2598,7 @@ def test_autofix_overwrites_a_sum_compute_field_that_depends_on_invented_subfiel
         name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["project"], data=[],
     )
     generated = GeneratedModuleFiles(manifest_fields=manifest, models_py=wrong_models_py, security_csv="", notes="")
-    _autofix_goal_named_sum_compute_field_missing(generated, goal, {"on_the_meerwerk": "pending"})
+    _autofix_goal_named_sum_compute_field_missing(generated, goal, {"on_the_fieldjob": "pending"})
 
     assert "quantity" not in generated.models_py and "discount" not in generated.models_py, (
         f"the invented, nonexistent subfields must be gone, got: {generated.models_py!r}"
@@ -2615,8 +2615,8 @@ def test_autofix_overwrites_a_sum_compute_field_that_depends_on_invented_subfiel
 
     # The one case that must be left completely untouched: already correct.
     correct_models_py = (
-        "from odoo import api, fields, models\n\nclass ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n\n"
+        "from odoo import api, fields, models\n\nclass ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n\n"
         "    amount_total = fields.Monetary(string='Total', compute='_compute_amount_total', store=True)\n\n"
         "    @api.depends('line_ids.price_unit')\n"
         "    def _compute_amount_total(self):\n"
@@ -2627,7 +2627,7 @@ def test_autofix_overwrites_a_sum_compute_field_that_depends_on_invented_subfiel
         manifest_fields=manifest, models_py=correct_models_py, security_csv="", notes="",
     )
     original = already_correct.models_py
-    _autofix_goal_named_sum_compute_field_missing(already_correct, goal, {"on_the_meerwerk": "pending"})
+    _autofix_goal_named_sum_compute_field_missing(already_correct, goal, {"on_the_fieldjob": "pending"})
     assert already_correct.models_py == original, "must never touch an already-correct compute field"
     print("PASS: an already-correct sum-compute field/method is left completely untouched")
 
@@ -2645,9 +2645,9 @@ def test_autofix_sum_compute_registers_the_groups_module_as_a_manifest_dependenc
     from specialists.build.specialist import _autofix_goal_named_sum_compute_field_missing
 
     goal = (
-        "On the meerwerk record, I want to see the total of all line prices shown automatically "
+        "On the fieldjob record, I want to see the total of all line prices shown automatically "
         "in the header.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: amount_total (Monetary, compute=_compute_amount_total, depends on "
         "line_ids.price_unit, store=True, groups=mis_base_extend.group_user_mis_see_sale_price)\n"
     )
@@ -2656,10 +2656,10 @@ def test_autofix_sum_compute_registers_the_groups_module_as_a_manifest_dependenc
     )
     generated = GeneratedModuleFiles(
         manifest_fields=manifest,
-        models_py="from odoo import fields, models\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import fields, models\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         security_csv="", notes="",
     )
-    _autofix_goal_named_sum_compute_field_missing(generated, goal, {"on_the_meerwerk": "pending"})
+    _autofix_goal_named_sum_compute_field_missing(generated, goal, {"on_the_fieldjob": "pending"})
     assert "mis_base_extend" in generated.manifest_fields.depends, (
         f"expected 'mis_base_extend' registered as a manifest dependency, got: {generated.manifest_fields.depends!r}"
     )
@@ -2785,7 +2785,7 @@ def test_autofix_prefers_goal_facts_over_regex_for_a_goal_regex_cannot_parse():
     from specialists.build.specialist import _autofix_goal_named_field_declaration_missing
 
     goal = (
-        "Add a numeric field to project.meerwerk called 'estimated_hours' so we can record how "
+        "Add a numeric field to project.fieldjob called 'estimated_hours' so we can record how "
         "many hours we think the work will take. It should just be a plain number field."
     )
     manifest = ManifestFields(
@@ -2793,7 +2793,7 @@ def test_autofix_prefers_goal_facts_over_regex_for_a_goal_regex_cannot_parse():
     )
     missing = GeneratedModuleFiles(
         manifest_fields=manifest,
-        models_py="from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         security_csv="", notes="",
     )
     # Named-field detection (_GOAL_NAMED_FIELD_RE, unchanged by this
@@ -2896,25 +2896,25 @@ def test_autofix_sequence_field_missing_injects_the_standard_odoo_idiom():
     from specialists.build.specialist import _autofix_goal_named_sequence_field_missing
 
     goal = (
-        "Every meerwerk record should get an automatic reference number when created, like "
-        "MW-2026-0042.\n\nModule: project_meerwerk\nModel: project.meerwerk\nField: name\n"
+        "Every fieldjob record should get an automatic reference number when created, like "
+        "MW-2026-0042.\n\nModule: project_fieldjob\nModel: project.fieldjob\nField: name\n"
     )
     manifest = ManifestFields(
         name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
     )
     generated = GeneratedModuleFiles(
         manifest_fields=manifest,
-        models_py="from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         security_csv="", notes="",
     )
     goal_facts = {"field_name": "name", "field_type": None, "is_computed": False, "is_sequence_assigned": True}
-    _autofix_goal_named_sequence_field_missing(generated, goal, {"every_meerwerk_record": "pending"}, goal_facts)
+    _autofix_goal_named_sequence_field_missing(generated, goal, {"every_fieldjob_record": "pending"}, goal_facts)
     assert "name = fields.Char(string='Name', default='New', copy=False, readonly=True)" in generated.models_py, (
         f"expected the real field declaration, got: {generated.models_py!r}"
     )
     assert "@api.model_create_multi" in generated.models_py
     assert "def create(self, vals_list):" in generated.models_py
-    assert "self.env['ir.sequence'].next_by_code('project.meerwerk')" in generated.models_py, (
+    assert "self.env['ir.sequence'].next_by_code('project.fieldjob')" in generated.models_py, (
         f"expected the real model's own technical name resolved for next_by_code(), got: {generated.models_py!r}"
     )
     import_line = generated.models_py.splitlines()[0]
@@ -2932,7 +2932,7 @@ def test_autofix_sequence_field_missing_injects_the_standard_odoo_idiom():
         f"expected a real ir.sequence data file, got: {generated.extra_data_files!r}"
     )
     sequence_xml = generated.extra_data_files["data/sequence_data.xml"]
-    assert '<field name="code">project.meerwerk</field>' in sequence_xml, (
+    assert '<field name="code">project.fieldjob</field>' in sequence_xml, (
         f"the sequence's own code must match the real model name, got: {sequence_xml!r}"
     )
     assert '<field name="prefix">MW-%(year)s-</field>' in sequence_xml, (
@@ -3053,11 +3053,11 @@ def test_autofix_sequence_field_missing_fires_via_goal_convention_line_when_goal
     from specialists.build.specialist import _autofix_goal_named_sequence_field_missing
 
     goal = (
-        "Every meerwerk record should get a unique reference number like MW-2026-0001, "
+        "Every fieldjob record should get a unique reference number like MW-2026-0001, "
         "auto-generated when created. The user should never have to type this.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: name (Char, readonly, copy=False, default='New')\n"
-        "Sequence code: project.meerwerk in data/sequence_data.xml, prefix MW-%(year)s-, padding 4\n"
+        "Sequence code: project.fieldjob in data/sequence_data.xml, prefix MW-%(year)s-, padding 4\n"
         "Override create() with @api.model_create_multi to assign from ir.sequence when name=='New'\n"
     )
     manifest = ManifestFields(
@@ -3065,17 +3065,17 @@ def test_autofix_sequence_field_missing_fires_via_goal_convention_line_when_goal
     )
     generated = GeneratedModuleFiles(
         manifest_fields=manifest,
-        models_py="from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         security_csv="", notes="",
     )
     # Deliberately goal_facts=None -- simulates the real live failure
     # mode: the LLM classification call either failed outright or simply
     # didn't confirm is_sequence_assigned for this goal.
-    _autofix_goal_named_sequence_field_missing(generated, goal, {"every_meerwerk_record": "pending"}, goal_facts=None)
+    _autofix_goal_named_sequence_field_missing(generated, goal, {"every_fieldjob_record": "pending"}, goal_facts=None)
     assert "name = fields.Char(string='Name', default='New', copy=False, readonly=True)" in generated.models_py, (
         f"expected the fallback to fire from the goal's own Sequence code: line, got: {generated.models_py!r}"
     )
-    assert "self.env['ir.sequence'].next_by_code('project.meerwerk')" in generated.models_py
+    assert "self.env['ir.sequence'].next_by_code('project.fieldjob')" in generated.models_py
     assert generated.extra_data_files and "data/sequence_data.xml" in generated.extra_data_files
     compile(generated.models_py, "<test>", "exec")
     print("PASS: the Sequence code: goal-convention line alone is a sufficient fallback trigger "
@@ -3096,12 +3096,12 @@ def test_autofix_sequence_field_missing_resolves_current_round_field_on_decompos
     from specialists.build.specialist import _autofix_goal_named_sequence_field_missing
 
     goal = (
-        "Every meerwerk record should get a unique reference number automatically, and also "
+        "Every fieldjob record should get a unique reference number automatically, and also "
         "track the assigned technician.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: name (Char, readonly, copy=False, default='New')\n"
         "Field: technician_id (Many2one: res.users)\n"
-        "Sequence code: project.meerwerk in data/sequence_data.xml, prefix MW-%(year)s-, padding 4\n"
+        "Sequence code: project.fieldjob in data/sequence_data.xml, prefix MW-%(year)s-, padding 4\n"
         "This round's own NEW focus is ONLY: 'name_field'\n"
     )
     manifest = ManifestFields(
@@ -3109,7 +3109,7 @@ def test_autofix_sequence_field_missing_resolves_current_round_field_on_decompos
     )
     generated = GeneratedModuleFiles(
         manifest_fields=manifest,
-        models_py="from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         security_csv="", notes="",
     )
     _autofix_goal_named_sequence_field_missing(
@@ -3133,9 +3133,9 @@ def test_autofix_sum_compute_field_missing_resolves_current_round_field_on_decom
     from specialists.build.specialist import _autofix_goal_named_sum_compute_field_missing
 
     goal = (
-        "I want a computed total amount field on the meerwerk form summing all line prices, and "
+        "I want a computed total amount field on the fieldjob form summing all line prices, and "
         "also a separate notes field.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: amount_total (Monetary, computed, compute=_compute_amount_total, "
         "depends on line_ids.price_unit, sums line_ids.price_unit)\n"
         "Field: internal_notes (Text)\n"
@@ -3146,7 +3146,7 @@ def test_autofix_sum_compute_field_missing_resolves_current_round_field_on_decom
     )
     generated = GeneratedModuleFiles(
         manifest_fields=manifest,
-        models_py="from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        models_py="from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         security_csv="", notes="",
     )
     _autofix_goal_named_sum_compute_field_missing(
@@ -3274,11 +3274,11 @@ def test_autofix_generates_deterministic_search_filters_from_a_concrete_goal():
     from specialists.build.specialist import _autofix_goal_named_search_filters_missing
 
     goal = (
-        "In the meerwerk list, I want a quick filter button called 'Accepted' that shows only "
+        "In the fieldjob list, I want a quick filter button called 'Accepted' that shows only "
         "accepted records, and another called 'My records' that shows only records assigned to "
         "me.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
-        "View: view_project_meerwerk_search (search view for project.meerwerk)\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
+        "View: view_project_fieldjob_search (search view for project.fieldjob)\n"
         "Filter 1: name=accepted, string=Accepted, domain=[('state','=','accepted')]\n"
         "Filter 2: name=my_records, string=My records, domain=[('user_id','=',uid)]\n"
         "Separator between the two filters\n"
@@ -3287,16 +3287,16 @@ def test_autofix_generates_deterministic_search_filters_from_a_concrete_goal():
         name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
     )
     generated = GeneratedModuleFiles(manifest_fields=manifest, models_py="", security_csv="", notes="")
-    _autofix_goal_named_search_filters_missing(generated, goal, {"in_the_meerwerk": "pending"})
+    _autofix_goal_named_search_filters_missing(generated, goal, {"in_the_fieldjob": "pending"})
 
     assert generated.views_xml, "expected real views_xml content to be generated"
     root = ET.fromstring(generated.views_xml)  # raises if not well-formed -- the exact class of bug this fixes
-    assert '<field name="model">project.meerwerk</field>' in generated.views_xml, (
+    assert '<field name="model">project.fieldjob</field>' in generated.views_xml, (
         "must explicitly declare model= -- confirmed live that Odoo does NOT reliably "
         "auto-infer it from inherit_id before arch validation runs (real sandbox install "
         "failure: 'Model not found: False')"
     )
-    assert 'ref="project_meerwerk.view_project_meerwerk_search"' in generated.views_xml
+    assert 'ref="project_fieldjob.view_project_fieldjob_search"' in generated.views_xml
     assert 'expr="//search"' in generated.views_xml and 'position="inside"' in generated.views_xml, (
         "must anchor on the always-valid //search root, never a guessed sibling element"
     )
@@ -3320,16 +3320,16 @@ def test_autofix_search_filters_still_fires_when_prose_and_splits_into_two_const
     leaving views_xml at whatever the LLM guessed (confirmed live:
     empty `<odoo></odoo>`, causing a real sandbox install ParseError).
     Uses the EXACT constraint_status keys observed on the real failing
-    round (`meerwerk_list_i`, `another_called_my`).
+    round (`fieldjob_list_i`, `another_called_my`).
     """
     import xml.etree.ElementTree as ET
 
     from specialists.build.specialist import _autofix_goal_named_search_filters_missing
 
     goal = (
-        "In the meerwerk list, I want a quick filter button called 'Accepted' that shows only "
+        "In the fieldjob list, I want a quick filter button called 'Accepted' that shows only "
         "accepted records, and another called 'My records' that shows only records assigned to me.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\nView: view_project_meerwerk_search\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\nView: view_project_fieldjob_search\n"
         "Filter 1: name=accepted, string=Accepted, domain=[('state','=','accepted')]\n"
         "Filter 2: name=my_records, string=My records, domain=[('user_id','=',uid)]\n"
     )
@@ -3338,7 +3338,7 @@ def test_autofix_search_filters_still_fires_when_prose_and_splits_into_two_const
     )
     generated = GeneratedModuleFiles(manifest_fields=manifest, models_py="", security_csv="", notes="")
     _autofix_goal_named_search_filters_missing(
-        generated, goal, {"meerwerk_list_i": "pending", "another_called_my": "pending"},
+        generated, goal, {"fieldjob_list_i": "pending", "another_called_my": "pending"},
     )
 
     assert generated.views_xml, "must still fire -- 2 constraint labels here are a prose-split artifact, not real multi-focus content"
@@ -3359,7 +3359,7 @@ def test_autofix_search_filters_still_skips_when_goal_asks_for_more_than_filters
 
     goal = (
         "Add a search filter and also a new field.\n\n"
-        "Module: project_meerwerk\nView: view_project_meerwerk_search\n"
+        "Module: project_fieldjob\nView: view_project_fieldjob_search\n"
         "Field: is_urgent (Boolean)\n"
         "Filter 1: name=accepted, string=Accepted, domain=[('state','=','accepted')]\n"
         "Filter 2: name=my_records, string=My records, domain=[('user_id','=',uid)]\n"
@@ -3380,11 +3380,11 @@ def test_autofix_search_filters_still_skips_when_goal_asks_for_more_than_filters
 def test_autofix_stat_button_missing_rebuilds_a_proper_smart_button():
     """Phase 26A follow-up (2026-07-27): real, live-reproduced bug --
     task 009's own goal ("a button in the top-right corner that shows
-    how many meerwerk records... Action method: action_view_partner_
-    meerwerk"). Confirmed live, 5 identical rounds: Build's own view.xml
+    how many fieldjob records... Action method: action_view_partner_
+    fieldjob"). Confirmed live, 5 identical rounds: Build's own view.xml
     correctly resolved the real base view (`base.view_partner_form`)
     and record shape, but implemented the requirement as a raw
-    `<field name="meerwerk_partner_count"/>` dropped inside `//sheet`
+    `<field name="fieldjob_partner_count"/>` dropped inside `//sheet`
     instead of Odoo's own standard `oe_stat_button` widget inside the
     form's `button_box` div -- Code-Review correctly flagged this same
     UI mismatch every round without the model ever converging. This
@@ -3395,25 +3395,25 @@ def test_autofix_stat_button_missing_rebuilds_a_proper_smart_button():
 
     goal = (
         "On the customer (contact) form, I want to see a button in the top-right corner that shows "
-        "how many meerwerk (extra work) records are linked to this customer. Clicking it should open "
+        "how many fieldjob (extra work) records are linked to this customer. Clicking it should open "
         "that list filtered to this customer.\n\n"
-        "Module: project_meerwerk\nModel: res.partner (inherit)\n"
-        "Field: meerwerk_partner_count (Integer, computed)\n"
-        "Compute method: _compute_meerwerk_partner_count, counts via search_count\n"
-        "Action method: action_view_partner_meerwerk opens project.meerwerk filtered by partner_id\n"
+        "Module: project_fieldjob\nModel: res.partner (inherit)\n"
+        "Field: fieldjob_partner_count (Integer, computed)\n"
+        "Compute method: _compute_fieldjob_partner_count, counts via search_count\n"
+        "Action method: action_view_partner_fieldjob opens project.fieldjob filtered by partner_id\n"
     )
     manifest = ManifestFields(
         name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
     )
     wrong_views_xml = (
         "<odoo>\n"
-        '    <record id="view_res_partner_inherit_meerwerk_partner_count" model="ir.ui.view">\n'
-        "        <field name=\"name\">res.partner.form.inherit.meerwerk_partner_count</field>\n"
+        '    <record id="view_res_partner_inherit_fieldjob_partner_count" model="ir.ui.view">\n'
+        "        <field name=\"name\">res.partner.form.inherit.fieldjob_partner_count</field>\n"
         '        <field name="model">res.partner</field>\n'
         '        <field name="inherit_id" ref="base.view_partner_form"/>\n'
         '        <field name="arch" type="xml">\n'
         '            <xpath expr="//sheet" position="inside">\n'
-        '                <field name="meerwerk_partner_count"/>\n'
+        '                <field name="fieldjob_partner_count"/>\n'
         "            </xpath>\n"
         "        </field>\n"
         "    </record>\n"
@@ -3428,10 +3428,10 @@ def test_autofix_stat_button_missing_rebuilds_a_proper_smart_button():
     ET.fromstring(generated.views_xml)
     assert 'ref="base.view_partner_form"' in generated.views_xml, "must preserve Build's own correct inherit target"
     assert "oe_stat_button" in generated.views_xml
-    assert 'name="action_view_partner_meerwerk"' in generated.views_xml
+    assert 'name="action_view_partner_fieldjob"' in generated.views_xml
     assert 'widget="statinfo"' in generated.views_xml
     assert "button_box" in generated.views_xml
-    assert '<field name="meerwerk_partner_count"/>' not in generated.views_xml, (
+    assert '<field name="fieldjob_partner_count"/>' not in generated.views_xml, (
         "the old raw-field-in-sheet anti-pattern must be gone"
     )
     print(f"PASS: rebuilds a proper stat button, preserving Build's own correct record/inherit "
@@ -3448,8 +3448,8 @@ def test_autofix_stat_button_missing_never_fires_without_the_full_shape():
 
     goal_no_action = (
         "I want to see a count on the customer form.\n\n"
-        "Module: project_meerwerk\nModel: res.partner (inherit)\n"
-        "Field: meerwerk_partner_count (Integer, computed)\n"
+        "Module: project_fieldjob\nModel: res.partner (inherit)\n"
+        "Field: fieldjob_partner_count (Integer, computed)\n"
     )
     manifest = ManifestFields(
         name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
@@ -3753,7 +3753,7 @@ def test_autofix_search_filters_never_fires_without_a_concrete_two_filter_goal()
     """
     from specialists.build.specialist import _autofix_goal_named_search_filters_missing
 
-    goal = "Add a quick filter for accepted records.\n\nModule: project_meerwerk\n"
+    goal = "Add a quick filter for accepted records.\n\nModule: project_fieldjob\n"
     manifest = ManifestFields(
         name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
     )
@@ -3775,8 +3775,8 @@ def test_autofix_sequence_field_missing_never_touches_an_existing_create_overrid
         name="x", version="1.0", category="Uncategorized", summary="", author="", depends=["base"], data=[],
     )
     models_py = (
-        "from odoo import models, fields\n\nclass ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n\n"
+        "from odoo import models, fields\n\nclass ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n\n"
         "    def create(self, vals_list):\n        # custom pre-existing logic\n        return super().create(vals_list)\n"
     )
     generated = GeneratedModuleFiles(manifest_fields=manifest, models_py=models_py, security_csv="", notes="")
@@ -3975,7 +3975,7 @@ def test_deterministic_view_builder_carries_readonly_from_goal():
     readonly, copy=False, default='New')`, but the deterministic
     builder's own output (verified directly via Gitea -- an exact match
     for this function's own output shape, record id `view_project_
-    meerwerk_inherit_name`) inserted a plain, editable `<field
+    fieldjob_inherit_name`) inserted a plain, editable `<field
     name="name"/>`, and Code-Review correctly, identically flagged the
     missing `readonly` attribute on rounds 4 AND 5 -- never an LLM
     mistake at all, this project's OWN deterministic scaffolding was
@@ -3986,21 +3986,21 @@ def test_deterministic_view_builder_carries_readonly_from_goal():
     import specialists.build.specialist as spec
 
     goal = (
-        "Every meerwerk record should get a unique reference number like MW-2026-0001, "
+        "Every fieldjob record should get a unique reference number like MW-2026-0001, "
         "auto-generated when created. The user should never have to type this.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: name (Char, readonly, copy=False, default='New')\n"
-        "Sequence code: project.meerwerk in data/sequence_data.xml, prefix MW-%(year)s-, padding 4\n"
+        "Sequence code: project.fieldjob in data/sequence_data.xml, prefix MW-%(year)s-, padding 4\n"
         "Override create() with @api.model_create_multi to assign from ir.sequence when name=='New'\n"
     )
 
     async def run():
         with patch(
             "tools_odoo.module_dev.toolchain.get_primary_form_view_xmlid",
-            return_value="project_meerwerk.view_project_meerwerk_form",
+            return_value="project_fieldjob.view_project_fieldjob_form",
         ):
             return await spec.build_deterministic_view_xml(
-                "project.meerwerk", ["name"], "odoo16_dev", task_id=None, goal=goal,
+                "project.fieldjob", ["name"], "odoo16_dev", task_id=None, goal=goal,
             )
 
     xml_text = asyncio.run(run())
@@ -4339,9 +4339,9 @@ def test_strips_unrequested_views_xml_for_a_pure_behavior_task():
     from specialists.build.specialist import _autofix_strip_unrequested_views_xml_for_pure_behavior_task
 
     goal = (
-        "When I select a project on the meerwerk form, I want the 'Assigned to' field to "
+        "When I select a project on the fieldjob form, I want the 'Assigned to' field to "
         "automatically fill with the project manager. I can still change it manually after.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "@api.onchange('project_id') method _onchange_project_id: if project_id and "
         "project_id.user_id, set user_id = project_id.user_id\n"
     )
@@ -4351,14 +4351,14 @@ def test_strips_unrequested_views_xml_for_a_pure_behavior_task():
     )
     views_xml = (
         '<odoo>\n  <record id="v1" model="ir.ui.view">\n'
-        '    <field name="inherit_id" ref="project_meerwerk.project_meerwerk_form"/>\n'
+        '    <field name="inherit_id" ref="project_fieldjob.project_fieldjob_form"/>\n'
         "  </record>\n</odoo>"
     )
     generated = GeneratedModuleFiles(
         manifest_fields=manifest,
         models_py=(
-            "from odoo import models, fields, api\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models, fields, api\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    @api.onchange('project_id')\n"
             "    def _onchange_project_id(self):\n"
             "        if self.project_id and self.project_id.user_id:\n"
@@ -4788,8 +4788,8 @@ def test_autofix_never_strips_views_xml_when_goal_prose_names_a_literal_xml_snip
     )
     real_views_xml = (
         '<odoo>\n  <record id="v1" model="ir.ui.view">\n'
-        '    <field name="model">project.meerwerk</field>\n'
-        '    <field name="inherit_id" ref="project_meerwerk.view_project_meerwerk_form"/>\n'
+        '    <field name="model">project.fieldjob</field>\n'
+        '    <field name="inherit_id" ref="project_fieldjob.view_project_fieldjob_form"/>\n'
         '    <field name="arch" type="xml">\n'
         '      <xpath expr="//header" position="inside">\n'
         '        <button name="action_send" type="object" string="Send to Customer"/>\n'
@@ -4798,8 +4798,8 @@ def test_autofix_never_strips_views_xml_when_goal_prose_names_a_literal_xml_snip
     generated = GeneratedModuleFiles(
         manifest_fields=manifest,
         models_py=(
-            "from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "from odoo import models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    def action_send(self):\n        self.ensure_one()\n        return {}\n"
         ),
         views_xml=real_views_xml, security_csv="", notes="",
@@ -4825,7 +4825,7 @@ def test_autofix_never_strips_a_real_quick_filter_when_goal_asks_for_one():
     from specialists.build.specialist import _autofix_strip_unrequested_views_xml_for_pure_behavior_task
 
     plain_prose_quick_filter_goal = (
-        "In the meerwerk list, I want a quick filter button called 'Accepted' that shows only "
+        "In the fieldjob list, I want a quick filter button called 'Accepted' that shows only "
         "accepted records, and another called 'My records' that shows only records assigned to me."
     )
     manifest = ManifestFields(
@@ -4834,10 +4834,10 @@ def test_autofix_never_strips_a_real_quick_filter_when_goal_asks_for_one():
     )
     real_filter_views_xml = (
         '<?xml version="1.0" encoding="utf-8"?>\n<odoo>\n'
-        '  <record id="view_project_meerwerk_search" model="ir.ui.view">\n'
-        '    <field name="name">project.meerwerk.search.inherit</field>\n'
-        '    <field name="model">project.meerwerk</field>\n'
-        '    <field name="inherit_id" ref="project_meerwerk.view_project_meerwerk_search"/>\n'
+        '  <record id="view_project_fieldjob_search" model="ir.ui.view">\n'
+        '    <field name="name">project.fieldjob.search.inherit</field>\n'
+        '    <field name="model">project.fieldjob</field>\n'
+        '    <field name="inherit_id" ref="project_fieldjob.view_project_fieldjob_search"/>\n'
         '    <field name="arch" type="xml">\n'
         '      <xpath expr="//search" position="inside">\n'
         '        <filter name="accepted" string="Accepted" domain="[(\'state\', \'=\', \'accepted\')]"/>\n'
@@ -4847,8 +4847,8 @@ def test_autofix_never_strips_a_real_quick_filter_when_goal_asks_for_one():
     generated = GeneratedModuleFiles(
         manifest_fields=manifest,
         models_py=(
-            "from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "from odoo import models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
         ),
         views_xml=real_filter_views_xml, security_csv="", notes="",
     )
@@ -5522,9 +5522,9 @@ _TASK010_REAL_SECURITY_XML = """<?xml version="1.0" encoding="utf-8"?>
     <field name="name">Mechanics</field>
     <field name="category_id" ref="base.module_category_hidden"/>
   </record>
-  <record id="rule_project_meerwerk_own" model="ir.rule">
+  <record id="rule_project_fieldjob_own" model="ir.rule">
     <field name="name">Mechanics: own records only</field>
-    <field name="model_id" ref="project_meerwerk.model_project_meerwerk"/>
+    <field name="model_id" ref="project_fieldjob.model_project_fieldjob"/>
     <field name="domain_force">[('create_uid','=',user.id)]</field>
     <field name="groups" eval="[(4, ref('oma_mechanics_should_only_see.group_mechanics'))]"/>
   </record>
@@ -5534,7 +5534,7 @@ _TASK010_REAL_SECURITY_XML = """<?xml version="1.0" encoding="utf-8"?>
 def test_deterministic_security_csv_defers_to_llm_when_new_group_grants_existing_model_access():
     result = build_deterministic_security_csv(
         [],  # no NEW model this round -- extending an existing one via _inherit
-        "Mechanics should only see the meerwerk records they created themselves. "
+        "Mechanics should only see the fieldjob records they created themselves. "
         "Managers and admins should see all records.",
         _TASK010_REAL_SECURITY_XML,
         "oma_mechanics_should_only_see_f6f4be34",
@@ -5559,7 +5559,7 @@ def test_deterministic_security_csv_still_returns_header_only_with_existing_secu
     # reusing an already-real, standard group) -- still correctly header-only, not deferred.
     security_xml = (
         '<odoo><record id="rule_x" model="ir.rule">'
-        '<field name="model_id" ref="project_meerwerk.model_project_meerwerk"/>'
+        '<field name="model_id" ref="project_fieldjob.model_project_fieldjob"/>'
         "</record></odoo>"
     )
     result = build_deterministic_security_csv([], "Restrict access somehow.", security_xml, "oma_x")
@@ -5586,8 +5586,8 @@ def test_models_py_has_real_non_comment_content_exempts_real_quick_filter_additi
 
     empty_models_py = (
         "from odoo import api, fields, models\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n"
     )
 
     no_filter = GeneratedModuleFiles(
@@ -5612,7 +5612,7 @@ def test_models_py_has_real_non_comment_content_exempts_real_quick_filter_additi
         ),
         models_py=empty_models_py,
         views_xml=(
-            "<odoo><record id=\"view_project_meerwerk_search\" model=\"ir.ui.view\">"
+            "<odoo><record id=\"view_project_fieldjob_search\" model=\"ir.ui.view\">"
             "<field name=\"arch\" type=\"xml\"><search>"
             "<filter name=\"accepted\" string=\"Accepted\" domain=\"[('state','=','accepted')]\"/>"
             "</search></field></record></odoo>"
@@ -5685,8 +5685,8 @@ def test_model_class_is_not_a_pure_identity_stub_exempts_views_only_task_catches
 
     identity_only_models_py = (
         "from odoo import api, fields, models\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n"
     )
 
     # Genuinely empty views_xml too -- the real, original defect shape (no legitimate content
@@ -5714,8 +5714,8 @@ def test_model_class_is_not_a_pure_identity_stub_exempts_views_only_task_catches
         ),
         models_py=identity_only_models_py,
         views_xml=(
-            "<odoo><record id=\"view_project_meerwerk_search\" model=\"ir.ui.view\">"
-            "<field name=\"model\">project.meerwerk</field>"
+            "<odoo><record id=\"view_project_fieldjob_search\" model=\"ir.ui.view\">"
+            "<field name=\"model\">project.fieldjob</field>"
             "<field name=\"arch\" type=\"xml\"><search>"
             "<filter name=\"accepted\" string=\"Accepted\" domain=\"[('state','=','accepted')]\"/>"
             "</search></field></record></odoo>"
@@ -5933,8 +5933,8 @@ def test_activity_calls_require_activity_mixin_inherit_live_exempts_real_transit
     """Real, confirmed false positive found live (2026-08-07, HUMAN_DECISION push, task046, real
     task_ids v5-v7, 3 consecutive real qwen3-coder-30b-a3b repetition-loop infra aborts all
     triggered by this exact pointless internal-fix-loop retry): the sync validator's literal-
-    string-only check raises on `_inherit = 'project.meerwerk'` + `activity_schedule(...)`, even
-    though `project.meerwerk`'s own real, live schema already includes `activity_ids` (mail.
+    string-only check raises on `_inherit = 'project.fieldjob'` + `activity_schedule(...)`, even
+    though `project.fieldjob`'s own real, live schema already includes `activity_ids` (mail.
     activity.mixin provided transitively) -- genuinely correct Odoo code, wrongly rejected.
     Mirrors `_validate_message_post_requires_mail_thread_inherit_live`'s own exact pattern/test
     shape for the sibling mail.thread case.
@@ -5951,8 +5951,8 @@ def test_activity_calls_require_activity_mixin_inherit_live_exempts_real_transit
         ),
         models_py=(
             "from odoo import api, models\n\n"
-            "class ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n\n"
+            "class ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n\n"
             "    @api.onchange('state')\n"
             "    def _onchange_state(self):\n"
             "        if self.user_id:\n"
@@ -5963,7 +5963,7 @@ def test_activity_calls_require_activity_mixin_inherit_live_exempts_real_transit
     )
     asyncio.run(_validate_activity_calls_require_activity_mixin_inherit_live(
         real, "odoo16_dev", task_id="test",
-    ))  # must not raise -- project.meerwerk already provides mail.activity.mixin transitively
+    ))  # must not raise -- project.fieldjob already provides mail.activity.mixin transitively
 
     # A model that genuinely does NOT provide mail.activity.mixin (fabricated target) must still
     # be rejected.
@@ -5992,7 +5992,7 @@ def test_activity_calls_require_activity_mixin_inherit_live_exempts_real_transit
         "a model that genuinely does not provide mail.activity.mixin transitively must still be "
         "rejected"
     )
-    print("PASS: live activity-mixin validator exempts project.meerwerk's real transitive mixin "
+    print("PASS: live activity-mixin validator exempts project.fieldjob's real transitive mixin "
           "and still catches a genuine missing-mixin case")
 
 

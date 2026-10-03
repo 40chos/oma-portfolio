@@ -26,7 +26,7 @@ from specialists.build.specialist import (
 
 _DB = "odoo16_dev"  # the one real fast-path-eligible db this codebase's own allow-list names
 
-_MEERWERK_FIELD_ROWS = [
+_FIELDJOB_FIELD_ROWS = [
     {"name": "name", "ttype": "char", "relation": None, "required": True},
     {"name": "project_id", "ttype": "many2one", "relation": "project.project", "required": True},
     {"name": "state", "ttype": "selection", "relation": None, "required": False},
@@ -43,7 +43,7 @@ def _make_contract(**overrides) -> TaskContract:
         specialist_type=SpecialistType.bug_fix,
         capability_class=CapabilityClass.module_development,
         tier=AutonomyTier.tier_2_notify_after,
-        goal="On the project.meerwerk record, add a field for the total.",
+        goal="On the project.fieldjob record, add a field for the total.",
         inputs=["some input"],
         rules=[],
         deliverables=["a module"],
@@ -65,12 +65,12 @@ def _make_specialist() -> BuildSpecialist:
 # ---------------------------------------------------------------------------
 
 def test_schema_block_includes_target_model_fields():
-    contract = _make_contract(module_identity="project.meerwerk")
+    contract = _make_contract(module_identity="project.fieldjob")
     with patch.object(schema_client_module, "is_fast_path_eligible", return_value=True), \
-         patch.object(schema_client_module, "_read_real_field_rows", return_value=_MEERWERK_FIELD_ROWS), \
+         patch.object(schema_client_module, "_read_real_field_rows", return_value=_FIELDJOB_FIELD_ROWS), \
          patch.object(schema_client_module, "get_relation_fields_fast", return_value={}):
         block = resolve_current_schema_block(contract, _DB)
-    assert "project.meerwerk:" in block
+    assert "project.fieldjob:" in block
     assert "project_id: many2one -> project.project, required" in block
     assert "state: selection" in block
 
@@ -80,12 +80,12 @@ def test_schema_block_curated_only_includes_related_model_named_in_goal():
     model must appear ONLY if the goal text itself names it -- not unconditionally for every
     relation the target model happens to have."""
     contract = _make_contract(
-        module_identity="project.meerwerk",
-        goal="On the project.meerwerk record, add a field referencing project.project.",
+        module_identity="project.fieldjob",
+        goal="On the project.fieldjob record, add a field referencing project.project.",
     )
     with patch.object(schema_client_module, "is_fast_path_eligible", return_value=True), \
          patch.object(schema_client_module, "_read_real_field_rows", side_effect=lambda model, db, login: {
-             "project.meerwerk": _MEERWERK_FIELD_ROWS, "res.partner": _PROJECT_FIELD_ROWS,
+             "project.fieldjob": _FIELDJOB_FIELD_ROWS, "res.partner": _PROJECT_FIELD_ROWS,
          }.get(model)), \
          patch.object(schema_client_module, "get_relation_fields_fast", return_value={
              "project_id": "project.project", "partner_id": "res.partner",
@@ -111,7 +111,7 @@ def test_schema_block_empty_when_model_does_not_exist_live():
 
 
 def test_schema_block_empty_when_db_not_fast_path_eligible():
-    contract = _make_contract(module_identity="project.meerwerk")
+    contract = _make_contract(module_identity="project.fieldjob")
     block = resolve_current_schema_block(contract, "some_fresh_sandbox_db")
     assert block == ""
 
@@ -238,7 +238,7 @@ def _capture_prompt(specialist, contract, **kwargs):
 
     with patch.object(specialist_module, "is_fast_path_eligible", return_value=True), \
          patch.object(schema_client_module, "is_fast_path_eligible", return_value=True), \
-         patch.object(schema_client_module, "_read_real_field_rows", return_value=_MEERWERK_FIELD_ROWS), \
+         patch.object(schema_client_module, "_read_real_field_rows", return_value=_FIELDJOB_FIELD_ROWS), \
          patch.object(schema_client_module, "get_relation_fields_fast", return_value={}), \
          patch.object(specialist_module, "call_structured", _fake_call_structured):
         asyncio.run(specialist._generate_code(
@@ -251,10 +251,10 @@ def test_schema_block_injected_without_depends_on_module():
     """§26.7 DoD (a): a task extending an existing model without depends_on_module set now
     receives that model's real current field list in the prompt -- §26.1's own confirmed gap."""
     specialist = _make_specialist()
-    contract = _make_contract(module_identity="project.meerwerk")
+    contract = _make_contract(module_identity="project.fieldjob")
     prompt = _capture_prompt(specialist, contract, depends_on_module=None, target_module_files=None)
     assert "<current_schema>" in prompt
-    assert "project.meerwerk:" in prompt
+    assert "project.fieldjob:" in prompt
     assert "project_id: many2one -> project.project, required" in prompt
 
 
@@ -263,13 +263,13 @@ def test_views_block_injected_alongside_schema_block_in_full_prompt():
     assembled prompt via the real _generate_code() path, using the same _capture_prompt
     integration harness every sibling injection test in this file already uses."""
     specialist = _make_specialist()
-    contract = _make_contract(module_identity="project.meerwerk")
+    contract = _make_contract(module_identity="project.fieldjob")
     with patch.object(schema_client_module, "list_model_view_xmlids_fast", return_value=[
-        ("project_meerwerk.view_project_meerwerk_form", "form"),
+        ("project_fieldjob.view_project_fieldjob_form", "form"),
     ]):
         prompt = _capture_prompt(specialist, contract, depends_on_module=None, target_module_files=None)
     assert "<current_views>" in prompt
-    assert "project_meerwerk.view_project_meerwerk_form (form)" in prompt
+    assert "project_fieldjob.view_project_fieldjob_form (form)" in prompt
     assert "never invent a plausible-sounding id" in prompt
 
 
@@ -278,9 +278,9 @@ def test_view_arch_block_injected_alongside_views_block_in_full_prompt():
     assembled prompt via the real _generate_code() path, using the same _capture_prompt
     integration harness every sibling injection test in this file already uses."""
     specialist = _make_specialist()
-    contract = _make_contract(module_identity="project.meerwerk")
+    contract = _make_contract(module_identity="project.fieldjob")
     with patch.object(schema_client_module, "list_model_view_xmlids_fast", return_value=[
-        ("project_meerwerk.view_project_meerwerk_form", "form"),
+        ("project_fieldjob.view_project_fieldjob_form", "form"),
     ]), patch.object(
         schema_client_module, "get_model_form_view_arch_fast",
         return_value=_PARTNER_FORM_ARCH_WITH_HEADER_AND_BUTTONS,
@@ -296,7 +296,7 @@ def test_previous_round_raw_failure_text_appears_verbatim():
     the next round's prompt, not a paraphrase."""
     specialist = _make_specialist()
     raw_text = (
-        "Sandbox install failed: ValueError: The _name attribute ProjectMeerwerk is not valid.\n"
+        "Sandbox install failed: ValueError: The _name attribute ProjectFieldjob is not valid.\n"
         "  File \"models.py\", line 3, in <module>\n    raise ValueError(...)"
     )
     contract = _make_contract(previous_round_raw_failure_text=raw_text)
@@ -318,7 +318,7 @@ def test_prompt_section_order_matches_item4():
     errors, task/goal, output-format contract last."""
     specialist = _make_specialist()
     contract = _make_contract(
-        module_identity="project.meerwerk",
+        module_identity="project.fieldjob",
         rules=["some prior rule"],
         previous_round_raw_failure_text="literal prior failure text",
     )
@@ -340,6 +340,6 @@ def test_prompt_section_order_matches_item4():
 
 def test_output_contract_tag_closed_at_true_end_of_prompt():
     specialist = _make_specialist()
-    contract = _make_contract(module_identity="project.meerwerk")
+    contract = _make_contract(module_identity="project.fieldjob")
     prompt = _capture_prompt(specialist, contract, depends_on_module=None, target_module_files=None)
     assert prompt.rstrip().endswith("</output_contract>")

@@ -1,7 +1,7 @@
 """Phase 30 (2026-08-06): unit test for
 _target_is_a_real_method_not_a_field() -- the real, confirmed live root
 cause behind 2 straight identical "Reproduction FAILED for
-project.meerwerk.get_summary_data" round failures on task040 (real task_id
+project.fieldjob.get_summary_data" round failures on task040 (real task_id
 942b77ea-6d09-489d-8a63-893b2b87bdb9).
 
 Root cause: `_extract_reproduction_target()` correctly resolves
@@ -27,8 +27,8 @@ from specialists.testing_qa.specialist import _target_is_a_real_method_not_a_fie
 
 _REAL_TASK040_MODELS_PY = (
     "from odoo import models\n\n"
-    "class ProjectMeerwerk(models.Model):\n"
-    "    _inherit = 'project.meerwerk'\n\n"
+    "class ProjectFieldjob(models.Model):\n"
+    "    _inherit = 'project.fieldjob'\n\n"
     "    def get_summary_data(self):\n"
     "        self.ensure_one()\n"
     "        return {\n"
@@ -46,8 +46,8 @@ def test_matches_the_real_live_get_summary_data_method():
 def test_never_matches_a_genuine_real_field_name():
     models_py = (
         "from odoo import models, fields\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n"
         "    date_of_birth = fields.Date()\n"
     )
     assert _target_is_a_real_method_not_a_field("date_of_birth", models_py) is False

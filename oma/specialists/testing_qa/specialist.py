@@ -1121,13 +1121,13 @@ class TestingQASpecialist:
         # never trivially matching whatever Build wrote), which means
         # its own `model` field is a blind guess whenever the goal
         # doesn't literally state the model's dotted technical name.
-        # Confirmed live: task 008's goal states `Module: project_meerwerk`
+        # Confirmed live: task 008's goal states `Module: project_fieldjob`
         # but never a `Model:` line -- the security-claim extraction
-        # guessed `model='project_meerwerk'` (confusing the MODULE name
-        # with the model's real technical name `project.meerwerk`),
+        # guessed `model='project_fieldjob'` (confusing the MODULE name
+        # with the model's real technical name `project.fieldjob`),
         # while `_extract_reproduction_target()` (which DOES read the
         # real code specifically to resolve technical names, see its own
-        # docstring) correctly resolved `target.model='project.meerwerk'`
+        # docstring) correctly resolved `target.model='project.fieldjob'`
         # in the very same round. `target.model` is proven more reliable
         # here (it has code-reading capability the security-claim
         # extraction deliberately lacks) -- prefer it whenever the two
@@ -1788,7 +1788,7 @@ class TestingQASpecialist:
         # even when the round's own single-target check (which DOES run through
         # `_autocorrect_hallucinated_reproduction_target`) just independently confirmed the real
         # field seconds earlier. Confirmed live: task 004's round correctly confirmed
-        # `project.meerwerk.amount_total` via the primary check, then this widening step
+        # `project.fieldjob.amount_total` via the primary check, then this widening step
         # independently re-hallucinated `line_prices_total` and reported it as a lost earlier
         # constraint -- same root cause, same fix, applied here too.
         collision_confirmed_fields = _collision_confirmed_field_names_from_inputs(contract.inputs)

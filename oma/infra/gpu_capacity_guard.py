@@ -1,7 +1,7 @@
 """RAM-capacity guard for the two resident GPU worker hosts.
 
 Real, concrete follow-up to the 2026-07-22 GPU Worker 01 (coder,
-10.1.19.195) outage: Operator's own diagnosis was that concurrent load from
+internal GPU host) outage: Operator's own diagnosis was that concurrent load from
 our own agents pushed the host's system RAM past what was available
 (the GPU model itself plus other services left less headroom than
 expected), crashing the whole host -- mid demo-prep, for 30+ minutes.

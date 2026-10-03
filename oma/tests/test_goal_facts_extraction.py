@@ -84,7 +84,7 @@ def test_build_field_declaration_snippet_prefers_goal_facts_over_regex():
     preference, not a coincidental agreement).
     """
     goal = (
-        "Add a numeric field to project.meerwerk called 'estimated_hours' so we can record how "
+        "Add a numeric field to project.fieldjob called 'estimated_hours' so we can record how "
         "many hours we think the work will take. It should just be a plain number field, nothing "
         "fancy about it."
     )  # deliberately no "Field type:"/"Field: name (Type)" convention -- regex alone finds nothing

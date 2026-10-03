@@ -24,7 +24,7 @@ class _FakeGenerated:
 
 _REAL_CONTAINER_GOAL = (
     "Add a 'Container count' smart button to the project form. There is no existing "
-    "container concept or button in project_meerwerk to copy -- build this as a "
+    "container concept or button in project_fieldjob to copy -- build this as a "
     "self-contained new model within this task's own scope, project.container, tracking "
     "one container per project."
 )

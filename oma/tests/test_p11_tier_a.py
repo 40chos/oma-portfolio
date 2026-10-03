@@ -168,13 +168,13 @@ def test_genuinely_empty_class_with_no_collision_still_raises():
 
 def test_visibility_groups_attribute_edit_exempts_an_empty_class():
     models_py = (
-        "class Meerwerk(models.Model):\n"
-        "    _inherit = 'meerwerk'\n"
+        "class Fieldjob(models.Model):\n"
+        "    _inherit = 'fieldjob'\n"
         "    # No new fields defined here as per the constraint\n"
         "    # The button visibility is controlled via security rules\n"
     )
     views_xml = (
-        '<odoo><record id="view_meerwerk_form_inherit" model="ir.ui.view">'
+        '<odoo><record id="view_fieldjob_form_inherit" model="ir.ui.view">'
         '<field name="arch" type="xml">'
         '<button name="send_to_customer" position="attributes">'
         '<attribute name="groups">base.group_system</attribute>'
@@ -329,7 +329,7 @@ def test_item4_skips_genuinely_views_only_quick_filter_round():
     this validator never shared the sibling item-3 validator's own genuinely-views-only exemptions,
     so a round that correctly leaves models_py untouched (a quick filter, a groups= visibility
     edit, etc.) was wrongly rejected for not declaring the goal's own Model: line target."""
-    goal = "Model: project.meerwerk\nAdd a quick filter button to the list."
+    goal = "Model: project.fieldjob\nAdd a quick filter button to the list."
     generated = _gen("class X: pass")
     generated.views_xml = (
         "<odoo><record id=\"x\" model=\"ir.ui.view\">"
@@ -346,7 +346,7 @@ def test_item4_still_raises_when_field_addition_genuinely_forgotten():
     """The fix above must stay narrow: a goal needing a real field/method addition, where
     models_py never touches the target model AND no views-only exemption signal is present,
     is still a genuine miss and must still raise."""
-    goal = "Model: project.meerwerk\nAdd a many2one field linking to the invoice."
+    goal = "Model: project.fieldjob\nAdd a many2one field linking to the invoice."
     generated = _gen("class X: pass")
     generated.views_xml = "<odoo></odoo>"
     assert _raises(_validate_models_py_touches_goal_target_model, generated, goal, None)
@@ -419,7 +419,7 @@ def test_datetime_now_raises():
     column -- ignores Odoo's own timezone/DST handling."""
     models_py = (
         "from odoo import models, fields, api\nimport datetime\n\n"
-        "class X(models.Model):\n    _inherit = 'project.meerwerk'\n\n"
+        "class X(models.Model):\n    _inherit = 'project.fieldjob'\n\n"
         "    def _auto_reject_old(self):\n        cutoff = datetime.datetime.now()\n"
     )
     assert _raises(_validate_no_stdlib_datetime_now_for_date_comparisons, _gen(models_py))
@@ -435,7 +435,7 @@ def test_datetime_utcnow_raises():
 def test_datetime_now_never_raises_when_absent():
     models_py = (
         "from odoo import models, fields, api\nfrom dateutil.relativedelta import relativedelta\n\n"
-        "class X(models.Model):\n    _inherit = 'project.meerwerk'\n\n"
+        "class X(models.Model):\n    _inherit = 'project.fieldjob'\n\n"
         "    def _auto_reject_old(self):\n        cutoff = fields.Date.today() - relativedelta(days=30)\n"
     )
     assert _raises(_validate_no_stdlib_datetime_now_for_date_comparisons, _gen(models_py)) is None
@@ -787,8 +787,8 @@ def test_second_schema_read_catches_collision_the_primary_fast_query_missed(monk
     monkeypatch.setattr(specialist_module, "is_fast_path_eligible", lambda db: True)
     old_models_py = ""  # genuine round 1 -- nothing committed yet, exactly like the real incident
     new_models_py = (
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n"
         "    customer_grouping_rule = fields.Boolean(string='Customer Grouping Rule')\n"
     )
     generated = _gen(new_models_py)
@@ -807,8 +807,8 @@ def test_second_schema_read_never_raises_when_both_reads_agree_nothing_real():
     import tools_odoo.odoo_schema_client as _schema_client
     old_models_py = ""
     new_models_py = (
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n"
         "    genuinely_new_field = fields.Boolean(string='Genuinely New')\n"
     )
     generated = _gen(new_models_py)
@@ -1023,19 +1023,19 @@ def test_item17_never_raises_on_header_only_csv_when_no_new_model_declared():
 # exceptions above but for row-level record-rule security instead of UI visibility. ---
 
 def test_record_rule_domain_restriction_exempts_an_empty_class():
-    """The exact real task 010 shape: 'Mechanics should only see the meerwerk records they
+    """The exact real task 010 shape: 'Mechanics should only see the fieldjob records they
     created themselves' is correctly, completely solved by a res.groups + ir.rule pair in
     security_xml alone -- models_py legitimately needs zero real content.
     """
-    models_py = "class ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n\n    pass\n"
+    models_py = "class ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n\n    pass\n"
     security_xml = (
         '<?xml version="1.0" encoding="utf-8"?><odoo>'
         '<record id="group_mechanics" model="res.groups">'
         '<field name="name">Mechanics</field>'
         '</record>'
-        '<record id="rule_project_meerwerk_own" model="ir.rule">'
+        '<record id="rule_project_fieldjob_own" model="ir.rule">'
         '<field name="name">Mechanics: own records only</field>'
-        '<field name="model_id" ref="model_project_meerwerk"/>'
+        '<field name="model_id" ref="model_project_fieldjob"/>'
         "<field name=\"domain_force\">[('create_uid','=',user.id)]</field>"
         '<field name="groups" eval="[(4, ref(\'oma_xyz.group_mechanics\'))]"/>'
         "</record></odoo>"
@@ -1050,12 +1050,12 @@ def test_ir_rule_with_empty_domain_force_does_not_exempt():
     """An ir.rule record present but with no real domain_force content (blank/whitespace-only)
     is not a genuine restriction -- must never falsely exempt an empty class.
     """
-    models_py = "class ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n\n    pass\n"
+    models_py = "class ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n\n    pass\n"
     security_xml = (
         '<?xml version="1.0" encoding="utf-8"?><odoo>'
-        '<record id="rule_project_meerwerk_own" model="ir.rule">'
+        '<record id="rule_project_fieldjob_own" model="ir.rule">'
         '<field name="name">Mechanics: own records only</field>'
-        '<field name="model_id" ref="model_project_meerwerk"/>'
+        '<field name="model_id" ref="model_project_fieldjob"/>'
         '<field name="domain_force"></field>'
         "</record></odoo>"
     )
@@ -1086,7 +1086,7 @@ def test_domain_force_on_an_unrelated_model_does_not_exempt():
 def test_genuinely_empty_class_with_no_record_rule_still_raises():
     """No security_xml at all, genuinely empty class -- the original, unexempted defect must
     still be caught."""
-    models_py = "class ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n\n    pass\n"
+    models_py = "class ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n\n    pass\n"
     generated = _gen(models_py, security_xml=None)
     assert _raises(_validate_models_py_has_real_non_comment_content, generated), (
         "a genuinely empty class with no security_xml at all must still be rejected"

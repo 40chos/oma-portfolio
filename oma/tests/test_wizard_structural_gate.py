@@ -25,7 +25,7 @@ class _FakeGenerated:
 
 
 _WIZARD_GOAL = (
-    "When I click 'Create Invoice' for multiple meerwerk records, I want a popup first that "
+    "When I click 'Create Invoice' for multiple fieldjob records, I want a popup first that "
     "shows me which ones will be included and lets me confirm before the invoices are actually "
     "created."
 )
@@ -35,7 +35,7 @@ def test_rejects_persistent_model_for_a_wizard_shaped_class_name():
     generated = _FakeGenerated(models_py=(
         "class InvoiceConfirmWizard(models.Model):\n"
         "    _name = 'invoice.confirm.wizard'\n"
-        "    meerwerk_ids = fields.Many2many('project.meerwerk')\n"
+        "    fieldjob_ids = fields.Many2many('project.fieldjob')\n"
     ))
     try:
         validate_wizard_intent_uses_transient_model_not_persistent_model(generated, _WIZARD_GOAL)
@@ -49,7 +49,7 @@ def test_accepts_correct_transient_model():
     generated = _FakeGenerated(models_py=(
         "class InvoiceConfirmWizard(models.TransientModel):\n"
         "    _name = 'invoice.confirm.wizard'\n"
-        "    meerwerk_ids = fields.Many2many('project.meerwerk')\n"
+        "    fieldjob_ids = fields.Many2many('project.fieldjob')\n"
     ))
     validate_wizard_intent_uses_transient_model_not_persistent_model(generated, _WIZARD_GOAL)
     print("PASS: a correctly-declared TransientModel wizard passes")
@@ -111,7 +111,7 @@ def test_window_action_for_a_non_wizard_model_is_untouched():
     generated = _FakeGenerated(
         views_xml=(
             '<record id="action_x" model="ir.actions.act_window">\n'
-            '    <field name="res_model">project.meerwerk</field>\n'
+            '    <field name="res_model">project.fieldjob</field>\n'
             "</record>\n"
         ),
     )

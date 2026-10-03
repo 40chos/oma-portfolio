@@ -1,4 +1,4 @@
-"""Real bug found live (2026-08-08, site_50 benchmark task 007, "In the meerwerk list, I want a
+"""Real bug found live (2026-08-08, site_50 benchmark task 007, "In the fieldjob list, I want a
 quick filter button called 'Accepted' that shows only accepted records..."):
 _extract_all_reproduction_targets()'s own final-round-widening extraction call hallucinated a
 literal field requirement named 'accepted' from the FILTER BUTTON's own quoted UI label -- no
@@ -38,7 +38,7 @@ def _contract(goal: str) -> TaskContract:
 
 def test_prompt_warns_against_treating_a_ui_control_label_as_a_field_claim():
     goal = (
-        "In the meerwerk list, I want a quick filter button called 'Accepted' that shows only "
+        "In the fieldjob list, I want a quick filter button called 'Accepted' that shows only "
         "accepted records, and another called 'My records' that shows only records assigned to me."
     )
     contract = _contract(goal)

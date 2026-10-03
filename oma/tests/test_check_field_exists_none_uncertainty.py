@@ -68,7 +68,7 @@ def test_autocorrect_never_guesses_a_correction_when_existence_check_is_uncertai
 
     with patch.object(testing_qa_module, "check_field_exists_on_model", fake_check_field_exists):
         specialist = _make_specialist()
-        target = ReproductionTarget(model="project.meerwerk", field_name="user_id")
+        target = ReproductionTarget(model="project.fieldjob", field_name="user_id")
 
         async def run():
             return await specialist._autocorrect_hallucinated_reproduction_target(

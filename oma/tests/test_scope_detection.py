@@ -26,7 +26,7 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_meerwerk", "mis_base_extend"])
+@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_fieldjob", "mis_base_extend"])
 @patch("manager.scope_detection.list_own_scaffolded_module_names", return_value=[])
 @patch("manager.scope_detection.call_structured", new_callable=AsyncMock)
 @patch("manager.scope_detection.is_fast_path_eligible", return_value=True)
@@ -35,12 +35,12 @@ def _run(coro):
 def test_valid_pick_from_real_candidates_returns_the_module(
     _state, _custom, _fast, mock_llm, _own_scaffolded, _candidates,
 ):
-    mock_llm.return_value = _ModulePick(module_name="project_meerwerk")
+    mock_llm.return_value = _ModulePick(module_name="project_fieldjob")
     result = _run(detect_existing_custom_module_target("goal text", "db", client=object(), model="m"))
-    assert result == "project_meerwerk"
+    assert result == "project_fieldjob"
 
 
-@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_meerwerk"])
+@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_fieldjob"])
 @patch("manager.scope_detection.list_own_scaffolded_module_names", return_value=[])
 @patch("manager.scope_detection.call_structured", new_callable=AsyncMock)
 def test_llm_pick_outside_the_real_candidate_list_is_rejected(mock_llm, _own_scaffolded, _candidates):
@@ -54,7 +54,7 @@ def test_llm_pick_outside_the_real_candidate_list_is_rejected(mock_llm, _own_sca
     assert result is None
 
 
-@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_meerwerk"])
+@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_fieldjob"])
 @patch("manager.scope_detection.list_own_scaffolded_module_names", return_value=[])
 @patch("manager.scope_detection.call_structured", new_callable=AsyncMock)
 def test_llm_returns_none_for_genuinely_new_work(mock_llm, _own_scaffolded, _candidates):
@@ -75,7 +75,7 @@ def test_empty_candidate_list_short_circuits_without_any_llm_call():
         mock_llm.assert_not_called()
 
 
-@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_meerwerk"])
+@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_fieldjob"])
 @patch("manager.scope_detection.list_own_scaffolded_module_names", return_value=[])
 @patch("manager.scope_detection.call_structured", new_callable=AsyncMock)
 @patch("manager.scope_detection.is_fast_path_eligible", return_value=True)
@@ -88,12 +88,12 @@ def test_module_on_disk_but_not_installed_is_rejected(
     doesn't mean it's actually live right now -- must check real
     installed state, not just filesystem presence.
     """
-    mock_llm.return_value = _ModulePick(module_name="project_meerwerk")
+    mock_llm.return_value = _ModulePick(module_name="project_fieldjob")
     result = _run(detect_existing_custom_module_target("goal", "db", client=object(), model="m"))
     assert result is None
 
 
-@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_meerwerk"])
+@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_fieldjob"])
 @patch("manager.scope_detection.list_own_scaffolded_module_names", return_value=[])
 @patch("manager.scope_detection.call_structured", new_callable=AsyncMock)
 def test_llm_call_exception_degrades_to_none_not_a_crash(mock_llm, _own_scaffolded, _candidates):
@@ -110,33 +110,33 @@ def test_llm_call_exception_degrades_to_none_not_a_crash(mock_llm, _own_scaffold
 
 def test_fuzzy_match_finds_the_single_obvious_candidate():
     goal = (
-        "The 'Send to customer' button on the meerwerk form should only be visible to System "
+        "The 'Send to customer' button on the fieldjob form should only be visible to System "
         "Administrators. Normal users and managers should not see it."
     )
-    result = _fuzzy_match_existing_custom_module(goal, ["project_meerwerk", "mis_base_extend"])
-    assert result == "project_meerwerk"
+    result = _fuzzy_match_existing_custom_module(goal, ["project_fieldjob", "mis_base_extend"])
+    assert result == "project_fieldjob"
 
 
 def test_fuzzy_match_declines_when_two_candidates_share_the_same_distinctive_token():
-    goal = "Something about the meerwerk form."
-    result = _fuzzy_match_existing_custom_module(goal, ["project_meerwerk", "billing_meerwerk"])
+    goal = "Something about the fieldjob form."
+    result = _fuzzy_match_existing_custom_module(goal, ["project_fieldjob", "billing_fieldjob"])
     assert result is None, "two candidates matching the same token is ambiguous -- must not guess"
 
 
 def test_fuzzy_match_returns_none_for_genuinely_new_work():
-    result = _fuzzy_match_existing_custom_module("build something brand new", ["project_meerwerk"])
+    result = _fuzzy_match_existing_custom_module("build something brand new", ["project_fieldjob"])
     assert result is None
 
 
 def test_fuzzy_match_requires_a_whole_word_not_a_partial_substring():
-    """"meerwerk2" (project_meerwerk2's own distinctive token) must not match a goal that only
-    contains the substring "meerwerk" without the trailing "2" -- word-boundary match, never a
+    """"fieldjob2" (project_fieldjob2's own distinctive token) must not match a goal that only
+    contains the substring "fieldjob" without the trailing "2" -- word-boundary match, never a
     naive substring check."""
-    result = _fuzzy_match_existing_custom_module("the meerwerk form", ["project_meerwerk2"])
+    result = _fuzzy_match_existing_custom_module("the fieldjob form", ["project_fieldjob2"])
     assert result is None
 
 
-@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_meerwerk", "mis_base_extend"])
+@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_fieldjob", "mis_base_extend"])
 @patch("manager.scope_detection.list_own_scaffolded_module_names", return_value=[])
 @patch("manager.scope_detection.call_structured", new_callable=AsyncMock)
 @patch("manager.scope_detection.is_fast_path_eligible", return_value=True)
@@ -146,19 +146,19 @@ def test_task008_exact_goal_shape_now_resolves_via_fallback_when_llm_returns_nul
     _state, _custom, _fast, mock_llm, _own_scaffolded, _candidates,
 ):
     """Reproduces the exact real-world failure confirmed live, 2026-08-04: the LLM path returned
-    {"module_name": null} for this precise goal, despite "project_meerwerk" being a real,
+    {"module_name": null} for this precise goal, despite "project_fieldjob" being a real,
     correct, unambiguous candidate already in the list it was shown. The deterministic fallback
     must now catch this case."""
     mock_llm.return_value = _ModulePick(module_name=None)
     goal = (
-        "The 'Send to customer' button on the meerwerk form should only be visible to System "
+        "The 'Send to customer' button on the fieldjob form should only be visible to System "
         "Administrators. Normal users and managers should not see it."
     )
     result = _run(detect_existing_custom_module_target(goal, "db", client=object(), model="m"))
-    assert result == "project_meerwerk"
+    assert result == "project_fieldjob"
 
 
-@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_meerwerk"])
+@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_fieldjob"])
 @patch("manager.scope_detection.list_own_scaffolded_module_names", return_value=[])
 @patch("manager.scope_detection.call_structured", new_callable=AsyncMock)
 @patch("manager.scope_detection.is_fast_path_eligible", return_value=True)
@@ -171,11 +171,11 @@ def test_fallback_pick_still_goes_through_the_same_installed_state_gate(
     path already requires -- a fallback-sourced pick for a module that's on disk but not
     installed must still be rejected."""
     mock_llm.return_value = _ModulePick(module_name=None)
-    result = _run(detect_existing_custom_module_target("the meerwerk form", "db", client=object(), model="m"))
+    result = _run(detect_existing_custom_module_target("the fieldjob form", "db", client=object(), model="m"))
     assert result is None
 
 
-@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_meerwerk", "mis_base_extend"])
+@patch("manager.scope_detection.list_custom_site_module_names", return_value=["project_fieldjob", "mis_base_extend"])
 @patch("manager.scope_detection.list_own_scaffolded_module_names", return_value=[])
 @patch("manager.scope_detection.call_structured", new_callable=AsyncMock)
 def test_deterministic_fuzzy_match_wins_when_it_finds_an_answer_llm_never_called(mock_llm, _own_scaffolded, _candidates):
@@ -195,8 +195,8 @@ def test_deterministic_fuzzy_match_wins_when_it_finds_an_answer_llm_never_called
     with patch("manager.scope_detection.is_fast_path_eligible", return_value=True), \
          patch("manager.scope_detection.is_custom_site_module", return_value=True), \
          patch("manager.scope_detection.get_module_state_fast", return_value="installed"):
-        result = _run(detect_existing_custom_module_target("the meerwerk form", "db", client=object(), model="m"))
-    assert result == "project_meerwerk", (
+        result = _run(detect_existing_custom_module_target("the fieldjob form", "db", client=object(), model="m"))
+    assert result == "project_fieldjob", (
         "the deterministic fuzzy match's own unambiguous answer must win -- it is the more "
         "reliable signal, confirmed live"
     )

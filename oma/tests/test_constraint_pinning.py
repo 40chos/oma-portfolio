@@ -260,7 +260,7 @@ def test_generate_scoped_edits_prompt_now_includes_live_schema_grounding():
 
     def _fake_resolve_current_schema_block(contract, db):
         captured["schema_block_call_args"] = (contract, db)
-        return "project.meerwerk:\n  name: char, required\n  state: selection"
+        return "project.fieldjob:\n  name: char, required\n  state: selection"
 
     contract = _make_contract(constraint_status={}, goal="Fix the 'state' field validation.")
     prior_files = {
@@ -270,7 +270,7 @@ def test_generate_scoped_edits_prompt_now_includes_live_schema_grounding():
         ),
         "models/models.py": (
             "from odoo import fields, models\n\nclass X(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "    _inherit = 'project.fieldjob'\n"
         ),
         "security/ir.model.access.csv": (
             "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
@@ -299,7 +299,7 @@ def test_generate_scoped_edits_prompt_now_includes_live_schema_grounding():
     )
     assert "prompt" in captured
     prompt = captured["prompt"]
-    assert "<current_schema>" in prompt and "project.meerwerk:" in prompt, (
+    assert "<current_schema>" in prompt and "project.fieldjob:" in prompt, (
         f"the live schema excerpt must actually appear in the assembled retry prompt -- got:\n{prompt[:2000]}"
     )
     preamble_end = prompt.index("THE SKILL TEXT") + len("THE SKILL TEXT")
@@ -442,7 +442,7 @@ def test_recurrence_escalation_catches_a_non_consecutive_regression():
     v = VerificationResult(
         task_id=contract.task_id, passed=False, reproduction_confirmed=False,
         uncovered_paths=[], coverage_diff="", spot_check_mismatch=False,
-        notes="Reproduction FAILED for project.meerwerk.meerwerk_acceptance_trigger.",
+        notes="Reproduction FAILED for project.fieldjob.fieldjob_acceptance_trigger.",
         root_cause="one_off",
     )
     new_contract, _reasoning = revise_contract_from_verification(
@@ -705,9 +705,9 @@ def test_field_omission_escalation_never_prescribes_a_fake_computed_field():
     guessing a fake skeleton for a computed/related/onchange field.
     """
     goal = (
-        "On the meerwerk record, I want to see the total of all line prices shown automatically "
+        "On the fieldjob record, I want to see the total of all line prices shown automatically "
         "in the header.\n\n"
-        "Module: project_meerwerk\nModel: project.meerwerk\n"
+        "Module: project_fieldjob\nModel: project.fieldjob\n"
         "Field: amount_total (Monetary, compute=_compute_amount_total, depends on "
         "line_ids.price_unit, store=True, currency_field=currency_id)\n"
     )
@@ -715,7 +715,7 @@ def test_field_omission_escalation_never_prescribes_a_fake_computed_field():
         "the task's own goal names a field 'amount_total' to add, but generated models_py "
         "never actually declares it (no `amount_total = fields.X(...)` found anywhere)"
     )
-    contract = _make_contract(constraint_status={"on_the_meerwerk": "pending"}, goal=goal)
+    contract = _make_contract(constraint_status={"on_the_fieldjob": "pending"}, goal=goal)
     contract = contract.model_copy(update={
         "rules": [
             f"Prior attempt (round 1) failed: {notes}",

@@ -20,7 +20,7 @@ from specialists.build.acl_code_generator import (
 
 def test_generates_field_groups_kwarg_for_a_simple_declaration():
     resolved = ResolvedAclTarget(
-        model_name="project.meerwerk", resolved_group_name="Administration / Settings",
+        model_name="project.fieldjob", resolved_group_name="Administration / Settings",
         resolved_group_external_id="base.group_system",
         field_or_action_name="internal_approver_id", is_field=True,
     )

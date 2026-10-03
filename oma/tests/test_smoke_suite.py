@@ -2,7 +2,7 @@
 
 Runs the actual smoke suite against the real live Odoo dev instance --
 skipped automatically when the OMA_ODOO_* env vars aren't loaded (e.g. in a
-CI environment with no network path to odoo-dev.int), since this is
+CI environment with no network path to the dev host), since this is
 deliberately a real-system check, not a mocked unit test.
 
 Confirmed working live 2026-08-12: all three checks pass, and no
@@ -16,7 +16,7 @@ import pytest
 
 pytestmark = pytest.mark.skipif(
     not os.environ.get("OMA_ODOO_URL"),
-    reason="requires live OMA_ODOO_* env vars and network access to odoo-dev.int",
+    reason="requires live OMA_ODOO_* env vars and network access to the dev host",
 )
 
 

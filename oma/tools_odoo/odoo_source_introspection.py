@@ -52,7 +52,7 @@ def _run_readonly(bash_command: str, timeout: int = 15) -> subprocess.CompletedP
 
 def check_real_module_defines_method(module_name: str, method_name: str) -> bool | None:
     """True/False the real SITE module (under `/opt/site/site16`, e.g.
-    `project_meerwerk`) defines a Python method of this name anywhere
+    `project_fieldjob`) defines a Python method of this name anywhere
     in its own `.py` source. None means the lookup itself could not be
     completed (SSH/network error, module directory doesn't exist,
     malformed name) -- callers MUST treat None as "unknown, don't

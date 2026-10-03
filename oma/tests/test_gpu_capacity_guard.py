@@ -263,7 +263,7 @@ def test_wait_for_ram_headroom_smoke_test_against_the_real_gpu_worker_host():
     async def _drive():
         client = httpx.AsyncClient()
         try:
-            return await read_ram_metrics(client, "http://10.1.19.195:9090")
+            return await read_ram_metrics(client, "http://192.0.2.11:9090")
         finally:
             await client.aclose()
 

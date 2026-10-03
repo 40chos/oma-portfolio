@@ -70,22 +70,22 @@ def test_code_review_verdict_clause_is_stripped_but_real_signal_survives():
     """
     rows = [
         _row(
-            event_type="outcome", module="project.meerwerk", tags=["failed"],
+            event_type="outcome", module="project.fieldjob", tags=["failed"],
             summary=(
-                "Reproduction confirmed for project.meerwerk.customer_grouping_rule. Spot-check "
+                "Reproduction confirmed for project.fieldjob.customer_grouping_rule. Spot-check "
                 "matches the self-report. Code-Review found 1 blocking issue(s): The method "
                 "action_create_batch_invoice is missing; the task goal explicitly requires it to "
-                "be implemented on project.meerwerk."
+                "be implemented on project.fieldjob."
             ),
         ),
     ]
-    hint = derive_known_risk_hint(rows, "project.meerwerk")
+    hint = derive_known_risk_hint(rows, "project.fieldjob")
     assert hint is not None, (
         "the real, deterministic Testing/QA signal preceding the Code-Review clause must still "
         "surface -- the whole row must not be discarded just because part of it is unreliable"
     )
     assert (
-        "Reproduction confirmed for project.meerwerk.customer_grouping_rule. Spot-check "
+        "Reproduction confirmed for project.fieldjob.customer_grouping_rule. Spot-check "
         "matches the self-report." in hint
     ), f"expected the real Testing/QA signal to survive stripping -- got:\n{hint}"
     assert "Code-Review found" not in hint, (

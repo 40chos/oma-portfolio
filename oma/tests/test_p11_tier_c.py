@@ -227,8 +227,8 @@ def test_item57_never_raises_when_rebound():
 def test_autofix_copies_vals_list_before_loop_on_task006_real_shape():
     models_py = (
         "from odoo import api, fields, models\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n\n"
         "    create_uid = fields.Many2one('res.users', string='Created by', readonly=True)\n\n"
         "    @api.model_create_multi\n"
         "    def create(self, vals_list):\n"
@@ -623,7 +623,7 @@ def test_item73_skips_when_goal_never_requests_it():
 # xmlid Odoo's own code correctly uses (`groups="base.group_system"`). ---
 
 _TASK_008_GOAL = (
-    "The 'Send to customer' button on the meerwerk form should only be visible to System "
+    "The 'Send to customer' button on the fieldjob form should only be visible to System "
     "Administrators. Normal users and managers should not see it."
 )
 
@@ -696,7 +696,7 @@ def test_item73_unmapped_role_name_fails_conservatively_not_silently_or_falsely(
 
 _TASK_032_GOAL = "Write a Python migration script to populate a new field on existing records"
 _TASK_018_GOAL = (
-    "Every night at midnight, automatically change all meerwerk records that have been in "
+    "Every night at midnight, automatically change all fieldjob records that have been in "
     "'sent' state for more than 30 days to 'rejected'. We don't want to chase customers forever."
 )
 
@@ -747,9 +747,9 @@ def test_migration_goal_never_raises_on_task018_real_legitimately_recurring_shap
 
     extra_data_files = {
         "data/cron_data.xml": (
-            '<odoo><record id="ir_cron_reject_stale_meerwerk" model="ir.cron">'
-            '<field name="name">Reject stale meerwerk records</field>'
-            '<field name="model_id" ref="model_project_meerwerk"/>'
+            '<odoo><record id="ir_cron_reject_stale_fieldjob" model="ir.cron">'
+            '<field name="name">Reject stale fieldjob records</field>'
+            '<field name="model_id" ref="model_project_fieldjob"/>'
             '<field name="interval_number">1</field>'
             '<field name="interval_type">days</field>'
             "</record></odoo>"
@@ -815,11 +815,11 @@ def test_migration_goal_checks_skip_entirely_on_a_non_migration_goal():
     models_py = "class X(models.Model):\n    _name = 'x'\n\n    def go(self):\n        self.env['x'].search([])\n"
     assert _raises(
         _validate_migration_goal_does_not_use_ir_cron,
-        _gen(models_py, extra_data_files=extra_data_files), "Add a Kanban view for meerwerk.",
+        _gen(models_py, extra_data_files=extra_data_files), "Add a Kanban view for fieldjob.",
     ) is None
     assert _raises(
         _validate_migration_goal_does_not_use_unbounded_search,
-        _gen(models_py), "Add a Kanban view for meerwerk.",
+        _gen(models_py), "Add a Kanban view for fieldjob.",
     ) is None
     print("PASS: both migration-shaped checks are complete no-ops on an ordinary, non-migration goal")
 

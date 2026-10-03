@@ -1,22 +1,22 @@
 """ContextSelector + ContextFormatter, and read_project_memory() --
-Phase 3 of the build plan, mirroring Nexo's real, verified split
-(agents/src/nexo/context/assembler.py + context/formatter.py) rather
+Phase 3 of the build plan, mirroring Pulsar's real, verified split
+(agents/src/pulsar/context/assembler.py + context/formatter.py) rather
 than an invented shape.
 
-Nexo's assembler decides *what fits* in a token budget (greedy fill,
+Pulsar's assembler decides *what fits* in a token budget (greedy fill,
 sorted by priority, a per-source diversity cap, history trimmed by
 walking backward from the most recent turn) and returns a plain
 dataclass; a separate formatter turns that dataclass into the actual
 system-prompt text. We keep that same two-piece split, adapted to our
 own inputs: agent_memory_events rows (from read_project_memory())
-instead of Nexo's RAG evidence, and a plain conversation-history list
-instead of Nexo's retrieval-evidence-and-RAG-history.
+instead of Pulsar's RAG evidence, and a plain conversation-history list
+instead of Pulsar's retrieval-evidence-and-RAG-history.
 
-Per §2.1's correction: Nexo's own `is_partial`/`gap_description` fields
+Per §2.1's correction: Pulsar's own `is_partial`/`gap_description` fields
 report whether upstream *retrieval* was incomplete, not whether the
-selector itself dropped something for budget reasons. Nexo does not
+selector itself dropped something for budget reasons. Pulsar does not
 give that signal for free -- so `budget_exhausted` below is a genuine
-addition, not something copied from Nexo, built because the Manager
+addition, not something copied from Pulsar, built because the Manager
 does need to know whether "no memory found" and "memory was found but
 didn't fit" are different situations.
 """
@@ -31,10 +31,10 @@ import psycopg2.extras
 
 from infra.settings import load_postgres_settings
 
-# Nexo's own real token-estimation heuristic: UTF-8 byte length // 3,
+# Pulsar's own real token-estimation heuristic: UTF-8 byte length // 3,
 # not char count // 4 -- accurate to within ~15% for mixed-language
 # text without needing a real tokenizer call, per
-# agents/src/nexo/context/assembler.py's own docstring.
+# agents/src/pulsar/context/assembler.py's own docstring.
 def estimate_tokens(text: str) -> int:
     return len(text.encode("utf-8")) // 3 + 1
 
@@ -71,7 +71,7 @@ class AssembledContext:
     # guess whether "no memory found" and "memory wasn't checked" look
     # the same. They must never look the same.
     memory_query_ran: bool = False
-    # A genuine addition beyond Nexo's own signal (§2.1's correction):
+    # A genuine addition beyond Pulsar's own signal (§2.1's correction):
     # true if there were more candidate memory rows or history turns
     # than fit in budget, i.e. something was actually dropped here, not
     # just "retrieval came back incomplete upstream."
@@ -85,7 +85,7 @@ class AssembledContext:
 class ContextSelector:
     """Decides what fits in the token budget. Does not touch text
     formatting at all -- that's ContextFormatter's job, kept separate
-    so each half is independently testable, mirroring Nexo's real split.
+    so each half is independently testable, mirroring Pulsar's real split.
     """
 
     def __init__(self, memory_token_budget: int = 4000, history_token_budget: int = 8000):
@@ -110,7 +110,7 @@ class ContextSelector:
             used += row_tokens
             selected_rows.append(row)
 
-        # Walk backward from the most recent turn, same as Nexo's real
+        # Walk backward from the most recent turn, same as Pulsar's real
         # _trim_history -- keep the most recent turns first, then
         # restore chronological order.
         kept_turns: list[ConversationTurn] = []
@@ -142,7 +142,7 @@ _ROLE_LABEL = {"user": "Operator", "assistant": "Manager"}
 
 class ContextFormatter:
     """Stateless -- pure functions of an AssembledContext, mirroring
-    Nexo's real ContextFormatter.
+    Pulsar's real ContextFormatter.
     """
 
     def format_system_block(self, ctx: AssembledContext) -> str:

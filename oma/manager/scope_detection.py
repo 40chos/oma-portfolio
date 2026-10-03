@@ -1,10 +1,10 @@
 """Phase 22 follow-up (2026-07-23): detects when a task's plain-text
 goal targets a model that ALREADY belongs to a genuinely pre-existing
-CUSTOM module (e.g. SITE's own `project_meerwerk`, `mis_base_extend`)
+CUSTOM module (e.g. SITE's own `project_fieldjob`, `mis_base_extend`)
 -- the real, structural gap found live running the SITE 50-task list:
-a task like "add a field to the meerwerk record" has no way, as plain
+a task like "add a field to the fieldjob record" has no way, as plain
 text submitted through the ordinary chat entry point, to tell Build
-that "meerwerk" means the real, already-installed `project.meerwerk`
+that "fieldjob" means the real, already-installed `project.fieldjob`
 model (48 real fields already there) rather than something to
 scaffold from scratch. Confirmed live: Build scaffolded a brand-new
 module with 6 of its own fresh fields (`line_ids`, `name`, `price`,
@@ -23,8 +23,8 @@ Deliberately conservative at every step: a wrong guess here is worse
 than no guess at all (it would incorrectly redirect a genuinely
 NEW-model task into editing an unrelated existing module). First real
 design attempt asked the LLM to invent the target's dotted Odoo
-technical model name cold from the goal text alone (e.g. "meerwerk" ->
-"project.meerwerk") -- confirmed live to be unreliable: correct only
+technical model name cold from the goal text alone (e.g. "fieldjob" ->
+"project.fieldjob") -- confirmed live to be unreliable: correct only
 inconsistently across repeated identical calls, because there is
 nothing grounding that guess in what modules actually exist. Redesigned
 to multiple-choice instead: give the LLM the REAL, current list of
@@ -58,7 +58,7 @@ _GOAL_WORD_RE = re.compile(r"[a-z0-9]+")
 def _fuzzy_match_existing_custom_module(goal: str, candidates: list[str]) -> str | None:
     """Phase 30 §26 follow-up (2026-08-04): real, confirmed gap -- the LLM pick above is a
     single call with no retry or fallback, and was confirmed live to return null for a goal
-    ("...the meerwerk form...") that obviously matches a real candidate ("project_meerwerk")
+    ("...the fieldjob form...") that obviously matches a real candidate ("project_fieldjob")
     already in the list it was shown -- non-deterministically, since a second, differently-
     worded goal targeting the exact same real module correctly picked it on the first try. A
     plain retry at the same call's default temperature (0.0) would very likely just reproduce
@@ -67,7 +67,7 @@ def _fuzzy_match_existing_custom_module(goal: str, candidates: list[str]) -> str
 
     Conservative by construction, same "a wrong guess is worse than no guess" philosophy as the
     LLM path: for each candidate module name, take its single MOST DISTINCTIVE token (the
-    longest underscore-separated segment -- "project_meerwerk" -> "meerwerk", never the whole
+    longest underscore-separated segment -- "project_fieldjob" -> "fieldjob", never the whole
     name, since requiring the whole name verbatim in plain-English prose would almost never
     match anything real). A match requires that exact token to appear as a whole word in the
     goal text (word-boundary, never a partial substring) -- and only if EXACTLY ONE candidate

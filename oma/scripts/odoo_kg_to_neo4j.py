@@ -1351,7 +1351,7 @@ def setup_constraints(driver: Any, database: str) -> list[str]:
     """S3.1. Additive, idempotent (IF NOT EXISTS everywhere) -- never a
     MATCH, never touches existing data, safe to run against a shared
     instance (constraints are per-label; this migration's 8 labels do not
-    overlap Nexo's CanonicalEntity/Relation/Episode/FlaggedEdge/
+    overlap Pulsar's CanonicalEntity/Relation/Episode/FlaggedEdge/
     SameAsCandidate/WrittenNodeKey labels)."""
     applied = []
     with driver.session(database=database) as session:
@@ -1473,7 +1473,7 @@ def bootstrap_if_needed(driver: Any, database: str, allow_bootstrap: bool) -> bo
     """S2.2 step 4's bootstrap sub-step. Returns True if bootstrap ran.
 
     "Empty" is scoped to ODOO_OWNED_LABELS, not a bare `MATCH (n)` count --
-    this instance is shared with Nexo's own live data (S3.3a), so a global
+    this instance is shared with Pulsar's own live data (S3.3a), so a global
     node count is never 0 in practice on first run. A bare-count check
     would make bootstrap_if_needed always raise on this shared database,
     permanently blocking the very first import even with

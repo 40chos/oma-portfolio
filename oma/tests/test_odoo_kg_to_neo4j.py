@@ -889,10 +889,10 @@ class TestSetupConstraints:
 
     def test_no_statement_touches_labels_outside_this_migration(self):
         # Defense-in-depth sanity check: constraint statements are additive
-        # schema only, never reference Nexo's labels.
-        nexo_labels = {"CanonicalEntity", "Relation", "Episode", "FlaggedEdge", "SameAsCandidate", "WrittenNodeKey"}
+        # schema only, never reference Pulsar's labels.
+        pulsar_labels = {"CanonicalEntity", "Relation", "Episode", "FlaggedEdge", "SameAsCandidate", "WrittenNodeKey"}
         for s in kg.CONSTRAINT_STATEMENTS:
-            assert not any(label in s for label in nexo_labels)
+            assert not any(label in s for label in pulsar_labels)
 
 
 # ==========================================================================

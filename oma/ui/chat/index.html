@@ -873,6 +873,16 @@ const state = {
   // again silently hides real, currently-running work from the default view.)
   tasks: { needs_attention: [], in_progress: [], completed: [] },
   pending: { sign_offs: [], proposed_rules: [], escalations: [] },
+  // taskId -> the goal text actually typed for it, set the instant a new task's id comes
+  // back from POST /api/message. Real bug this closes (the project owner's own live report):
+  // selectBranch(taskId) now opens right after the task_id is minted (the live-streaming
+  // fix), before the backend has necessarily even created the task row GET /api/tasks reads
+  // from yet -- taskById() can legitimately return nothing for a few hundred ms, which used
+  // to leave the conversation panel showing literally nothing (not even the message the
+  // operator just typed) until the next poll caught up. This is a client-side fallback that
+  // never depends on that race -- renderConversation() prefers the real task.title once
+  // it's loaded, falling back to this only until then.
+  pendingGoalText: {},
   // 2026-08-06 (the project owner's own report: "900 rules I don't want to see every time, I need to
   // filter it in or out, the same for running or paused or everything else"): per-section
   // show/hide, independent of showHistory (which controls DATA VOLUME fetched from the
@@ -1090,6 +1100,9 @@ async function sendMessage(){
   // live stream right away (not after waiting for the full reply, as before) so
   // its real node/round/specialist events are visible as they actually happen.
   const taskId = data.result && data.result.task_id;
+  // Set BEFORE selectBranch() -- see pendingGoalText's own comment in the state object
+  // for why this can't just wait for refreshTasks() to catch up.
+  if(taskId) state.pendingGoalText[taskId] = text;
   await Promise.all([refreshTasks(), refreshPending()]);
   if(taskId) selectBranch(taskId);
 
@@ -4113,9 +4126,10 @@ function renderConversation(){
   // below (which already got the goal-clamp treatment earlier) so that earlier fix never
   // touched this line. Same summarize() helper already used for every other short preview in
   // this file, reused here rather than inventing a fourth truncation pattern.
-  hdr.textContent = task ? summarize(task.title, 60) : state.activeBranchId;
-  hdr.title = task ? task.title : ''; // full text still available on hover, native browser tooltip, zero extra UI
-  const goalRow = task ? [{from:'operator', text: task.title}] : [];
+  const goalText = task ? task.title : (state.pendingGoalText[state.activeBranchId] || '');
+  hdr.textContent = goalText ? summarize(goalText, 60) : state.activeBranchId;
+  hdr.title = goalText; // full text still available on hover, native browser tooltip, zero extra UI
+  const goalRow = goalText ? [{from:'operator', text: goalText}] : [];
   const real = (state.branchMessages[state.activeBranchId] || []).map(m => ({
     from: m.detail.role === 'operator' ? 'operator' : 'sys',
     text: m.detail.headline || m.detail.text || JSON.stringify(m.detail),
@@ -4217,6 +4231,24 @@ function selectMainChat(){
   // "start fresh, nothing selected" affordance. Clearing it here lets
   // renderTaskDetail()'s own existing "No task selected" empty state do its job.
   state.selectedTaskId = null;
+  // Real UX fix (the project owner's own explicit direction): "M" is the
+  // "start a genuinely new task" affordance, not a persistent chat thread --
+  // clicking it should always present a blank conversation ready for a fresh
+  // goal, never the tail of whatever was last discussed. This only clears
+  // the in-memory render state, not the real underlying history -- a page
+  // RELOAD still restores it via restoreMainChatHistory() (a separate,
+  // earlier fix for surviving a refresh mid-conversation); this is scoped
+  // specifically to the explicit "M" click, not to every render path.
+  state.mainMessages = [];
+  // Real bug fixed (the project owner's own live report, with a screenshot): the node-detail
+  // drawer (#node-drawer -- a specific CONSTRAINT NODE's own round history/live-stream view,
+  // opened by clicking a node in a task's graph) is a persistent DOM element that is
+  // deliberately never destroyed/recreated on a normal render (see renderTaskDetail()'s own
+  // comment on why) -- it just sits open, independent of activeBranchId/selectedTaskId/
+  // mainMessages, until something explicitly closes it. Nothing in this function touched it
+  // before, so clicking "M" after having a node's drawer open left it sitting there, still
+  // showing that node's stale content, even though every other panel had correctly reset.
+  if(document.getElementById('node-drawer')?.classList.contains('open')) closeDrawer();
   closeStream();
   renderConversation();
   renderTaskListPanel();

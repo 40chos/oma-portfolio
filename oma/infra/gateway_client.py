@@ -2,7 +2,7 @@
 system calls through to reach a model. Never a bare httpx/requests call
 scattered elsewhere.
 
-Per the build plan's Phase 2 and §2.4 (Nexo's real llm_backends.py
+Per the build plan's Phase 2 and §2.4 (Pulsar's real llm_backends.py
 pattern, reimplemented small and direct, no Router hop in between):
   - a shared, pooled httpx.AsyncClient reused across calls
   - jittered exponential-backoff retry (three attempts)
@@ -10,7 +10,7 @@ pattern, reimplemented small and direct, no Router hop in between):
     failed repeatedly within a short window, for a cooldown period
   - a bulkhead semaphore partitioned by BACKEND, not by model tier
 
-Per the build plan's Phase 2 and §2.4 (Nexo's real llm_backends.py
+Per the build plan's Phase 2 and §2.4 (Pulsar's real llm_backends.py
 pattern, reimplemented small and direct, no Router hop in between), this
 client has always split traffic across named backend pools keyed off the
 `model` name, each with its own circuit breaker/bulkhead/pooled client, so
@@ -181,11 +181,10 @@ def _is_concurrency_limit_error(exc: Exception) -> bool:
 DELTA_FLUSH_INTERVAL_SEC = 0.12
 DELTA_FLUSH_CHAR_THRESHOLD = 40
 
-BACKEND_CODER = "gpu_worker_01_coder"          # 10.1.19.195:9090, coder only
-BACKEND_REASONING = "gpu_worker_02_reasoning"  # 10.1.19.203:9090, qwen3.6-27b only
-# Real infra change, 2026-07-22: GPU Worker 03 (10.1.19.200:9090) --
-# confirmed via the fleet's own firewall audit report
-# (infra/network/FIREWALL_AUDIT_REPORT.md, vm-z19-n200-gpu-worker-03) --
+BACKEND_CODER = "gpu_worker_01_coder"          # internal GPU host, coder only
+BACKEND_REASONING = "gpu_worker_02_reasoning"  # internal GPU host, qwen3.6-27b only
+# Real infra change, 2026-07-22: GPU Worker 03 (internal GPU host) --
+# confirmed via the fleet's own firewall audit report --
 # already runs a resident Qwen3-9B-int4-32k with `enable_thinking: false`
 # baked in as a genuine SERVER-side default (confirmed live via its own
 # /running endpoint's launch command), unlike qwen3.6-27b on Worker 02,
@@ -668,7 +667,7 @@ class ModelGatewayClient:
         `{"type": "json_schema", "json_schema": {"name": ..., "schema": ...}}`),
         passed straight through to the vLLM-backed serving request when
         given. Confirmed live against the real coder inference host
-        (GPU Worker 01, `10.1.19.195:9090`, vLLM behind `llama-swap`)
+        (GPU Worker 01, internal GPU host, vLLM behind `llama-swap`)
         that this stack accepts and correctly honors
         `response_format: json_schema` end to end for
         `qwen3-coder-30b-a3b` specifically -- this is a

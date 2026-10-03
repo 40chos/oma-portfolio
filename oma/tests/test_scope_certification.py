@@ -60,7 +60,7 @@ def test_classify_scope_quick_filter_is_its_own_bucket_not_workflow():
     """Phase 33 §3 item 5: a quick-filter/search-domain goal must not land in the
     much harder workflow_with_custom_buttons_or_cron bucket just because it also
     says the word 'button' or 'filter'."""
-    goal = "In the meerwerk list, I want a quick filter button called 'Accepted' that shows only accepted records."
+    goal = "In the fieldjob list, I want a quick filter button called 'Accepted' that shows only accepted records."
     assert classify_scope(goal) == "quick_filter_search_construction"
 
 

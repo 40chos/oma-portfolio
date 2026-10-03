@@ -12,7 +12,7 @@ has now been run against this shared instance -- the graph is populated:
     Module 240 / Model 868 / Field 6804 / View 2228 / ViewType 9 /
     UnresolvedItem 6610 / AccessGroup 82 / ImportMetadata 1
 
-The Nexo project's own labels (CanonicalEntity/Relation/Episode/
+The Pulsar project's own labels (CanonicalEntity/Relation/Episode/
 FlaggedEdge/SameAsCandidate) remain populated and untouched by every run
 of this migration -- verified directly, before/after, around each of the
 four real migration runs this session.
@@ -27,9 +27,9 @@ This suite verifies, for real, against the real server:
      final_module_graph.jsonl -- the actual authoritative source, not a
      scripted fake result.
   4. Every one of the five functions is provably scoped to the seven
-     Odoo-only labels and never touches/returns/counts the live Nexo data
+     Odoo-only labels and never touches/returns/counts the live Pulsar data
      that shares this instance -- the safety rule this whole task runs
-     under. Verified by taking real before/after counts of every Nexo
+     under. Verified by taking real before/after counts of every Pulsar
      label around all five calls.
 
 Two real bugs were found and fixed by exactly this kind of live check
@@ -64,9 +64,9 @@ from neo4j import GraphDatabase
 from infra import neo4j_client
 from tools_odoo import graph_queries
 
-_ENV_FILE = "/home/andrew/projects/agents/.env-graph-neo4j"
+_ENV_FILE = "/home/dev/projects/agents/.env-graph-neo4j"
 _SOURCE_JSONL = (
-    "/home/andrew/projects/docs/architecture/odoo-knowledge-pipeline/final_module_graph.jsonl"
+    "/home/dev/projects/docs/architecture/odoo-knowledge-pipeline/final_module_graph.jsonl"
 )
 
 # The seven Odoo-specific labels this whole task's Cypher must stay scoped to.
@@ -80,7 +80,7 @@ _ODOO_LABELS = (
     "AccessGroup",
     "ImportMetadata",
 )
-# The unrelated, live, production Nexo-project labels sharing this instance.
+# The unrelated, live, production Pulsar-project labels sharing this instance.
 # These must never be touched/counted/returned by anything in graph_queries.py.
 _FOREIGN_LABELS = (
     "CanonicalEntity",
@@ -301,12 +301,12 @@ def test_field_types_match_source_jsonl_once_data_exists(real_driver):
 
 # ---------------------------------------------------------------------------
 # 4. Cross-repo / cross-initiative safety: every real call above must leave
-# the live Nexo data completely untouched -- the hard safety requirement
+# the live Pulsar data completely untouched -- the hard safety requirement
 # this whole task runs under.
 # ---------------------------------------------------------------------------
 
 
-def test_all_query_functions_never_touch_the_live_nexo_labels(real_driver):
+def test_all_query_functions_never_touch_the_live_pulsar_labels(real_driver):
     before = {label: _label_count(real_driver, label) for label in _FOREIGN_LABELS}
 
     graph_queries.get_field_types_for_model(real_driver, "account.account")
@@ -325,7 +325,7 @@ def test_all_query_functions_never_touch_the_live_nexo_labels(real_driver):
     after = {label: _label_count(real_driver, label) for label in _FOREIGN_LABELS}
 
     assert before == after, (
-        "A graph_queries.py function changed a live Nexo-project node count -- "
+        "A graph_queries.py function changed a live Pulsar-project node count -- "
         "this must never happen; every query in this module must stay scoped to "
         f"the Odoo-only labels. before={before} after={after}"
     )

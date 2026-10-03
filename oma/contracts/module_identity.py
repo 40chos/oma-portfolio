@@ -21,7 +21,7 @@ making that escalation path an unreachable no-op on every real task.
 Every real task goal in this project follows one consistent, already-
 established convention -- a `Model: <name>` metadata line (confirmed
 across every real task this whole Phase 25/26 investigation has ever
-run, e.g. "Model: project.meerwerk" or "Model: res.partner (inherit)")
+run, e.g. "Model: project.fieldjob" or "Model: res.partner (inherit)")
 -- making this a cheap, deterministic, reliable resolution, never a
 guess dressed up as one.
 """
@@ -40,7 +40,7 @@ _GOAL_MODEL_LINE_RE = re.compile(
 # returns None, because that goal (a genuine, real prose-only request, no structured `Model:`
 # metadata line at all) has nothing the original regex can match. Confirmed rejected by Operator
 # 7+ separate times for exactly this reason. Fallback: a dotted, lowercase identifier matching
-# Odoo's own real model-naming convention (e.g. "account.move", "project.meerwerk"), found
+# Odoo's own real model-naming convention (e.g. "account.move", "project.fieldjob"), found
 # ANYWHERE in the goal prose when no structured `Model:` line exists. Deliberately excludes
 # tokens ending in a common file extension (.csv/.py/.xml/etc.) -- the flagship example itself
 # contains "ir.model.access.csv" immediately before the real target "account.move", and a

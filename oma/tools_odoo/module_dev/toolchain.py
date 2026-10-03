@@ -89,12 +89,12 @@ _CUSTOM_SITE_ADDONS_ROOT = "/opt/site/site16"
 def list_custom_site_module_names(container: str | None = None) -> list[str]:
     """Phase 22 follow-up (2026-07-23): the full, real list of module
     directory names under `/opt/site/site16` -- SITE's own genuinely
-    custom business modules (`project_meerwerk`, `mis_base_extend`,
+    custom business modules (`project_fieldjob`, `mis_base_extend`,
     etc.), used by `manager.scope_detection` to give the LLM a REAL,
     closed list to pick from instead of asking it to invent a dotted
     Odoo technical model name from an arbitrary domain word with no
     grounding at all (confirmed unreliable live: asked to guess
-    "meerwerk" -> `project.meerwerk` cold, the model got it right only
+    "fieldjob" -> `project.fieldjob` cold, the model got it right only
     inconsistently across repeated identical calls -- multiple-choice
     selection from a real list is a fundamentally easier, more
     reliable task for an LLM than open-ended technical-name
@@ -119,7 +119,7 @@ def is_custom_site_module(module_name: str, container: str | None = None) -> boo
     """Phase 22 follow-up (2026-07-23): True iff `module_name` lives
     under `/opt/site/site16` specifically -- the ONE root in
     `_BASE_ADDONS_PATH` reserved for SITE's own genuinely custom
-    business modules (`project_meerwerk`, `mis_base_extend`, etc.),
+    business modules (`project_fieldjob`, `mis_base_extend`, etc.),
     distinct from core Odoo (`/opt/site/16/addons`,
     `/opt/site/16/odoo/addons`) and every OCA repo (the other
     `_BASE_ADDONS_PATH` entries). Used by
@@ -332,7 +332,7 @@ def _run_in_container(bash_command: str, timeout: int = 180, container: str | No
     # single-quoted, POSIX-safe token regardless of what's inside.
     #
     # Stage 5 port: the original ran this over SSH to a second real host
-    # (odoo-dev.int) that itself ran `docker exec`. In this single-host
+    # (a remote dev host) that itself ran `docker exec`. In this single-host
     # Compose port there's no second host -- `docker exec` runs directly,
     # same quoting/timeout handling below, unchanged.
     docker_cmd = ["docker", "exec", container, "bash", "-c", bash_command]

@@ -304,7 +304,7 @@ def test_never_overwrites_security_content_build_genuinely_did_write():
 
 _NO_SECURITY_ROUND_LEFT_GOAL = (
     "Create a small new Odoo module that defines a brand new custom model called "
-    "oma.meerwerk.email.content... This round's own NEW focus is ONLY: "
+    "oma.fieldjob.email.content... This round's own NEW focus is ONLY: "
     "'email_content_model'. The following constraints are NOT yet in scope for this round "
     "and must NOT be implemented even partially: ['email_template', 'write_override']."
 )
@@ -320,16 +320,16 @@ def test_preserves_new_models_baseline_row_when_no_future_round_owns_security():
     generated = _make_generated(
         security_csv=(
             "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-            "access_oma_meerwerk_email_content,oma.meerwerk.email.content,"
-            "model_oma_meerwerk_email_content,base.group_user,1,1,1,0"
+            "access_oma_fieldjob_email_content,oma.fieldjob.email.content,"
+            "model_oma_fieldjob_email_content,base.group_user,1,1,1,0"
         ),
     )
     generated.models_py = (
-        "from odoo import models, fields\n\nclass MeerwerkEmailContent(models.Model):\n"
-        "    _name = 'oma.meerwerk.email.content'\n"
+        "from odoo import models, fields\n\nclass FieldjobEmailContent(models.Model):\n"
+        "    _name = 'oma.fieldjob.email.content'\n"
     )
     _autofix_strip_premature_security_content_on_decomposed_round(generated, _NO_SECURITY_ROUND_LEFT_GOAL)
-    assert "access_oma_meerwerk_email_content" in generated.security_csv
+    assert "access_oma_fieldjob_email_content" in generated.security_csv
     print("PASS: a new model's baseline row survives when no future round is scheduled to add it")
 
 

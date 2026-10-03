@@ -56,25 +56,25 @@ def test_find_module_defining_model_prefers_the_real_customer_codebase():
     """Real, confirmed bug found live (2026-07-26, Phase 25D, task 005's
     own resubmission): this function used to search ONLY /mnt/extra-
     addons (this pipeline's own transient scaffolded modules) -- for a
-    real, permanent customer model (project.meerwerk, defined by the
-    real project_meerwerk module under /opt/site/site16), that search
+    real, permanent customer model (project.fieldjob, defined by the
+    real project_fieldjob module under /opt/site/site16), that search
     could only ever find a WRONG answer: some unrelated earlier task's
     own scaffold that happened to also (incorrectly) redefine the same
-    model name. Confirmed live: 'project.meerwerk' resolved to
+    model name. Confirmed live: 'project.fieldjob' resolved to
     'oma_create_an_import_wizard_ede68004' -- a completely unrelated
     module. The real customer codebase must be checked FIRST.
     """
     def fake_docker_exec(bash_command, timeout=60):
         from subprocess import CompletedProcess
         if bash_command.startswith(f"grep") and _CUSTOM_CODEBASE_ROOT in bash_command:
-            return CompletedProcess(args=[], returncode=0, stdout=f"{_CUSTOM_CODEBASE_ROOT}/project_meerwerk/models/models.py\n", stderr="")
+            return CompletedProcess(args=[], returncode=0, stdout=f"{_CUSTOM_CODEBASE_ROOT}/project_fieldjob/models/models.py\n", stderr="")
         if bash_command.startswith("grep") and _MODULE_DEV_ADDONS_DIR in bash_command:
             return CompletedProcess(args=[], returncode=0, stdout=f"{_MODULE_DEV_ADDONS_DIR}/oma_create_an_import_wizard_ede68004/models/models.py\n", stderr="")
         return CompletedProcess(args=[], returncode=1, stdout="", stderr="")
 
     with patch("tools_odoo.codebase_read._docker_exec_readonly", side_effect=fake_docker_exec):
-        result = find_module_defining_model("project.meerwerk")
-    assert result == "project_meerwerk", (
+        result = find_module_defining_model("project.fieldjob")
+    assert result == "project_fieldjob", (
         f"expected the real customer module to be preferred over an unrelated scaffold, got: {result!r}"
     )
     print("PASS: find_module_defining_model() prefers the real customer codebase over this "

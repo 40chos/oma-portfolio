@@ -57,7 +57,7 @@ async def detect_correction(
     """Returns {is_correction, confidence, directive, applicability_condition}.
     Never raises to the caller in normal operation -- degrades to
     is_correction=False, confidence=0.0 on any failure (including
-    IncompleteResponseError from generate_checked()), matching Nexo's
+    IncompleteResponseError from generate_checked()), matching Pulsar's
     real "silently degrade, never block the conversation" shape for
     background classification calls.
     """

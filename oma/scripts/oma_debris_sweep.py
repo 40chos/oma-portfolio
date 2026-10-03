@@ -7,11 +7,11 @@ Real, evidenced problem this closes: `manager/loop.py`'s `cleanup_module_from_fa
 and `manager/compensations.py`'s compensating-action cleanup both only fire for a task's
 OWN active run (a round whose install succeeded but was rejected in the same round loop,
 or a task cut off mid-sequence). Neither fires for a task abandoned outside those exact
-code paths -- confirmed live (2026-08-04): 38 separate `oma_*meerwerk*` modules
+code paths -- confirmed live (2026-08-04): 38 separate `oma_*fieldjob*` modules
 simultaneously `state=installed` in the real, shared `odoo16_dev` database, each from a
 DIFFERENT task_id (slugify_module_name() gives every new task_id a brand-new module name
 even when the goal text is nearly identical to an earlier abandoned attempt), none ever
-uninstalled. New tasks then build against a `project.meerwerk` model whose real, live
+uninstalled. New tasks then build against a `project.fieldjob` model whose real, live
 registry has been mutated by dozens of unrelated, never-cleaned-up prior attempts.
 
 Never destructive by default: `uninstall --stale` requires an explicit `--confirm` flag;

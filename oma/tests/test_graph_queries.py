@@ -61,7 +61,7 @@ class _FakeDriver:
 @pytest.fixture(autouse=True)
 def _neo4j_env():
     env = {
-        "NEO4J_URI": "bolt://10.1.13.151:7687",
+        "NEO4J_URI": "bolt://192.0.2.10:7687",
         "NEO4J_USER": "test-user",
         "NEO4J_PASSWORD": "test-password",
     }

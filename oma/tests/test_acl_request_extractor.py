@@ -25,7 +25,7 @@ class _FakeContract:
 
 
 def test_extracts_real_confirmed_goal_shape_internal_approver():
-    goal = "On the meerwerk form, only System Administrators should see who approved this record internally."
+    goal = "On the fieldjob form, only System Administrators should see who approved this record internally."
     extracted = extract_acl_request(goal)
     assert extracted is not None
     assert extracted.role_phrase == "System Administrators"
@@ -51,7 +51,7 @@ def test_returns_none_for_a_goal_with_no_acl_shape():
 def test_resolves_when_the_exact_role_phrase_is_a_real_group():
     extracted = extract_acl_request("Only Managers should see the internal notes field.")
     resolved = resolve_acl_request(
-        extracted, "project.meerwerk", "odoo16_dev",
+        extracted, "project.fieldjob", "odoo16_dev",
         check_group_exists_fn=lambda db, name: name == "Managers",
         check_field_exists_fn=lambda db, model, field: True,
         resolve_group_external_id_fn=lambda db, name: "some_module.group_managers",
@@ -61,7 +61,7 @@ def test_resolves_when_the_exact_role_phrase_is_a_real_group():
     assert resolved.resolved_group_name == "Managers"
     assert resolved.resolved_group_external_id == "some_module.group_managers"
     block = format_resolved_acl_target_block(resolved)
-    assert "some_module.group_managers" in block and "project.meerwerk" in block
+    assert "some_module.group_managers" in block and "project.fieldjob" in block
     print("PASS: an exact-match real group resolves directly, including its real external ID")
 
 
@@ -88,7 +88,7 @@ def test_fails_loudly_when_group_exists_but_has_no_resolvable_external_id():
     resolution FAILURE, never proceed with only the display name."""
     extracted = extract_acl_request("Only Managers should see the internal notes field.")
     resolved = resolve_acl_request(
-        extracted, "project.meerwerk", "odoo16_dev",
+        extracted, "project.fieldjob", "odoo16_dev",
         check_group_exists_fn=lambda db, name: name == "Managers",
         resolve_group_external_id_fn=lambda db, name: None,
     )
@@ -114,7 +114,7 @@ def test_fails_loudly_never_guesses_when_no_real_group_matches():
 def test_unavailable_live_check_is_reported_as_a_failure_not_silently_skipped():
     extracted = extract_acl_request("Only Managers should see the internal notes field.")
     resolved = resolve_acl_request(
-        extracted, "project.meerwerk", "odoo16_dev", check_group_exists_fn=lambda db, name: None,
+        extracted, "project.fieldjob", "odoo16_dev", check_group_exists_fn=lambda db, name: None,
     )
     from tools_odoo.acl_request_extractor import AclResolutionFailure
     assert isinstance(resolved, AclResolutionFailure)

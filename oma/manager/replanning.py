@@ -1568,7 +1568,7 @@ def compute_regressed_constraints(
     (`_reverify_earlier_constraints_field_targets`) is what actually caught this live, but only at
     the very last round, after the round budget meant to fix it was already spent. This check
     looks at the EXACT trailing identifier segment of each `creates` entry (e.g. `linked_invoice`
-    from `project.meerwerk.linked_invoice`) -- the real field/method name Build's own generated
+    from `project.fieldjob.linked_invoice`) -- the real field/method name Build's own generated
     code would contain verbatim -- as a whole-word match, not a stem. A constraint whose `creates`
     identifiers are all still present verbatim is never flagged by this half even if the stem
     check above would (deliberately conservative in the OTHER direction: this is additive

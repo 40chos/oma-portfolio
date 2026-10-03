@@ -76,12 +76,13 @@ than ask approval for each one.
   (`is_custom_xerp_module`, `/opt/xerp/16/...`), not just comments.
 - **"vgroep" (employer's internal domain/org name) → `oma`/`oma.local`**, including the
   Gitea org path and committer email.
-- Remaining IP/hostname literals (`10.1.19.195/200/203`, `10.1.13.143/144`,
-  `odoo-dev.int`, `gitea.int`) in `infra/gateway_client.py`, `infra/settings.py`,
-  `infra/gpu_capacity_guard.py`, `infra/odoo_settings.py`, `infra/odoo_jit_apikey.py`,
-  and the SSH-dependent tools are **deliberately left for Stages 3 and 5** rather than
-  patched twice — those files get a real architectural rewrite there (GPU-gateway →
-  Ollama/cloud switch; SSH → compose networking), not a find-and-replace.
+- Remaining IP/hostname literals (real internal GPU-worker and dev-host addresses) in
+  `infra/gateway_client.py`, `infra/settings.py`, `infra/gpu_capacity_guard.py`,
+  `infra/odoo_jit_apikey.py`, `specialists/build/specialist.py`,
+  `tools_odoo/module_dev/toolchain.py`, and a handful of their tests were deferred here
+  with a note to revisit at Stages 3/5 (the GPU-gateway → Ollama/cloud switch; SSH →
+  compose networking rewrites) — see Stage 12 below for the actual follow-through;
+  this note was stale by the time that happened.
 - `README.md`, `ARCHITECTURE.md`, `ENGINEERING_LOG.md` are being rewritten/re-sanitized
   wholesale rather than patched in place — the originals are an internal phase-by-phase
   build log addressed to the original team, not portfolio-facing documentation.
@@ -589,6 +590,59 @@ session's own test artifacts (left the operator's own real, legitimately-pending
 untouched). Worth a real fix later: task archival should probably call
 `clear_pending_escalation()` itself rather than leaving this a manual, easy-to-forget two-step
 process -- noted here, not silently fixed by inventing new scope beyond what was reported.
+
+## Stage 12: a real sanitization gap found via a document outside the repo
+
+The operator surfaced a real internal architecture document (not part of this repo,
+pulled from their own records) while preparing to share this repo publicly, and asked
+for a check of what else might be unsanitized. Cross-referencing it against the repo
+surfaced a genuine, previously-undetected gap: a second real client-identifying term,
+the name of a real pre-existing custom Odoo model at the original employer, had leaked
+into 77 files and was never caught by the earlier "xerp" → "site" pass (Sanitization,
+above) -- a different literal string, so a substring-based find-and-replace for one
+term never touched the other. Confirmed before fixing: `grep` for the earlier term
+came back essentially empty (one expected, meta self-reference in this very file); the
+second term had zero prior sanitization attempts against it at all.
+
+Fixed the same way as the original "xerp" → "site" pass, case-preserving, across all
+77 files, including three filesystem renames (`git mv`, preserving history): two
+pending-validator fixture files and a skill directory
+(`meerwerk-request-classification/` → `fieldjob-request-classification/`). Verified
+with a full repo-wide grep (zero hits) and `py_compile` on every changed file.
+
+Also found and fixed, at the same time: the "Remaining IP/hostname literals... left
+for Stages 3 and 5" note directly above was stale -- those real internal GPU-worker
+IPs and a real internal dev-host hostname were still live, as literal values, in code
+comments (never in actual runtime config -- `infra/settings.py`'s real defaults all
+come from environment variables, these were docstring/comment narrative only) across
+6 source files and 7 test files. Replaced the real IPs with RFC 5737 documentation-
+range addresses (`192.0.2.0/24`) in test fixtures, and the narrative comments'
+specific real addresses/hostnames with generic equivalents ("internal GPU host," "the
+dev host") -- same principle as every other sanitization pass in this log: keep the
+real engineering reasoning, remove what specifically identifies the original
+infrastructure.
+
+The architecture document itself went well beyond a names/IPs problem on closer
+reading: alongside the usual identifying details, it included a real username baked
+into 18 file paths, a real internal NAS/platform name, and the real name of a
+separate sibling internal project ("Nexo" -- caught by this same cross-reference,
+30+ occurrences across 9 files this repo's own earlier passes never touched). It
+also went into real operational detail about the production system's current
+security posture in a way that scrubbing names alone wouldn't have made safe to
+publish, regardless of how the specifics are characterized here. Raised this
+directly rather than deciding alone; the operator's call was to not include the
+document's security-related content at all, in any form, and to write
+`ARCHITECTURE.md` fresh instead, covering the same general mechanisms already
+documented in README.md/this log at more technical depth, with nothing from the
+source document's specific text, real paths, or real names carried over.
+
+Cross-referencing that document also surfaced "Nexo" (fixed, `Nexo`/`nexo` ->
+`Pulsar`/`pulsar`, case-preserving, across the 9 files above) and two files the
+original "Jack"/"Andrew" sanitization pass had missed entirely --
+`tests/test_graph_queries_live.py` (two real paths under a real `/home/andrew/...`
+home directory) and `tools_odoo/knowledge_graph/README.md` (prose referring to
+"Andrew" by name, plus a `cd /home/andrew/...` testing instruction). Both fixed the
+same way as every other instance of this class of gap in this log.
 
 ## Still open (tracked, not forgotten)
 

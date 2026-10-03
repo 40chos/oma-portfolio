@@ -55,7 +55,7 @@ class GatewaySettings:
     # rationale and the coder/reasoning role split.
     coder_base_url: str
     reasoning_base_url: str
-    # Real infra change, 2026-07-22: GPU Worker 03 (10.1.19.200:9090) --
+    # Real infra change, 2026-07-22: GPU Worker 03 (internal GPU host) --
     # see infra/gateway_client.py's own BACKEND_FAST_EXTRACTION comment
     # for the full rationale. Defaults to the real, confirmed address so
     # existing deployments don't need a .env change to pick this up;
@@ -102,7 +102,7 @@ class Neo4jSettings:
     max_transaction_retry_time_s: float = 15.0
     # Real fix 2026-08-13: 8.0s was set when the live graph had ~6.8k :Field
     # nodes; grounding/blast-radius queries (get_module_grounding, the
-    # Nexo-isolation sweep) now confirmed timing out against the real,
+    # Pulsar-isolation sweep) now confirmed timing out against the real,
     # grown graph (9.2k+ :Field nodes after the EXTENDS_FIELD fix). Raised
     # to keep these usable for real safety checks rather than failing open
     # or blocking a round on a timeout that has nothing to do with the

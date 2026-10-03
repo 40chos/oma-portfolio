@@ -1,4 +1,4 @@
-"""The capability-class cascade -- Phase 4 step 4, shaped after Nexo's
+"""The capability-class cascade -- Phase 4 step 4, shaped after Pulsar's
 real complexity_classifier.py pattern (§2.5): a cheap keyword/pattern
 fast-path with zero model calls for the confident majority of cases,
 falling through to a cached, whitelisted, temperature-zero LLM call
@@ -229,7 +229,7 @@ _classification_cache: dict[str, str] = {}
 
 # Real bug found live (2026-08-06, task027 of the SITE 50-task fix-pass): the original
 # `'[^']*'` alternative treated ANY apostrophe as a potential opening quote, including a
-# possessive contraction's apostrophe ("meerwerk record's state changes to 'accepted'") -- the
+# possessive contraction's apostrophe ("fieldjob record's state changes to 'accepted'") -- the
 # contraction's apostrophe was greedily paired with the NEXT real closing quote, silently
 # stripping genuine intent-bearing text in between ("'s state changes to '" -- eating "state
 # changes to") as if it had been quoted literal content. Fixed by requiring a single-quote

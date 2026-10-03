@@ -53,7 +53,7 @@ def _run_with_goal(goal: str) -> list[str]:
 
 def test_goal_text_gets_ondelete_guidance_for_a_new_intermediate_state():
     goal = (
-        "The meerwerk record currently goes from Invoiced directly to Done. I need an "
+        "The fieldjob record currently goes from Invoiced directly to Done. I need an "
         "intermediate state called 'Paid' between Invoiced and Done, so we can mark when the "
         "invoice is actually paid."
     )

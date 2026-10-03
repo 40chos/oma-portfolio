@@ -643,15 +643,15 @@ def test_item45_never_raises_with_mail_thread():
 # --- Item 45 live sibling (2026-08-04, task027's own real false-positive) ---
 
 def test_item45_live_skips_when_inherited_model_already_provides_mail_thread_transitively():
-    """The real, confirmed false positive this closes: _inherit = 'project.meerwerk' already
-    transitively provides mail.thread (via project.meerwerk's own _inherit), so calling
+    """The real, confirmed false positive this closes: _inherit = 'project.fieldjob' already
+    transitively provides mail.thread (via project.fieldjob's own _inherit), so calling
     message_post() here is genuinely correct Odoo code -- the sync-only check would wrongly
     reject it."""
     import specialists.build.specialist as specialist_module
 
     models_py = (
         "class X(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n\n"
+        "    _inherit = 'project.fieldjob'\n\n"
         "    def go(self):\n"
         "        self.message_post(body='hi')\n"
     )
@@ -686,7 +686,7 @@ def test_item45_live_never_calls_live_lookup_when_mail_thread_already_literal():
 
     models_py = (
         "class X(models.Model):\n"
-        "    _inherit = ['project.meerwerk', 'mail.thread']\n\n"
+        "    _inherit = ['project.fieldjob', 'mail.thread']\n\n"
         "    def go(self):\n"
         "        self.message_post(body='hi')\n"
     )
@@ -796,17 +796,17 @@ def test_autofix_adds_mail_thread_to_a_bare_string_inherit_task016_real_shape():
     """
     models_py = (
         "from odoo import models, api\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n\n"
         "    def write(self, vals):\n"
-        "        result = super(ProjectMeerwerk, self).write(vals)\n"
+        "        result = super(ProjectFieldjob, self).write(vals)\n"
         "        if 'state' in vals:\n"
         "            self.message_post(body=\"State changed\")\n"
         "        return result\n"
     )
     generated = _gen(models_py)
     asyncio.run(_autofix_add_mail_thread_inherit_when_message_post_used(generated, "test_db", None))
-    assert "_inherit = ['project.meerwerk', 'mail.thread']" in generated.models_py
+    assert "_inherit = ['project.fieldjob', 'mail.thread']" in generated.models_py
     assert _raises(_validate_message_post_requires_mail_thread_inherit, generated) is None
     print("PASS: task016's own real bare-string _inherit is autofixed to include mail.thread")
 
@@ -815,20 +815,20 @@ def test_autofix_appends_mail_thread_to_an_existing_inherit_list():
     models_py = (
         "from odoo import models\n\n"
         "class X(models.Model):\n"
-        "    _inherit = ['project.meerwerk', 'portal.mixin']\n\n"
+        "    _inherit = ['project.fieldjob', 'portal.mixin']\n\n"
         "    def write(self, vals):\n"
         "        self.message_post(body='x')\n"
         "        return super().write(vals)\n"
     )
     generated = _gen(models_py)
     asyncio.run(_autofix_add_mail_thread_inherit_when_message_post_used(generated, "test_db", None))
-    assert "'project.meerwerk', 'portal.mixin', 'mail.thread'" in generated.models_py
+    assert "'project.fieldjob', 'portal.mixin', 'mail.thread'" in generated.models_py
     assert _raises(_validate_message_post_requires_mail_thread_inherit, generated) is None
     print("PASS: an existing _inherit list gets mail.thread appended, other mixins preserved")
 
 
 def test_autofix_is_a_no_op_when_message_post_never_called():
-    models_py = "class X(models.Model):\n    _inherit = 'project.meerwerk'\n"
+    models_py = "class X(models.Model):\n    _inherit = 'project.fieldjob'\n"
     generated = _gen(models_py)
     before = generated.models_py
     asyncio.run(_autofix_add_mail_thread_inherit_when_message_post_used(generated, "test_db", None))
@@ -839,7 +839,7 @@ def test_autofix_is_a_no_op_when_message_post_never_called():
 def test_autofix_is_a_no_op_when_mail_thread_already_inherited():
     models_py = (
         "class X(models.Model):\n"
-        "    _inherit = ['project.meerwerk', 'mail.thread']\n\n"
+        "    _inherit = ['project.fieldjob', 'mail.thread']\n\n"
         "    def write(self, vals):\n"
         "        self.message_post(body='x')\n"
         "        return super().write(vals)\n"
@@ -854,7 +854,7 @@ def test_autofix_is_a_no_op_when_mail_thread_already_inherited():
 def test_autofix_skips_adding_when_the_target_model_already_provides_mail_thread():
     """The real, live-confirmed root cause of task027's own confusing install crash: this
     autofix's OLD blind-add behavior added a REDUNDANT 'mail.thread' to a class extending
-    project.meerwerk, which already inherits mail.thread on its own base definition -- Odoo's
+    project.fieldjob, which already inherits mail.thread on its own base definition -- Odoo's
     real _inherit merging breaks on the redundant re-declaration (confirmed via a live,
     byte-for-byte reproduction against the real sandbox). get_model_fields is monkeypatched to
     simulate the target model already having 'message_follower_ids' (a field that only ever
@@ -862,8 +862,8 @@ def test_autofix_skips_adding_when_the_target_model_already_provides_mail_thread
     import specialists.build.specialist as specialist_module
 
     models_py = (
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n\n"
         "    def _post_accepted_note(self):\n"
         "        self.message_post(body='x')\n"
     )
@@ -879,7 +879,7 @@ def test_autofix_skips_adding_when_the_target_model_already_provides_mail_thread
 def test_autofix_still_adds_mail_thread_when_target_model_genuinely_lacks_it():
     """The other half of the same fix: a target model confirmed live to NOT already have
     mail.thread (no message_follower_ids field) must still get it added, exactly as before --
-    this is the common, correct case for every target that isn't project.meerwerk."""
+    this is the common, correct case for every target that isn't project.fieldjob."""
     import specialists.build.specialist as specialist_module
 
     models_py = (
@@ -899,7 +899,7 @@ def test_autofix_still_adds_mail_thread_when_target_model_genuinely_lacks_it():
 
 def test_autofix_falls_through_to_old_behavior_when_live_lookup_is_inconclusive():
     """None (couldn't get a confident live answer) must never regress this autofix's own
-    already-proven-correct behavior for every target that isn't project.meerwerk -- falls
+    already-proven-correct behavior for every target that isn't project.fieldjob -- falls
     through to the old blind-add rather than silently doing nothing."""
     import specialists.build.specialist as specialist_module
 
@@ -921,7 +921,7 @@ def test_autofix_falls_through_to_old_behavior_when_live_lookup_is_inconclusive(
 # --- Autofix for the missing-owning-module-dependency gap (2026-08-04, same-night full
 # 30-task sweep, task027 -- confirmed via a live, byte-for-byte reproduction against the real
 # sandbox: `_inherit = [..., 'mail.thread']` with 'mail' missing from the manifest's own
-# `depends` produces a confusing `ValueError: The _name attribute ProjectMeerwerk is not valid`
+# `depends` produces a confusing `ValueError: The _name attribute ProjectFieldjob is not valid`
 # at real Odoo registry-init time -- Odoo silently falls through to registering the whole class
 # as a brand-new model when it can't resolve every _inherit target, deriving _name from the
 # Python class name. Each test builds its OWN fresh ManifestFields (never the shared _MANIFEST
@@ -940,28 +940,28 @@ def test_autofix_adds_mail_to_depends_for_task027s_own_real_shape():
     the manifest's own depends never included 'mail' -- the actual root cause behind a
     confusing install-time _name error that looks like (but is not) a naming mistake."""
     models_py = (
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = ['project.meerwerk', 'mail.thread']\n\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = ['project.fieldjob', 'mail.thread']\n\n"
         "    def _post_accepted_note(self):\n"
         "        pass\n"
     )
-    generated = _gen_with_depends(models_py, ["base", "project_meerwerk"])
+    generated = _gen_with_depends(models_py, ["base", "project_fieldjob"])
     _autofix_add_owning_module_dependency_for_known_mixins(generated)
     assert "mail" in generated.manifest_fields.depends
     print("PASS: 'mail' added to depends for a _inherit list naming mail.thread")
 
 
 def test_autofix_adds_portal_to_depends_for_portal_mixin():
-    models_py = "class X(models.Model):\n    _inherit = ['project.meerwerk', 'portal.mixin']\n"
-    generated = _gen_with_depends(models_py, ["base", "project_meerwerk"])
+    models_py = "class X(models.Model):\n    _inherit = ['project.fieldjob', 'portal.mixin']\n"
+    generated = _gen_with_depends(models_py, ["base", "project_fieldjob"])
     _autofix_add_owning_module_dependency_for_known_mixins(generated)
     assert "portal" in generated.manifest_fields.depends
     print("PASS: 'portal' added to depends for a _inherit list naming portal.mixin")
 
 
 def test_autofix_is_a_no_op_when_owning_module_already_present():
-    models_py = "class X(models.Model):\n    _inherit = ['project.meerwerk', 'mail.thread']\n"
-    generated = _gen_with_depends(models_py, ["base", "project_meerwerk", "mail"])
+    models_py = "class X(models.Model):\n    _inherit = ['project.fieldjob', 'mail.thread']\n"
+    generated = _gen_with_depends(models_py, ["base", "project_fieldjob", "mail"])
     before = list(generated.manifest_fields.depends)
     _autofix_add_owning_module_dependency_for_known_mixins(generated)
     assert generated.manifest_fields.depends == before
@@ -969,8 +969,8 @@ def test_autofix_is_a_no_op_when_owning_module_already_present():
 
 
 def test_autofix_is_a_no_op_when_no_known_mixin_is_inherited():
-    models_py = "class X(models.Model):\n    _inherit = 'project.meerwerk'\n"
-    generated = _gen_with_depends(models_py, ["base", "project_meerwerk"])
+    models_py = "class X(models.Model):\n    _inherit = 'project.fieldjob'\n"
+    generated = _gen_with_depends(models_py, ["base", "project_fieldjob"])
     before = list(generated.manifest_fields.depends)
     _autofix_add_owning_module_dependency_for_known_mixins(generated)
     assert generated.manifest_fields.depends == before
@@ -997,15 +997,15 @@ def test_autofix_handles_bare_string_inherit_naming_a_mixin_directly():
 def test_strip_removes_redundant_mail_thread_from_task027s_own_real_re_crash_shape():
     """task027's own real re-crash content, verbatim (read directly off the real sandbox
     container after this session's first fix was already deployed): _inherit correctly lists
-    project.meerwerk, but the LLM ALSO wrote 'mail.thread' directly -- redundant, since
-    project.meerwerk already provides it transitively. Odoo's own real _inherit merging breaks on
+    project.fieldjob, but the LLM ALSO wrote 'mail.thread' directly -- redundant, since
+    project.fieldjob already provides it transitively. Odoo's own real _inherit merging breaks on
     the redundant re-declaration, confirmed via live reproduction the same night."""
     import specialists.build.specialist as specialist_module
 
     models_py = (
         "from odoo import api, models\n\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = ['project.meerwerk', 'mail.thread']\n\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = ['project.fieldjob', 'mail.thread']\n\n"
         "    def _post_accepted_note(self):\n"
         "        for record in self:\n"
         "            if record.project_id:\n"
@@ -1015,13 +1015,13 @@ def test_strip_removes_redundant_mail_thread_from_task027s_own_real_re_crash_sha
     with patch.object(specialist_module, "is_fast_path_eligible", return_value=False), \
          patch.object(specialist_module, "get_model_fields", return_value=["id", "name", "message_follower_ids"]):
         asyncio.run(_autofix_strip_redundant_mixin_inherit_when_already_provided(generated, "test_db", "task-123"))
-    assert "_inherit = ['project.meerwerk']" in generated.models_py
+    assert "_inherit = ['project.fieldjob']" in generated.models_py
     assert "'mail.thread'" not in generated.models_py
     print("PASS: a redundant mail.thread the LLM wrote directly is stripped when the other target already provides it")
 
 
 def test_strip_is_a_no_op_when_only_one_inherit_target():
-    models_py = "class X(models.Model):\n    _inherit = 'project.meerwerk'\n"
+    models_py = "class X(models.Model):\n    _inherit = 'project.fieldjob'\n"
     generated = _gen(models_py)
     before = generated.models_py
     asyncio.run(_autofix_strip_redundant_mixin_inherit_when_already_provided(generated, "test_db", "task-123"))
@@ -1062,7 +1062,7 @@ def test_strip_is_a_no_op_when_live_lookup_is_inconclusive():
 
 def test_strip_is_a_no_op_without_task_id():
     """No task_id means no live lookup is possible at all -- must never guess-strip."""
-    models_py = "class X(models.Model):\n    _inherit = ['project.meerwerk', 'mail.thread']\n"
+    models_py = "class X(models.Model):\n    _inherit = ['project.fieldjob', 'mail.thread']\n"
     generated = _gen(models_py)
     before = generated.models_py
     asyncio.run(_autofix_strip_redundant_mixin_inherit_when_already_provided(generated, "test_db", None))
@@ -1076,12 +1076,12 @@ def test_strip_handles_portal_mixin_redundancy_too():
     access_token."""
     import specialists.build.specialist as specialist_module
 
-    models_py = "class X(models.Model):\n    _inherit = ['project.meerwerk', 'portal.mixin']\n"
+    models_py = "class X(models.Model):\n    _inherit = ['project.fieldjob', 'portal.mixin']\n"
     generated = _gen(models_py)
     with patch.object(specialist_module, "is_fast_path_eligible", return_value=False), \
          patch.object(specialist_module, "get_model_fields", return_value=["id", "name", "access_token"]):
         asyncio.run(_autofix_strip_redundant_mixin_inherit_when_already_provided(generated, "test_db", "task-123"))
-    assert "_inherit = ['project.meerwerk']" in generated.models_py
+    assert "_inherit = ['project.fieldjob']" in generated.models_py
     print("PASS: the same fix generalizes to portal.mixin, not just mail.thread")
 
 
@@ -1163,8 +1163,8 @@ def test_autofix_wraps_task012_own_real_plain_literal():
     models_py = (
         "from odoo import api, fields, models\n"
         "from odoo.exceptions import ValidationError\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n\n"
         "    date_finish = fields.Date(string='Finish date')\n\n"
         "    @api.constrains('date', 'date_finish')\n"
         "    def _check_date_order(self):\n"

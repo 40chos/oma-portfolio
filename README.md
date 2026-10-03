@@ -193,8 +193,13 @@ demo-capture/          the real captured trace the replay page is built from
 .github/workflows/     CI — syntax + import validation on every push (see the
                         workflow file's own header comment for why it's scoped
                         this way, not a full integration-test run)
+ARCHITECTURE.md        a deeper technical walkthrough than this README
 DECISIONS.md           every judgment call made during the port, and why
 ```
+
+**[→ ARCHITECTURE.md](ARCHITECTURE.md)** goes deeper than this README on how the
+pieces fit together — the request lifecycle, the constraint-graph scheduler, the
+three-specialist pipeline, and what this repo deliberately leaves out and why.
 
 `oma/README.md` has the deeper per-module documentation (env vars,
 specialist internals, the manager's autonomy-tier model in

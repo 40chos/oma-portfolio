@@ -1,18 +1,18 @@
-"""Session facts (a smaller, direct version of Nexo's background fact
+"""Session facts (a smaller, direct version of Pulsar's background fact
 extractor) + the token-triggered summarizer -- Phase 3 of the build plan,
 §2.2's pattern: two distinct mechanisms working alongside each other, not
-one, mirrored from agents/src/nexo/pipeline/session_memory.py and
-agents/src/nexo/context/summarizer.py.
+one, mirrored from agents/src/pulsar/pipeline/session_memory.py and
+agents/src/pulsar/context/summarizer.py.
 
 At this scale -- one Manager, one conversation with Operator at a time, not
 many concurrent sessions -- an in-process dict is genuinely sufficient
 for session facts, per the build plan's own instruction not to reach for
 Redis here without a real multi-process need.
 
-The compression threshold is NOT inherited from Nexo's own two disagreeing
+The compression threshold is NOT inherited from Pulsar's own two disagreeing
 numbers (its config schema defaults to 20,000 tokens; summarizer.py's own
 header comment records the live deployed value as 27,000 -- an
-unresolved discrepancy inside Nexo's own codebase, per §2.2's correction).
+unresolved discrepancy inside Pulsar's own codebase, per §2.2's correction).
 Picked fresh here based on the Manager's own model: qwen3.6-27b has a
 verified 65,536-token context window (§0.5.2); 20,000 leaves comfortable
 room for the system prompt, project-memory block, and the model's own
@@ -49,11 +49,11 @@ from infra.gateway_client import ModelGatewayClient
 # qwen3.6-27b's verified context window is 65,536 tokens (§0.5.2).
 # 20,000 leaves comfortable room for the system prompt, the project
 # memory block, and the model's own reply -- picked deliberately for
-# this model, not inherited from either of Nexo's two disagreeing values.
+# this model, not inherited from either of Pulsar's two disagreeing values.
 COMPRESSION_TRIGGER_TOKENS = 20_000
-KEEP_RECENT_TURNS = 8  # turn PAIRS kept verbatim, matching Nexo's own choice
+KEEP_RECENT_TURNS = 8  # turn PAIRS kept verbatim, matching Pulsar's own choice
 
-SESSION_FACT_TTL_SECONDS = 86_400.0  # 24h, matching Nexo's own SessionMemoryStore
+SESSION_FACT_TTL_SECONDS = 86_400.0  # 24h, matching Pulsar's own SessionMemoryStore
 
 _EXTRACT_SYSTEM = """\
 You extract durable named facts from a conversation turn between Operator \
@@ -71,7 +71,7 @@ If no facts found, respond with exactly: {"facts": []}
 
 
 def estimate_token_count(messages: list[dict]) -> int:
-    """Same cheap heuristic as Nexo's real estimate_token_count: UTF-8
+    """Same cheap heuristic as Pulsar's real estimate_token_count: UTF-8
     byte length // 3 over content fields only. A real tokenizer call is
     unnecessary precision for a trigger check.
     """
@@ -128,7 +128,7 @@ class SessionFactsStore:
     def get_facts_block(self, session_id: str) -> str:
         """AUTHORITATIVE block, prepended to every subsequent prompt --
         if a fact here conflicts with something in project memory, the
-        fact wins, matching Nexo's real convention. Returns "" when
+        fact wins, matching Pulsar's real convention. Returns "" when
         empty so callers can distinguish "no facts" cleanly.
         """
         state = self._sessions.get(session_id)
@@ -186,7 +186,7 @@ async def extract_and_store_facts(
     store: SessionFactsStore,
     turn_number: int,
 ) -> None:
-    """Fire-and-forget background call, exactly matching Nexo's real
+    """Fire-and-forget background call, exactly matching Pulsar's real
     shape: non-blocking, degrades silently (just doesn't add a fact) on
     any failure -- never blocks or breaks the main conversation.
     """
@@ -277,7 +277,7 @@ async def compress_session(
 ) -> tuple[list[dict], bool]:
     """Returns (new_messages, success). On failure, returns the
     untrimmed messages unchanged (degraded mode) rather than
-    crashing or blocking -- matching Nexo's real behavior exactly.
+    crashing or blocking -- matching Pulsar's real behavior exactly.
     """
     to_compress, to_keep = _format_turns_for_compression(messages, keep_recent)
     if not to_compress:

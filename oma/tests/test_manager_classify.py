@@ -99,10 +99,10 @@ LABELED_CASES = [
     # nonsensical "I can run that audit, but I need to know what to
     # point it at" clarification. Fixed by adding a fast-path pattern
     # recognizing this project's own "Field:" convention directly.
-    ("On the meerwerk form, I want an internal notes field that only "
+    ("On the fieldjob form, I want an internal notes field that only "
      "developers/technical staff can see and edit -- regular users and "
      "managers should never see it at all.\n\n"
-     "Module: project_meerwerk\nModel: project.meerwerk\n"
+     "Module: project_fieldjob\nModel: project.fieldjob\n"
      "Field: developer_notes (Text)\n"
      "Restrict to group: mis_base_extend.group_user_developer_access_fields\n", MODULE_DEV),
     # Real, FIFTH bug found live (2026-08-06, task027 of the SITE 50-task fix-pass): a standing
@@ -112,7 +112,7 @@ LABELED_CASES = [
     # caught this shape, so it fell to the flaky LLM classifier and was misclassified as
     # data_change, which then hard-blocked the task outright via capability_readiness.py's
     # deliberate data_change gate before a single round could start.
-    ("Whenever a meerwerk record's state changes to 'accepted', automatically post a note in "
+    ("Whenever a fieldjob record's state changes to 'accepted', automatically post a note in "
      "the chatter of the linked project saying 'Extra work MW-XXXX accepted by customer.'", MODULE_DEV),
 ]
 

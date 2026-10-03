@@ -109,7 +109,7 @@ _shared_key_cache: dict[str, tuple[int, str]] = {}
 # threads can all see `_shared_key_cache.get(db)` return None at once on
 # a cold cache and each independently kick off `create_task_api_key()`,
 # an 8-20s odoo-bin-shell registry boot. Confirmed live: a real
-# `_inherit = 'project.meerwerk'` target that DOES genuinely exist
+# `_inherit = 'project.fieldjob'` target that DOES genuinely exist
 # (independently confirmed via a direct, isolated `get_model_fields_fast()`
 # call returning 49 real fields) was reported as "does not exist as a
 # real model anywhere" on round 1 of a best-of-N round -- consistent
@@ -296,7 +296,7 @@ def _read_real_field_rows(model_name: str, db: str, login: str) -> list[dict] | 
             # "selection" added 2026-08-06 (Phase 30, category-wide info-gap sweep): confirmed
             # live this was the SAME gap class as TransientModel/mail.template exposure -- a real,
             # already-queryable fact (a Selection field's real, valid option keys, e.g.
-            # project.meerwerk.state -> draft/sent/accepted/rejected/invoiced/done) that no caller
+            # project.fieldjob.state -> draft/sent/accepted/rejected/invoiced/done) that no caller
             # of this shared reader had ever requested, so no schema-grounding block could ever
             # show it, no matter how many other callers routed through here.
             {"fields": ["name", "ttype", "relation", "required", "readonly", "selection", "modules"]},
@@ -389,11 +389,11 @@ def list_module_models_fast(module_name: str, db: str, login: str = "Admin") -> 
     OUR OWN oma_*-prefixed scaffolds (via list_custom_models_fast()'s hard
     `module LIKE 'oma_'` filter) when Build invents a nonexistent `_inherit`
     target. That's blind to real, pre-existing SITE customer modules (e.g.
-    `project_meerwerk`, defining `project.meerwerk`) even when a task is
+    `project_fieldjob`, defining `project.fieldjob`) even when a task is
     KNOWN to be extending one via a `depends_on_module:` marker -- Build
     still has to guess the real model's dotted name from the module name
-    alone, and got it wrong live (`project_meerwerk.project_meerwerk`
-    instead of the real `project.meerwerk`). This gives the validation
+    alone, and got it wrong live (`project_fieldjob.project_fieldjob`
+    instead of the real `project.fieldjob`). This gives the validation
     check a way to list a SPECIFIC named module's own real models, so that
     guess can be corrected with a concrete suggestion instead of a bare
     rejection.
@@ -420,8 +420,8 @@ def resolve_model_owner_module_fast(model_name: str, db: str, login: str = "Admi
     used elsewhere (a model's own dotted prefix == its real addon name,
     e.g. `project.project` -> `project`) is WRONG for the very common
     shape of a genuinely custom model whose module name doesn't match
-    its own dotted prefix at all (`project.meerwerk` is owned by
-    `project_meerwerk`, not `project`) -- and unlike
+    its own dotted prefix at all (`project.fieldjob` is owned by
+    `project_fieldjob`, not `project`) -- and unlike
     `list_module_models_fast`, this doesn't require already knowing
     which module to ask about. Does the reverse lookup instead: given a
     model NAME, find its own `ir.model` row, then any `ir.model.data`
@@ -644,7 +644,7 @@ def list_model_mail_templates_fast(model_name: str, db: str, login: str = "Admin
     label (task030's own real manager request: "pre-loaded with our 09.A template"), Build
     fabricates a plausible-sounding-but-nonexistent external id (confirmed live:
     `self.env.ref('your_module.email_template_customer')`, which does not exist -- the real
-    template is `project_meerwerk`-owned, id 157, named "09.A — Meerwerk versturen", genuinely
+    template is `project_fieldjob`-owned, id 157, named "09.A — Fieldjob versturen", genuinely
     installed and queryable). Same missing-grounding shape as the view-xmlid gap, just for
     templates instead of views.
 

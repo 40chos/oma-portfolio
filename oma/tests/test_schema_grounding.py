@@ -30,11 +30,11 @@ def test_render_model_field_summary_no_transient_note_for_regular_model():
 
 def test_render_model_field_summary_shows_real_selection_options_and_readonly():
     """Phase 30 (2026-08-06), category-wide info-gap sweep: a Selection field's real, valid
-    option keys (e.g. project.meerwerk.state -> draft/sent/accepted/rejected/invoiced/done,
+    option keys (e.g. project.fieldjob.state -> draft/sent/accepted/rejected/invoiced/done,
     confirmed live) were never fetched by the shared field reader at all, let alone rendered --
     any task referencing an existing model's own state/status values had zero grounding for the
     real option keys. `readonly` was already fetched but discarded before reaching this render
-    step. Using project.meerwerk's own real state field shape.
+    step. Using project.fieldjob's own real state field shape.
     """
     rows = [
         {
@@ -46,7 +46,7 @@ def test_render_model_field_summary_shows_real_selection_options_and_readonly():
          "readonly": True, "selection": "[('overdue', 'Overdue'), ('today', 'Today')]"},
         {"name": "name", "ttype": "char", "relation": None, "required": True, "readonly": False},
     ]
-    rendered = _render_model_field_summary("project.meerwerk", rows)
+    rendered = _render_model_field_summary("project.fieldjob", rows)
     lines_by_field = {line.strip().split(":")[0]: line for line in rendered.splitlines()}
     assert "[draft, sent, accepted]" in lines_by_field["state"]
     assert "readonly" not in lines_by_field["state"]

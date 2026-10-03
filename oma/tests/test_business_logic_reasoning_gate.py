@@ -8,7 +8,7 @@ prices shown automatically in the header" produced a view field ('amount_total')
 defined as a model field, identically across 2 rounds (round 1 full generation, round 2 scoped-
 edit retry) -- the UI half of the feature was written, the compute half wasn't. Confirmed via
 direct redis trace inspection: Build's own generated models.py for round 1 defined ONLY
-`_inherit = 'project.meerwerk'` with no field at all in one variant, and in another live capture
+`_inherit = 'project.fieldjob'` with no field at all in one variant, and in another live capture
 defined the field correctly but Code-Review still hallucinated it as missing -- the reasoning-
 analysis doc's own §1 category A ("UI/scaffold written, backend logic never written") names this
 exact shape as the single most common real failure across the 36-task fail set.
@@ -39,7 +39,7 @@ def _make_contract(**overrides) -> TaskContract:
         specialist_type=SpecialistType.bug_fix,
         capability_class=CapabilityClass.module_development,
         tier=AutonomyTier.tier_2_notify_after,
-        goal="On the project.meerwerk record, add a field for the total.",
+        goal="On the project.fieldjob record, add a field for the total.",
         inputs=["some input"],
         rules=[],
         deliverables=["a module"],
@@ -62,7 +62,7 @@ def _make_specialist() -> BuildSpecialist:
 
 def test_detects_computed_field_displayed_in_view_shape():
     goal = (
-        "On the meerwerk record, I want to see the total of all line prices shown "
+        "On the fieldjob record, I want to see the total of all line prices shown "
         "automatically in the header. It should update whenever I add or change a line."
     )
     shape = _detect_business_logic_shape(goal)
@@ -72,7 +72,7 @@ def test_detects_computed_field_displayed_in_view_shape():
 
 
 def test_detects_smart_button_shape():
-    goal = "Add a smart button to the meerwerk record showing the count of related tasks."
+    goal = "Add a smart button to the fieldjob record showing the count of related tasks."
     shape = _detect_business_logic_shape(goal)
     assert shape is not None and shape[0] == "smart button with a live count"
     print("PASS: a smart-button goal is detected")
@@ -93,7 +93,7 @@ def test_detects_onchange_autofill_shape():
 
 
 def test_detects_invoice_line_construction_shape():
-    goal = "Batch create invoice lines for all approved meerwerk records, generating the correct invoice lines with tax and account."
+    goal = "Batch create invoice lines for all approved fieldjob records, generating the correct invoice lines with tax and account."
     shape = _detect_business_logic_shape(goal)
     assert shape is not None and shape[0] == "invoice line construction with tax/account"
     print("PASS: an invoice-line-construction goal is detected")
@@ -101,13 +101,13 @@ def test_detects_invoice_line_construction_shape():
 
 def test_detects_state_transition_shape_with_accepted_wording():
     """Real bug this fixes (2026-08-06, fix-pass task 020): task 020's own real goal ("When a
-    meerwerk is marked as accepted, automatically send a confirmation email...") went completely
+    fieldjob is marked as accepted, automatically send a confirmation email...") went completely
     undetected -- the original trigger-word list only covered sent/approved/confirmed/paid/
     completed/submitted, missing "accepted"/"marked as X" phrasing entirely.
     """
     goal = (
-        "When a meerwerk is marked as accepted, automatically send a confirmation email to the "
-        "customer in their own language. Include the meerwerk reference, total amount, and "
+        "When a fieldjob is marked as accepted, automatically send a confirmation email to the "
+        "customer in their own language. Include the fieldjob reference, total amount, and "
         "expected finish date."
     )
     shape = _detect_business_logic_shape(goal)
@@ -134,24 +134,24 @@ def test_detects_migration_script_must_actually_run_shape():
 
 def test_smart_button_worked_example_never_names_a_real_live_model():
     """Real, confirmed regression found live (2026-08-06, fix-pass task 026): the original smart-
-    button worked example illustrated the shape using 'project.meerwerk' -- a REAL, live model in
+    button worked example illustrated the shape using 'project.fieldjob' -- a REAL, live model in
     this deployment (also the real target of tasks 004/009/etc.) -- and Build, given task 026's
     own genuinely different goal ('Container count' smart button on project.project, counting
     waste.container records), copied the example nearly verbatim: wrong model (_inherit =
-    'project.meerwerk' instead of 'project.project'), wrong relation field, wrong domain,
-    wrong res_model ('project.meerwerk.line' instead of 'waste.container'). Fixed by using a
+    'project.fieldjob' instead of 'project.project'), wrong relation field, wrong domain,
+    wrong res_model ('project.fieldjob.line' instead of 'waste.container'). Fixed by using a
     clearly fictional example domain ('library.loan') that can never be mistaken for a real
     target in any deployment, plus an explicit warning against literal reuse.
     """
     from specialists.build.specialist import _detect_business_logic_shape
     shape = _detect_business_logic_shape(
         "I want to add a 'Container count' smart button to the project form, just like the "
-        "meerwerk button. Show the number of containers and clicking it opens the container "
+        "fieldjob button. Show the number of containers and clicking it opens the container "
         "list for that project."
     )
     assert shape is not None
     assert shape[0] == "smart button with a live count"
-    assert "project.meerwerk" not in shape[1], (
+    assert "project.fieldjob" not in shape[1], (
         "the smart-button worked example must never name a real, live model in this "
         "deployment -- it invites literal copying onto unrelated tasks"
     )
@@ -162,14 +162,14 @@ def test_smart_button_worked_example_never_names_a_real_live_model():
 
 
 def test_no_worked_example_names_a_real_live_deployment_model():
-    """General regression guard: none of the 6 worked examples may reference 'project.meerwerk'
+    """General regression guard: none of the 6 worked examples may reference 'project.fieldjob'
     (or any other real, live model in this specific deployment) as their illustrative model --
     only genuinely generic, standard Odoo models (res.partner, account.move.line) or the
     deliberately fictional 'library.loan' placeholder are safe to use as example domains.
     """
     from specialists.build.specialist import _BUSINESS_LOGIC_SHAPE_EXAMPLES
     for _pattern, name, example in _BUSINESS_LOGIC_SHAPE_EXAMPLES:
-        assert "project.meerwerk" not in example, (
+        assert "project.fieldjob" not in example, (
             f"worked example {name!r} names a real, live deployment model -- must use a "
             f"fictional or genuinely generic standard-Odoo placeholder instead"
         )
@@ -178,14 +178,14 @@ def test_no_worked_example_names_a_real_live_deployment_model():
 
 def test_detects_smart_button_goal_phrased_as_how_many_instead_of_count():
     """Real bug this fixes (2026-08-06, fix-pass task 009): task 009's own real goal ("a button
-    in the top-right corner that shows how many meerwerk records exist for this project") is
+    in the top-right corner that shows how many fieldjob records exist for this project") is
     exactly the reasoning-analysis doc's own category-A smart-button example, but the original
     regex required the literal word "count" near "button" -- "how many ... exist" never matched
     at all, so this shape went completely undetected for its own real, natural phrasing.
     """
     goal = (
         "On the project form, I want to see a button in the top-right corner that shows how "
-        "many meerwerk (extra work) records exist for this project. Clicking it should open "
+        "many fieldjob (extra work) records exist for this project. Clicking it should open "
         "that list filtered to this project."
     )
     shape = _detect_business_logic_shape(goal)
@@ -197,7 +197,7 @@ def test_detects_smart_button_goal_phrased_as_how_many_instead_of_count():
 
 def test_onchange_goal_with_form_and_automatically_does_not_false_positive_as_computed_field():
     """Real bug this fixes (2026-08-06, fix-pass task 005): task 005's real goal ("When I select
-    a project on the meerwerk form, I want the 'Assigned to' field to automatically fill with the
+    a project on the fieldjob form, I want the 'Assigned to' field to automatically fill with the
     project manager") has zero total/sum/computation semantics, but the ORIGINAL computed-field
     regex's right-hand alternative listed bare "automatically" as a standalone trigger alongside
     "total/sum/calculate/compute" -- so "form"..."automatically" alone matched it, shadowing the
@@ -205,7 +205,7 @@ def test_onchange_goal_with_form_and_automatically_does_not_false_positive_as_co
     Monetary compute method) for a task that actually needs @api.onchange.
     """
     goal = (
-        "When I select a project on the meerwerk form, I want the 'Assigned to' field to "
+        "When I select a project on the fieldjob form, I want the 'Assigned to' field to "
         "automatically fill with the project manager. I can still change it manually after."
     )
     shape = _detect_business_logic_shape(goal)
@@ -244,7 +244,7 @@ def test_goal_facts_is_computed_alone_triggers_the_gate_even_without_a_textual_s
 
 def test_multi_piece_prompt_block_includes_the_matched_shape_example_only():
     contract = _make_contract(
-        goal="Add a smart button to the meerwerk record showing the count of related tasks.",
+        goal="Add a smart button to the fieldjob record showing the count of related tasks.",
         goal_facts={},
     )
     block = _multi_piece_business_logic_prompt_block(contract)
@@ -313,10 +313,10 @@ def test_generate_code_raw_injects_shape_example_for_task004_shaped_goal():
     specialist = _make_specialist()
     contract = _make_contract(
         goal=(
-            "On the meerwerk record, I want to see the total of all line prices shown "
+            "On the fieldjob record, I want to see the total of all line prices shown "
             "automatically in the header. It should update whenever I add or change a line."
         ),
-        module_identity="project.meerwerk",
+        module_identity="project.fieldjob",
     )
     prompt = _capture_generate_code_raw_prompt(specialist, contract, depends_on_module=None, target_module_files=None)
     assert "coordinated pieces to work together" in prompt
@@ -364,17 +364,17 @@ def test_scoped_edits_retry_path_also_injects_the_shape_example():
     specialist = _make_specialist()
     contract = _make_contract(
         goal=(
-            "On the meerwerk record, I want to see the total of all line prices shown "
+            "On the fieldjob record, I want to see the total of all line prices shown "
             "automatically in the header. It should update whenever I add or change a line."
         ),
-        module_identity="project.meerwerk",
+        module_identity="project.fieldjob",
     )
     prior_files = {
         "__manifest__.py": (
             "{'name': 't', 'version': '1.0', 'category': 't', 'summary': 't', 'author': 't', "
             "'depends': ['base'], 'data': []}"
         ),
-        "models/models.py": "class ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n",
+        "models/models.py": "class ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n",
         "security/ir.model.access.csv": "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n",
     }
     prompt = _capture_scoped_edits_prompt(specialist, contract, prior_files)

@@ -77,7 +77,7 @@ def read_module_files(module_name: str) -> dict[str, str]:
     depends_on_module: and edit_existing_module: both assumed their
     target module always lives under /mnt/extra-addons, silently
     failing (CodebaseReadError, "no files found") for a genuinely
-    pre-existing CUSTOMER module like `project_meerwerk` or
+    pre-existing CUSTOMER module like `project_fieldjob` or
     `mis_base_extend` (real files, but at /opt/site/site16, never
     written by this pipeline at all) -- meaning neither mechanism had
     ever actually been exercised against real customer code, only
@@ -124,7 +124,7 @@ def read_module_files_relevant_to_goal(module_name: str, goal: str) -> dict[str,
     genuinely means a handful of files).
 
     Extracts dotted, Odoo-technical-name-shaped tokens from `goal`
-    (e.g. "crm.lead", "project.meerwerk" -- the exact convention every
+    (e.g. "crm.lead", "project.fieldjob" -- the exact convention every
     real task spec in this project already uses, e.g. "Model:
     crm.lead"), then greps the module's own `models/` directory for
     files whose `_name`/`_inherit` actually defines/extends one of
@@ -238,17 +238,17 @@ def find_module_defining_model(model_name: str) -> str | None:
     Real, general fix (2026-07-26, Phase 25D, task 005's own
     resubmission): this used to search ONLY `/mnt/extra-addons` (this
     pipeline's own transient, per-task scaffolded modules) -- for a
-    model this pipeline never actually created (e.g. `project.meerwerk`,
+    model this pipeline never actually created (e.g. `project.fieldjob`,
     a real, permanent model the genuine customer module `project_
-    meerwerk` under `/opt/site/site16` defines), that search can only
+    fieldjob` under `/opt/site/site16` defines), that search can only
     ever find a WRONG answer: some unrelated earlier task's own OMA
     scaffold that happens to also (incorrectly) redefine the same model
     with its own `_name` line, rather than correctly `_inherit`ing it.
-    Confirmed live: `project.meerwerk` resolved to
+    Confirmed live: `project.fieldjob` resolved to
     `oma_create_an_import_wizard_ede68004` -- a completely unrelated
     module from an unrelated earlier task -- purely because it was the
     first (wrong) hit under `/mnt/extra-addons`, while the REAL,
-    permanent, correct answer (`project_meerwerk`) was never even
+    permanent, correct answer (`project_fieldjob`) was never even
     searched. The real customer codebase is checked FIRST now (the
     stable, authoritative, permanent answer whenever it exists at all),
     falling back to the transient scaffold search only when the model

@@ -69,8 +69,8 @@ def test_helper_matches_single_item_list_form():
 
 def test_helper_matches_every_item_in_a_multi_item_list():
     assert _inherit_target_names(
-        "class X:\n    _inherit = ['project.meerwerk', 'mail.thread', 'mail.activity.mixin']\n"
-    ) == ["project.meerwerk", "mail.thread", "mail.activity.mixin"]
+        "class X:\n    _inherit = ['project.fieldjob', 'mail.thread', 'mail.activity.mixin']\n"
+    ) == ["project.fieldjob", "mail.thread", "mail.activity.mixin"]
     print("PASS: EVERY item in a 3-item list is captured, not just the first (a real Python re "
           "limitation the old naive fix attempts would have missed -- verified directly)")
 
@@ -132,7 +132,7 @@ def test_item14_api_constrains_skips_on_list_form_inherit_too():
 def test_message_post_recognizes_target_named_second_in_a_list():
     models_py = (
         "class X(models.Model):\n"
-        "    _inherit = ['project.meerwerk', 'mail.thread']\n"
+        "    _inherit = ['project.fieldjob', 'mail.thread']\n"
         "    def go(self):\n        self.message_post(body='hi')\n"
     )
     assert _raises(_validate_message_post_requires_mail_thread_inherit, _gen(models_py)) is None
@@ -142,7 +142,7 @@ def test_message_post_recognizes_target_named_second_in_a_list():
 def test_activity_mixin_recognizes_target_named_second_in_a_list():
     models_py = (
         "class X(models.Model):\n"
-        "    _inherit = ['project.meerwerk', 'mail.activity.mixin']\n"
+        "    _inherit = ['project.fieldjob', 'mail.activity.mixin']\n"
         "    def go(self):\n        self.activity_schedule('mail.mail_activity_data_todo')\n"
     )
     assert _raises(_validate_activity_calls_require_activity_mixin_inherit, _gen(models_py)) is None

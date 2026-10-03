@@ -774,24 +774,24 @@ def test_compute_regressed_constraints_catches_a_field_renamed_to_a_related_name
     `linked_invoice` to a different, still invoice-related field (`invoice_id`) -- the label-stem
     heuristic ("invoic" matches both) sees nothing wrong, a real, confirmed false negative.
     constraint_nodes carries the ACTUAL identifier
-    (`project.meerwerk.linked_invoice`, from decompose_into_constraints_with_artifacts()'s own
+    (`project.fieldjob.linked_invoice`, from decompose_into_constraints_with_artifacts()'s own
     real-identifier extraction) and catches it via an exact whole-word check instead.
     """
     constraint_status = {"invoice_link": "satisfied"}
     constraint_nodes = {
-        "invoice_link": ConstraintNode(label="invoice_link", creates=["project.meerwerk.linked_invoice"]),
+        "invoice_link": ConstraintNode(label="invoice_link", creates=["project.fieldjob.linked_invoice"]),
     }
     old_files = {
         "models/models.py": (
-            "class ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "class ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
             "    linked_invoice = fields.Many2one('account.move')\n"
         ),
     }
     new_files = {
         "models/models.py": (
-            "class ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "class ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
             "    invoice_id = fields.Many2one('account.move')\n"
         ),
     }
@@ -812,7 +812,7 @@ def test_compute_regressed_constraints_catches_a_field_renamed_to_a_related_name
 def test_compute_regressed_constraints_exact_check_passes_when_identifier_survives_verbatim():
     constraint_status = {"invoice_link": "satisfied"}
     constraint_nodes = {
-        "invoice_link": ConstraintNode(label="invoice_link", creates=["project.meerwerk.linked_invoice"]),
+        "invoice_link": ConstraintNode(label="invoice_link", creates=["project.fieldjob.linked_invoice"]),
     }
     old_files = {"models/models.py": "linked_invoice = fields.Many2one('account.move')\n"}
     new_files = {

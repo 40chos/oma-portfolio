@@ -33,11 +33,11 @@ def _render_model_field_summary(model_name: str, field_rows: list[dict], is_tran
     known True, so an ordinary regular model's header stays unchanged (no added noise for the
     overwhelmingly common case).
     Real, confirmed gap found live (2026-08-06, Phase 30 category-wide info-gap sweep): a
-    Selection field's real, valid option keys (e.g. project.meerwerk.state ->
+    Selection field's real, valid option keys (e.g. project.fieldjob.state ->
     draft/sent/accepted/rejected/invoiced/done, live-queried) were never fetched by the shared
     reader this function's caller routes through, let alone rendered -- ANY task referencing an
     existing model's own state/status values (task020/030/042/046 and others touching
-    project.meerwerk.state alone) had zero grounding for what the real option keys actually are,
+    project.fieldjob.state alone) had zero grounding for what the real option keys actually are,
     the exact same "the model was never shown this fact" shape as the TransientModel/mail.template
     gaps. Separately, `readonly` was already fetched by `_read_real_field_rows()` but discarded
     before ever reaching this rendering step -- now shown too (a readonly/computed field being
@@ -114,7 +114,7 @@ def resolve_current_schema_block(contract: "TaskContract", db: str) -> str:
     # it -- but a goal naming a HUMAN-READABLE concept ("tag"/"category", "container") rather than
     # the real technical model name (`project.tags`, `project.container`) got NO related-model
     # grounding at all, and Build then hallucinated a field/relation on the unnamed model (task041:
-    # `container_id.partner_id` on project.meerwerk, a field that does not exist there; task045:
+    # `container_id.partner_id` on project.fieldjob, a field that does not exist there; task045:
     # wrong relation direction on project.tags). Every real, structural one-hop relation the target
     # model actually has is now considered -- still never a full ORM dump (capped, and each related
     # block is itself just name/type/required, same curated shape as the target's own), just no

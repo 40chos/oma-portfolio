@@ -35,7 +35,7 @@ def test_different_finding_class_is_never_same_finding():
 
 def test_missing_finding_class_falls_back_to_word_overlap_heuristic():
     a = _fb(finding_class=None, text="the action_accept method is not defined on the base model")
-    b = _fb(finding_class=None, text="action_accept is not defined in the base model project.meerwerk")
+    b = _fb(finding_class=None, text="action_accept is not defined in the base model project.fieldjob")
     assert same_underlying_finding_structured(a, b) is True
     print("PASS: when finding_class is absent on both sides, falls back to the existing word-overlap heuristic")
 

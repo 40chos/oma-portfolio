@@ -44,7 +44,7 @@ def _make_contract(**overrides) -> TaskContract:
         specialist_type=SpecialistType.bug_fix,
         capability_class=CapabilityClass.module_development,
         tier=AutonomyTier.tier_2_notify_after,
-        goal="On the meerwerk record, show the total of all line prices in the header.",
+        goal="On the fieldjob record, show the total of all line prices in the header.",
         inputs=[],
         rules=[],
         deliverables=["a module"],
@@ -172,8 +172,8 @@ def test_autocorrects_hallucinated_field_with_zero_stem_overlap_to_the_one_real_
         return {
             "models/models.py": (
                 "from odoo import api, fields, models\n\n"
-                "class ProjectMeerwerk(models.Model):\n"
-                "    _inherit = 'project.meerwerk'\n\n"
+                "class ProjectFieldjob(models.Model):\n"
+                "    _inherit = 'project.fieldjob'\n\n"
                 "    amount_total = fields.Monetary(\n"
                 "        string='Amount Total',\n"
                 "        currency_field='currency_id',\n"
@@ -191,12 +191,12 @@ def test_autocorrects_hallucinated_field_with_zero_stem_overlap_to_the_one_real_
     monkeypatch.setattr(testing_qa_module, "read_module_files", fake_read_module_files)
 
     specialist = _make_specialist()
-    target = ReproductionTarget(model="project.meerwerk", field_name="line_prices_total")
+    target = ReproductionTarget(model="project.fieldjob", field_name="line_prices_total")
     result = asyncio.run(
         specialist._autocorrect_hallucinated_reproduction_target(target, "oma_test", "odoo16_dev")
     )
     assert result.field_name == "amount_total"
-    assert result.model == "project.meerwerk"
+    assert result.model == "project.fieldjob"
     print("PASS: a hallucinated field name with zero stem overlap is corrected to the one real "
           "field the module's own code genuinely defines")
 
@@ -256,7 +256,7 @@ def test_does_not_autocorrect_when_module_defines_multiple_new_fields(monkeypatc
             "models/models.py": (
                 "from odoo import fields, models\n\n"
                 "class X(models.Model):\n"
-                "    _inherit = 'project.meerwerk'\n\n"
+                "    _inherit = 'project.fieldjob'\n\n"
                 "    amount_total = fields.Monetary(compute='_compute_total', store=True)\n"
                 "    amount_tax = fields.Monetary(compute='_compute_tax', store=True)\n"
             ),
@@ -266,7 +266,7 @@ def test_does_not_autocorrect_when_module_defines_multiple_new_fields(monkeypatc
     monkeypatch.setattr(testing_qa_module, "read_module_files", fake_read_module_files)
 
     specialist = _make_specialist()
-    target = ReproductionTarget(model="project.meerwerk", field_name="grand_total")
+    target = ReproductionTarget(model="project.fieldjob", field_name="grand_total")
     result = asyncio.run(
         specialist._autocorrect_hallucinated_reproduction_target(target, "oma_test", "odoo16_dev")
     )
@@ -406,27 +406,27 @@ def test_autocorrects_using_build_confirmed_collision_field_even_with_zero_stem_
         return ["id", "name", "line_ids", "amount_total"]
     def fake_read_module_files(module_name):
         # Correctly stripped -- no field declaration left at all, by design.
-        return {"models/models.py": "class ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n"}
+        return {"models/models.py": "class ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n"}
     monkeypatch.setattr(testing_qa_module, "check_field_exists_on_model", fake_check_field_exists)
     monkeypatch.setattr(testing_qa_module, "get_model_fields", fake_get_model_fields)
     monkeypatch.setattr(testing_qa_module, "read_module_files", fake_read_module_files)
 
     specialist = _make_specialist()
-    target = ReproductionTarget(model="project.meerwerk", field_name="line_prices_total")
+    target = ReproductionTarget(model="project.fieldjob", field_name="line_prices_total")
     result = asyncio.run(
         specialist._autocorrect_hallucinated_reproduction_target(
             target, "oma_test", "odoo16_dev", collision_confirmed_fields=["amount_total"],
         )
     )
     assert result.field_name == "amount_total"
-    assert result.model == "project.meerwerk"
+    assert result.model == "project.fieldjob"
     print("PASS: Build's own collision-confirmed field is used even when neither the stem-match "
           "nor the newly-defined-field tier could ever find it")
 
 
 def test_does_not_use_collision_confirmed_fields_when_ambiguous():
     specialist = _make_specialist()
-    target = ReproductionTarget(model="project.meerwerk", field_name="line_prices_total")
+    target = ReproductionTarget(model="project.fieldjob", field_name="line_prices_total")
     import unittest.mock as mock
     with mock.patch.object(testing_qa_module, "check_field_exists_on_model", return_value=False):
         result = asyncio.run(
@@ -448,19 +448,19 @@ def test_final_round_widening_autocorrects_a_hallucinated_earlier_target_instead
     earlier constraint's field no longer exists" regression even when the round's own primary
     check (which DOES autocorrect) had just independently confirmed the real field seconds
     earlier. Confirmed live: task 004's round correctly confirmed
-    `project.meerwerk.amount_total` via the primary check, then this widening step independently
+    `project.fieldjob.amount_total` via the primary check, then this widening step independently
     re-hallucinated `line_prices_total` and reported a false regression.
     """
     async def fake_extract_all(self, contract, module_name):
         return ReproductionTargetList(
-            targets=[ReproductionTarget(model="project.meerwerk", field_name="line_prices_total")]
+            targets=[ReproductionTarget(model="project.fieldjob", field_name="line_prices_total")]
         )
     def fake_check_field_exists(db, model, field_name):
         return field_name != "line_prices_total"  # only the hallucinated name is missing
     def fake_get_model_fields(model, db):
         return ["id", "name", "line_ids", "amount_total"]
     def fake_read_module_files(module_name):
-        return {"models/models.py": "class ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n"}
+        return {"models/models.py": "class ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n"}
     monkeypatch.setattr(testing_qa_module.TestingQASpecialist, "_extract_all_reproduction_targets", fake_extract_all)
     monkeypatch.setattr(testing_qa_module, "check_field_exists_on_model", fake_check_field_exists)
     monkeypatch.setattr(testing_qa_module, "get_model_fields", fake_get_model_fields)
@@ -468,7 +468,7 @@ def test_final_round_widening_autocorrects_a_hallucinated_earlier_target_instead
 
     specialist = _make_specialist()
     contract = _make_contract(inputs=["collision_confirmed_fields:['amount_total']"])
-    already_checked = ReproductionTarget(model="project.meerwerk", field_name="amount_total")
+    already_checked = ReproductionTarget(model="project.fieldjob", field_name="amount_total")
     confirmed, notes = asyncio.run(
         specialist._reverify_earlier_constraints_field_targets(contract, "oma_test", "odoo16_dev", already_checked)
     )
@@ -485,14 +485,14 @@ def test_final_round_widening_still_reports_a_genuine_regression(monkeypatch):
     """
     async def fake_extract_all(self, contract, module_name):
         return ReproductionTargetList(
-            targets=[ReproductionTarget(model="project.meerwerk", field_name="genuinely_removed_field")]
+            targets=[ReproductionTarget(model="project.fieldjob", field_name="genuinely_removed_field")]
         )
     def fake_check_field_exists(db, model, field_name):
         return False  # genuinely missing, no matter what
     def fake_get_model_fields(model, db):
         return ["id", "name", "line_ids"]
     def fake_read_module_files(module_name):
-        return {"models/models.py": "class ProjectMeerwerk(models.Model):\n    _inherit = 'project.meerwerk'\n"}
+        return {"models/models.py": "class ProjectFieldjob(models.Model):\n    _inherit = 'project.fieldjob'\n"}
     monkeypatch.setattr(testing_qa_module.TestingQASpecialist, "_extract_all_reproduction_targets", fake_extract_all)
     monkeypatch.setattr(testing_qa_module, "check_field_exists_on_model", fake_check_field_exists)
     monkeypatch.setattr(testing_qa_module, "get_model_fields", fake_get_model_fields)
@@ -500,7 +500,7 @@ def test_final_round_widening_still_reports_a_genuine_regression(monkeypatch):
 
     specialist = _make_specialist()
     contract = _make_contract(inputs=[])  # no collision confirmation this time
-    already_checked = ReproductionTarget(model="project.meerwerk", field_name="amount_total")
+    already_checked = ReproductionTarget(model="project.fieldjob", field_name="amount_total")
     confirmed, notes = asyncio.run(
         specialist._reverify_earlier_constraints_field_targets(contract, "oma_test", "odoo16_dev", already_checked)
     )
@@ -728,7 +728,7 @@ def test_verify_security_access_claim_button_restriction_wrong_group_fails(monke
 
     specialist = _make_specialist()
     claim = SecurityAccessClaim(
-        applicable=True, model="project.meerwerk", restricted_button_name="action_send",
+        applicable=True, model="project.fieldjob", restricted_button_name="action_send",
         restricted_group_xmlid="base.group_system",
     )
     passed, notes = asyncio.run(
@@ -747,7 +747,7 @@ def test_verify_security_access_claim_button_restriction_correct_passes(monkeypa
 
     specialist = _make_specialist()
     claim = SecurityAccessClaim(
-        applicable=True, model="project.meerwerk", restricted_button_name="action_send",
+        applicable=True, model="project.fieldjob", restricted_button_name="action_send",
         restricted_group_xmlid="base.group_system",
     )
     passed, notes = asyncio.run(
@@ -772,7 +772,7 @@ def test_verify_security_access_claim_button_restriction_uncertain_fails_conserv
 
     specialist = _make_specialist()
     claim = SecurityAccessClaim(
-        applicable=True, model="project.meerwerk", restricted_button_name="action_send",
+        applicable=True, model="project.fieldjob", restricted_button_name="action_send",
         restricted_group_xmlid="base.group_system",
     )
     passed, notes = asyncio.run(specialist._verify_security_access_claim(claim, "odoo16_dev", task_id=None))
@@ -786,7 +786,7 @@ def test_reproduction_field_check_skipped_for_a_button_restriction_claim():
     model`) must never gate `passed` for a button-restriction task --
     its own target (a button name) will NEVER satisfy a field-existence
     check, since a button is not an ORM field. Confirmed live: task 008
-    reported "Reproduction FAILED for project.meerwerk.action_send"
+    reported "Reproduction FAILED for project.fieldjob.action_send"
     identically across 5 rounds despite a genuinely correct fix,
     entirely because this check was running against the wrong target.
     This test locks in that a button-restriction claim is correctly
@@ -795,7 +795,7 @@ def test_reproduction_field_check_skipped_for_a_button_restriction_claim():
     restricted_button_name`).
     """
     claim = SecurityAccessClaim(
-        applicable=True, model="project.meerwerk", restricted_button_name="action_send",
+        applicable=True, model="project.fieldjob", restricted_button_name="action_send",
         restricted_group_xmlid="base.group_system",
     )
     assert claim.applicable and claim.restricted_button_name, (

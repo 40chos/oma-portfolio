@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from manager.scope_detection import _fuzzy_match_existing_custom_module
 
-_CANDIDATES = ["oma_build_a_complete_field_ab52b7f8", "project_meerwerk", "mis_base_extend"]
+_CANDIDATES = ["oma_build_a_complete_field_ab52b7f8", "project_fieldjob", "mis_base_extend"]
 
 
 def test_exact_full_name_verbatim_in_goal_matches_even_when_no_single_token_would():
@@ -35,8 +35,8 @@ def test_exact_full_name_verbatim_in_goal_matches_even_when_no_single_token_woul
 
 def test_still_matches_single_distinctive_token_case():
     assert _fuzzy_match_existing_custom_module(
-        "the meerwerk form needs a new field", _CANDIDATES,
-    ) == "project_meerwerk"
+        "the fieldjob form needs a new field", _CANDIDATES,
+    ) == "project_fieldjob"
     print("PASS: existing single-distinctive-token fuzzy match still works")
 
 

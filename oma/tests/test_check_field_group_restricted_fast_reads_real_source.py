@@ -33,8 +33,8 @@ def test_extract_field_declaration_source_handles_nested_parens():
     non-greedy-to-first-close-paren regex would truncate mid-declaration."""
     source = (
         "from odoo import fields, models\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _inherit = 'project.meerwerk'\n\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _inherit = 'project.fieldjob'\n\n"
         "    status = fields.Selection([('draft', 'Draft'), ('done', 'Done')], "
         "string='Status', groups='base.group_system')\n\n"
         "    other_field = fields.Char()\n"

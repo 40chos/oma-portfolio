@@ -19,13 +19,13 @@ from tools_odoo.module_dev.toolchain import InstallFinding, install_module, _par
 # Real, confirmed Odoo 16 warning text, byte-for-byte as produced by the real dev container's own
 # odoo/modules/loading.py (grepped live, 2026-08-01) -- not a guessed or paraphrased string.
 _REAL_ACCESS_RULES_LOG = (
-    "2026-08-01 12:00:00,000 12345 INFO test_db odoo.modules.loading: Module site_meerwerk loaded in 1.10s\n"
+    "2026-08-01 12:00:00,000 12345 INFO test_db odoo.modules.loading: Module site_fieldjob loaded in 1.10s\n"
     "2026-08-01 12:00:00,100 12345 WARNING test_db odoo.modules.loading: "
-    "The models ['project.satisfaction'] have no access rules in module site_meerwerk, "
+    "The models ['project.satisfaction'] have no access rules in module site_fieldjob, "
     "consider adding some, like:\n"
     "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-    "site_meerwerk.access_project_satisfaction,access_project_satisfaction,"
-    "site_meerwerk.model_project_satisfaction,base.group_user,1,0,0,0\n"
+    "site_fieldjob.access_project_satisfaction,access_project_satisfaction,"
+    "site_fieldjob.model_project_satisfaction,base.group_user,1,0,0,0\n"
 )
 
 
@@ -36,7 +36,7 @@ def test_parse_install_findings_extracts_real_access_rules_warning():
         kind="missing_access_rules",
         artifact_names=["project.satisfaction"],
         raw_text=(
-            "The models ['project.satisfaction'] have no access rules in module site_meerwerk, "
+            "The models ['project.satisfaction'] have no access rules in module site_fieldjob, "
             "consider adding some"
         ),
     )
@@ -46,7 +46,7 @@ def test_parse_install_findings_extracts_real_access_rules_warning():
 def test_parse_install_findings_multiple_models_in_one_warning():
     log = (
         "WARNING test_db odoo.modules.loading: The models ['project.satisfaction', 'project.rating'] "
-        "have no access rules in module site_meerwerk, consider adding some, like:\n"
+        "have no access rules in module site_fieldjob, consider adding some, like:\n"
     )
     findings = _parse_install_findings(log)
     assert len(findings) == 1
@@ -99,7 +99,7 @@ def test_install_module_state_verification_failed_carries_the_real_finding(monke
     depends on `InstallResult.findings` being populated exactly here.
     """
     _setup_state_verification_failed(monkeypatch, _REAL_ACCESS_RULES_LOG)
-    result = install_module("site_meerwerk", "odoo16_sandbox_20260801_120000", remote_port=8072, sandbox=True)
+    result = install_module("site_fieldjob", "odoo16_sandbox_20260801_120000", remote_port=8072, sandbox=True)
     assert result.success is False
     assert result.error_kind == "state_verification_failed"
     assert len(result.findings) == 1

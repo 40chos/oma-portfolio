@@ -21,7 +21,7 @@ import re
 
 # Real phrasings observed directly in production goal text signaling "this model
 # does not exist yet, build it fresh" -- e.g. "There is no existing container
-# concept or button in project_meerwerk to copy -- build this as a self-contained
+# concept or button in project_fieldjob to copy -- build this as a self-contained
 # NEW model within this task's own scope."
 _GOAL_SIGNALS_BRAND_NEW_MODEL_RE = re.compile(
     r"there is no existing .{0,60}? -- build this as a (?:self-contained )?new model"

@@ -38,10 +38,10 @@ def _make_generated(
 
 _TASK030_OWN_REAL_SHAPE = (
     '<?xml version="1.0" encoding="utf-8"?>\n<odoo>\n'
-    '  <record id="email_template_meerwerk_customer" model="mail.template">\n'
-    '    <field name="name">Meerwerk Customer Email Template</field>\n'
-    '    <field name="model_id" ref="project_meerwerk.model_project_meerwerk"/>\n'
-    '    <field name="subject">Meerwerk - {{object.name}}</field>\n'
+    '  <record id="email_template_fieldjob_customer" model="mail.template">\n'
+    '    <field name="name">Fieldjob Customer Email Template</field>\n'
+    '    <field name="model_id" ref="project_fieldjob.model_project_fieldjob"/>\n'
+    '    <field name="subject">Fieldjob - {{object.name}}</field>\n'
     '    <field name="body_html" use="1"><![CDATA[<p>Hello,</p>]]></field>\n'
     "  </record>\n</odoo>"
 )

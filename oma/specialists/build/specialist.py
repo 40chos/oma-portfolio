@@ -1205,7 +1205,7 @@ _IR_UI_VIEW_RECORD_RE = re.compile(r'<record\b[^>]*\bmodel="ir\.ui\.view"')
 # generation already produced. This strip function's own field-adding exemption (`if
 # _extract_inherited_field_names(...): return`, below) then let that stray view straight through,
 # because it has no knowledge of an explicit "no view changes" instruction at all. The stray view
-# reused a colliding, naively-guessed id (`view_project_meerwerk_form`, project.meerwerk being
+# reused a colliding, naively-guessed id (`view_project_fieldjob_form`, project.fieldjob being
 # reused by ~20 other already-installed modules) for both its own `id` and its `inherit_id`,
 # producing a self-inherit rejection that then reproduced identically across retries (see the
 # `manager/loop.py` fix in the same revision for why the retry never corrected itself). Extracted
@@ -1224,7 +1224,7 @@ def _autofix_strip_unrequested_views_xml_for_pure_behavior_task(
     `@api.onchange`/business-logic task, e.g. "auto-fill 'Assigned to'
     when a project is selected") still had the LLM generate a views_xml
     file anyway, referencing a GUESSED base-view external id
-    (`project_meerwerk.project_meerwerk_form`) that does not actually
+    (`project_fieldjob.project_fieldjob_form`) that does not actually
     exist in the real registry -- correctly, deterministically rejected
     pre-write by `_validate_xml_refs_resolve()` every one of 5 straight
     rounds, and the model never stopped inventing it, exhausting the
@@ -1240,7 +1240,7 @@ def _autofix_strip_unrequested_views_xml_for_pure_behavior_task(
     virtually always needs SOME view wiring for it to be usable, even
     when the metadata line is somehow missing, so that case is left
     alone). Never triggered by prose alone (a goal casually mentioning
-    "the meerwerk form" in a sentence is not the same as a real `Form
+    "the fieldjob form" in a sentence is not the same as a real `Form
     view:` metadata line -- `_FORM_VIEW_INTENT_RE`'s own broader prose
     match is deliberately NOT reused here for that reason).
     """
@@ -1463,7 +1463,7 @@ def _render_search_filters_view_xml(
 # Real, confirmed false-pass found live (2026-08-06, fix-pass task 007): the deterministic
 # builder above (`_autofix_goal_named_search_filters_missing`) only ever engages for the rigid,
 # structured `Module:`/`View:`/`Filter N:` goal shape (Manager's own pre-decomposed contract
-# text) -- task 007's REAL, natural-language goal ("In the meerwerk list, I want a quick filter
+# text) -- task 007's REAL, natural-language goal ("In the fieldjob list, I want a quick filter
 # button called 'Accepted' that shows only accepted records...") never matches it, so it falls
 # through to ordinary LLM generation. Confirmed live, all 3 best-of-N candidates in the same
 # round made the IDENTICAL mistake: added `decoration-success`/`decoration-info` XML attributes
@@ -6979,7 +6979,7 @@ def _autofix_dedupe_duplicate_special_model_attribute_assignments(generated: Gen
     Real, confirmed follow-on gap found live (2026-08-03, task027's own real re-test, same day as
     the fix above): a scoped edit's own search_replace inserts its new lines at the position of
     the matched target (the class header), so a genuinely STALE, already-invalid earlier `_name`
-    value (e.g. a leftover 'ProjectMeerwerk' PascalCase mistake from a prior round) can end up
+    value (e.g. a leftover 'ProjectFieldjob' PascalCase mistake from a prior round) can end up
     positioned AFTER the scoped edit's own newly-inserted, genuinely valid `_name` value -- blindly
     "keep the last" would then throw away the correct one and keep the broken one, the opposite of
     the intent. For `_name` specifically (never `_inherit`, which has no comparable "one candidate
@@ -7745,7 +7745,7 @@ async def _validate_view_fields_exist_on_inherited_model(
     which passed every existing validator (the sync check above
     intentionally skips pure `_inherit` extensions) and only surfaced
     as a real `ParseError` at sandbox install time: `Field
-    "expected_finish_date" does not exist in model "project.meerwerk"`.
+    "expected_finish_date" does not exist in model "project.fieldjob"`.
 
     Only runs for the pure-`_inherit`, no-new-model case (the sync
     check above already covers a genuinely new model completely).
@@ -8231,7 +8231,7 @@ async def _validate_references_resolve_against_real_target(
 # real decomposition occasionally groups 2-3 tightly related fields
 # under one constraint label" -- the enforced value never actually
 # matched that documented intent. Confirmed live: Tasks 019 (a
-# TransientModel wizard needing exactly 3 fields -- meerwerk_ids,
+# TransientModel wizard needing exactly 3 fields -- fieldjob_ids,
 # total_amount, currency_id -- to be minimally coherent) and 048 (a new
 # model needing exactly 3 fields -- date, project_id, score) both got
 # blocked at precisely 3 new fields, the exact case the docstring says
@@ -9607,10 +9607,10 @@ async def _validate_goal_named_field_is_declared(
     Real, confirmed false-positive found live (Phase 25E, 2026-07-26,
     task 006's own regression re-run): the named field can genuinely
     already exist as a REAL field on the model being `_inherit`-ed --
-    task 006's own goal ("Field: name / Sequence code: project.meerwerk
+    task 006's own goal ("Field: name / Sequence code: project.fieldjob
     / Override: create() using @api.model_create_multi") never wanted a
     NEW `name` field, it wanted a `create()` override on a `name` field
-    the real customer module (`project_meerwerk`) already declares
+    the real customer module (`project_fieldjob`) already declares
     (`name = fields.Char(..., default='New')`). This validator had no
     ground-truth check at all -- it only ever looked at `models_py`'s
     own text, so it hard-failed 5 identical rounds in a row even though
@@ -9759,15 +9759,15 @@ def _validate_single_constraint_field_scope(
 def _resolve_current_round_named_field(goal: str, named_fields: list[str]) -> str | None:
     """Real, general fix (2026-07-26, Phase 25F, task 009's own live
     run): when a decomposed task's goal names MULTIPLE fields across
-    DIFFERENT rounds' own constraints (e.g. "Field: meerwerk_ids
-    (One2many...)" for round 1's constraint, "Field: meerwerk_count
+    DIFFERENT rounds' own constraints (e.g. "Field: fieldjob_ids
+    (One2many...)" for round 1's constraint, "Field: fieldjob_count
     (Integer, computed)" for a later round's), both `_autofix_goal_
     named_field_declaration_missing()` and `_validate_goal_named_field_
     is_declared()` used to bail out completely -- for the ENTIRE task,
     every round -- the moment more than one "Field:" line existed
     anywhere in the goal, even though the round's own goal text
     explicitly states which ONE field is THIS round's job ("This
-    round's own NEW focus is ONLY: 'meerwerk_ids_field'"). Confirmed
+    round's own NEW focus is ONLY: 'fieldjob_ids_field'"). Confirmed
     live: task 009 burned all 5 rounds on an identical, un-autofixed,
     un-validated field omission this way, because the goal legitimately
     named two fields total across its own decomposition.
@@ -9826,10 +9826,10 @@ def _validate_no_premature_out_of_scope_method(
     FIELDS -- but a round can just as easily overreach by adding a
     METHOD a LATER constraint owns, and nothing caught that at all.
     Confirmed live: a round whose own goal explicitly said "This round's
-    own NEW focus is ONLY: 'meerwerk_count_field'... The following
+    own NEW focus is ONLY: 'fieldjob_count_field'... The following
     constraints are NOT yet in scope for this round... ['compute_
-    meerwerk_count_method', 'action_view_meerwerk_method']" nonetheless
-    wrote `_compute_meerwerk_count` anyway -- caught correctly by Code-
+    fieldjob_count_method', 'action_view_fieldjob_method']" nonetheless
+    wrote `_compute_fieldjob_count` anyway -- caught correctly by Code-
     Review every round, but only AFTER a full round was spent, never
     pre-write, burning all 5 rounds on the same class of mistake without
     ever converging (the field itself was never even added, since the
@@ -9859,7 +9859,7 @@ def _validate_no_premature_out_of_scope_method(
     # Real, confirmed bug found live (2026-08-09, task 07141af5-9a4e-41b6-93ea-8b7af04fea9c's
     # flagship run, service_ticket_model node): this validator used to only ever check when at
     # least one NOT-yet-in-scope label literally ended with the string suffix "_method" (e.g.
-    # 'action_view_meerwerk_method', matching the ONE real incident this validator was
+    # 'action_view_fieldjob_method', matching the ONE real incident this validator was
     # originally built from) -- but this project's own real constraint-naming convention uses
     # descriptive, multi-word labels ('ticket_workflow_and_logging', 'ticket_access_rights')
     # that never end with that exact suffix, so `method_shaped_labels` was ALWAYS empty and this
@@ -9897,8 +9897,8 @@ def _validate_no_premature_out_of_scope_method(
     if this_rounds_focus:
         # Real, confirmed ambiguity found live while adding this exemption: a task's own labels
         # can share vocabulary across genuinely DIFFERENT constraints by design (e.g.
-        # 'meerwerk_count_field' vs. the separate, later 'compute_meerwerk_count_method' -- both
-        # legitimately contain "meerwerk"+"count"). A method matching `this_rounds_focus` is only
+        # 'fieldjob_count_field' vs. the separate, later 'compute_fieldjob_count_method' -- both
+        # legitimately contain "fieldjob"+"count"). A method matching `this_rounds_focus` is only
         # SAFELY exempted when that match is unambiguous -- it must NOT also fuzzy-match one of
         # the not-yet-in-scope labels, or the exemption could just as easily be papering over the
         # exact mistake this validator exists to catch (writing a method a LATER, equally-
@@ -10058,17 +10058,17 @@ async def _validate_manifest_declares_core_dependencies(
     which module owns it) -- this check now only ever fires for a
     genuinely standard-Odoo-dotted-prefix target.
 
-    Real bug found live (2026-07-24, task 020, `project_meerwerk`):
+    Real bug found live (2026-07-24, task 020, `project_fieldjob`):
     `custom_model_names` was only ever built from OUR OWN oma_*
     scaffolds -- a real, pre-existing SITE module like
-    `project_meerwerk` (owning `project.meerwerk`) was never in it, so
+    `project_fieldjob` (owning `project.fieldjob`) was never in it, so
     this check fell through to the naive dotted-prefix guess
-    (`'project.meerwerk'.split('.')[0]` -> `'project'`), which happened
+    (`'project.fieldjob'.split('.')[0]` -> `'project'`), which happened
     to already be satisfied (Build had separately added the real
     `project` core module), silently satisfying THIS check while the
-    real, correct dependency (`project_meerwerk` itself) was never
+    real, correct dependency (`project_fieldjob` itself) was never
     added -- Odoo then failed at registry build time with `Model
-    'project.meerwerk' does not exist in registry`, entirely outside
+    'project.fieldjob' does not exist in registry`, entirely outside
     anything this check (or its sibling, which ran too late to matter)
     was set up to catch. When `depends_on_module` is set, its own real
     models (same `list_module_models_fast` lookup
@@ -10113,7 +10113,7 @@ async def _validate_manifest_declares_core_dependencies(
         # above can be satisfied by a module that's already in
         # depends_list for an unrelated reason, silently hiding that
         # the REAL owner (a differently-named module, e.g.
-        # `project_meerwerk` for `project.meerwerk`) is still missing.
+        # `project_fieldjob` for `project.fieldjob`) is still missing.
         # Verify against the real owner whenever it's resolvable and
         # disagrees with the guess, rather than trusting the guess.
         if _resolve_owner is not None:
@@ -10316,10 +10316,10 @@ async def _validate_no_invented_related_field_targets(
     'project_id.expected_finish_date', ...)` passed every existing
     validator and Code-Review, then crashed the real install with
     `KeyError: Field expected_finish_date referenced in related field
-    definition project.meerwerk.expected_finish_date does not exist.`
-    -- neither `project.meerwerk` nor `project.project` (the actual
+    definition project.fieldjob.expected_finish_date does not exist.`
+    -- neither `project.fieldjob` nor `project.project` (the actual
     hop-1 target) has any such field; the real field
-    (`date_finish`) lives directly on `project.meerwerk` itself, no
+    (`date_finish`) lives directly on `project.fieldjob` itself, no
     `related=` indirection needed at all.
 
     Only validates the two-hop case (`relation_field.target_attr`,
@@ -10585,7 +10585,7 @@ def _goal_states_field_readonly(goal: str, field_name: str) -> bool:
     confirmed live: task 006's goal named `Field: name (Char, readonly,
     copy=False, default='New')`, but the deterministic builder's own
     output (verified directly via Gitea -- record id `view_project_
-    meerwerk_inherit_name`, an exact match for this function's own
+    fieldjob_inherit_name`, an exact match for this function's own
     output shape) inserted a plain, editable `<field name="name"/>`,
     and Code-Review correctly, identically flagged the missing
     `readonly` attribute on rounds 4 AND 5 -- this was never an LLM
@@ -11396,15 +11396,15 @@ async def _validate_inherit_target_resolved(
     skip that specific case rather than emit a self-referential,
     useless instruction.
 
-    Real gap found live (2026-07-23, SITE `project_meerwerk` tasks):
+    Real gap found live (2026-07-23, SITE `project_fieldjob` tasks):
     the "real custom models currently available" suggestion list was
     built ONLY from our own oma_*-prefixed scaffolds, even when this
     task is KNOWN (via `depends_on_module`, already resolved by the
     Manager/scope_detection) to be extending a specific real,
     pre-existing SITE customer module. Build still had to guess that
     module's own real model name unaided and got the dotted convention
-    wrong (`project_meerwerk.project_meerwerk` instead of the real
-    `project.meerwerk`). When `depends_on_module` is set, its own real
+    wrong (`project_fieldjob.project_fieldjob` instead of the real
+    `project.fieldjob`). When `depends_on_module` is set, its own real
     models (via `list_module_models_fast`) are now added to the
     candidate pool too, so the suggestion is concrete and correct
     instead of a bare rejection that leaves Build guessing again.
@@ -11752,10 +11752,10 @@ async def _autofix_rewrite_own_task_model_name_to_inherit(
     for match in list(_NEW_MODEL_NAME_RE.finditer(generated.models_py)):
         name = match.group(1)
         # Real, confirmed gap found live (2026-08-03, task016's own real escalation): requiring
-        # the FULL dotted model name (e.g. 'project.meerwerk') to appear verbatim in the goal is
+        # the FULL dotted model name (e.g. 'project.fieldjob') to appear verbatim in the goal is
         # too strict for ordinary, casual goal phrasing -- every one of these real tasks refers to
-        # "a meerwerk record", never spells out the technical dotted name. Widened to also accept
-        # the model's own last dot-segment (e.g. 'meerwerk') as a case-insensitive match -- purely
+        # "a fieldjob record", never spells out the technical dotted name. Widened to also accept
+        # the model's own last dot-segment (e.g. 'fieldjob') as a case-insensitive match -- purely
         # an additional way to pass THIS gate; every other safety check below (confirmed real via
         # live registry, same-task ownership exemption) is completely unchanged, so this can never
         # by itself cause an unrelated collision to be silently rewritten.
@@ -11784,10 +11784,10 @@ _VALID_ODOO_MODEL_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$")
 def _validate_new_model_name_is_valid_odoo_identifier(generated: GeneratedModuleFiles) -> None:
     """Real, confirmed bug found live (2026-08-03, task016's own real sandbox install crash): a
     `_name = 'X'` value that isn't a genuinely new, real Odoo model at all -- it's the Python
-    CLASS name reused as the model identifier (e.g. `_name = 'ProjectMeerwerk'` on `class
-    ProjectMeerwerk(models.Model):`), never a valid Odoo model name at all. Odoo's own
+    CLASS name reused as the model identifier (e.g. `_name = 'ProjectFieldjob'` on `class
+    ProjectFieldjob(models.Model):`), never a valid Odoo model name at all. Odoo's own
     `raise_on_invalid_object_name` (models.py) requires a lowercase, dot-separated identifier
-    (e.g. 'project.meerwerk') -- a PascalCase/camelCase value crashes the real install with
+    (e.g. 'project.fieldjob') -- a PascalCase/camelCase value crashes the real install with
     "The _name attribute X is not valid", a genuinely different, less legible failure than the
     "already real" collision case `_validate_new_model_name_not_already_real` below catches
     (this name was never real at all, so that check's own live-registry lookup correctly never
@@ -11802,7 +11802,7 @@ def _validate_new_model_name_is_valid_odoo_identifier(generated: GeneratedModule
             raise ValueError(
                 f"models_py defines `_name = {name!r}`, which is not a valid Odoo model "
                 f"identifier -- Odoo requires a lowercase, dot-separated name (e.g. "
-                f"'project.meerwerk'), never a PascalCase/camelCase Python class name reused as "
+                f"'project.fieldjob'), never a PascalCase/camelCase Python class name reused as "
                 f"the model identifier. Odoo's own real install would crash with \"The _name "
                 f"attribute {name} is not valid.\" Pick a real, valid dotted model name, or use "
                 f"`_inherit` instead if the goal is actually extending an existing model."
@@ -12457,7 +12457,7 @@ def slugify_module_name(goal: str, task_id: str) -> str:
 
     Deliberately not the same derivation as `contracts.module_identity.
     resolve_module_identity()` (Phase 26B) -- that one intentionally
-    resolves the real Odoo MODEL a task touches (e.g. `project.meerwerk`),
+    resolves the real Odoo MODEL a task touches (e.g. `project.fieldjob`),
     since its job is "does this look like the same recurring failure on
     the same real model," not "what is this task's own real, unique
     scaffold module directory" (this function's own job, always unique
@@ -12912,7 +12912,7 @@ def _new_record_rule_domain_restriction_present(security_xml: str | None) -> boo
     """Real, confirmed fourth exception found live (2026-08-06, fix-pass task 010): the SAME
     correctly-empty-models-py shape the three exceptions above already recognize, but for a
     row-level `ir.rule` domain restriction instead of a button/menu visibility group edit.
-    "Mechanics should only see the meerwerk records they created themselves" needs zero Python:
+    "Mechanics should only see the fieldjob records they created themselves" needs zero Python:
     a `res.groups` record plus an `ir.rule` with `domain_force=[('create_uid','=',user.id)]` and
     a `groups` many2many scoping it to the new group is the complete, correct, 100% real Odoo
     answer -- confirmed live: all 3 of task 010's own first-round candidates independently wrote
@@ -14711,22 +14711,22 @@ async def _autofix_add_mail_thread_inherit_when_message_post_used(
 
     Live target-model check (2026-08-04, same-night full 30-task sweep, task027 -- this
     autofix's OWN blind-add was found to be the real, direct root cause of a confusing, live
-    install crash): `project.meerwerk` -- the one dominant target model across this whole
+    install crash): `project.fieldjob` -- the one dominant target model across this whole
     benchmark -- already declares `_inherit = ['mail.thread', 'mail.activity.mixin',
     'portal.mixin']` on ITS OWN base definition. Blindly adding a SECOND, redundant
     'mail.thread' to an extension class's own `_inherit` list breaks Odoo's real `_inherit`
     merging at registry-init time (confirmed live, byte-for-byte reproduction: the exact same
     class, same message_post() call, installs perfectly cleanly with the redundant mail.thread
     removed) -- and produces a wildly misleading error (`ValueError: The _name attribute
-    ProjectMeerwerk is not valid`) that looks like a naming mistake but is actually this. Now
+    ProjectFieldjob is not valid`) that looks like a naming mistake but is actually this. Now
     queries the real, live field list of the FIRST non-mail.thread inherit target before adding
     anything -- `message_follower_ids` is a real field ONLY ever present on a model that already
     has mail.thread mixed in somewhere in its own inheritance chain, so its presence is a
-    reliable, general signal for "already provided," not specific to project.meerwerk alone.
+    reliable, general signal for "already provided," not specific to project.fieldjob alone.
     None (couldn't get a confident live answer) is treated the same conservative way every other
     live-lookup in this chain already is -- falls through to the OLD blind-add behavior rather
     than silently doing nothing, since a live-lookup failure must never regress this autofix's
-    own already-proven-correct behavior for every target that ISN'T project.meerwerk.
+    own already-proven-correct behavior for every target that ISN'T project.fieldjob.
     """
     if "message_post(" not in generated.models_py:
         return
@@ -14777,7 +14777,7 @@ def _autofix_add_owning_module_dependency_for_known_mixins(generated: GeneratedM
     in an `_inherit` list (confirmed live against this deployment's real `odoo/modules/loading.py`
     -- not assumed) is NOT a clean "module not found" error -- it silently falls through to
     registering the whole class as a brand-new model, deriving `_name` from the Python class name
-    itself (`ProjectMeerwerk`), which then fails the naming-convention check at `_auto_init()`
+    itself (`ProjectFieldjob`), which then fails the naming-convention check at `_auto_init()`
     time with a confusing, misleading error that looks exactly like a naming mistake but is
     actually a missing-dependency mistake. The 6th/7th narrow validators added earlier tonight
     could never catch this: the generated `_name`-less, `_inherit`-only code is 100% correct
@@ -14811,7 +14811,7 @@ async def _autofix_strip_redundant_mixin_inherit_when_already_provided(
     earlier fix only stopped THIS session's own autofix from blindly ADDING a redundant
     'mail.thread' -- it never covered the LLM's own generated output writing the redundant
     declaration directly itself. Confirmed live: task027's real committed content, re-run after
-    that first fix was deployed, was still `_inherit = ['project.meerwerk', 'mail.thread']` --
+    that first fix was deployed, was still `_inherit = ['project.fieldjob', 'mail.thread']` --
     written that way directly by the model (verified via the trigger call, `record.project_id.
     message_post(...)`, posting on a DIFFERENT model than `self`, so the add-autofix's own trigger
     condition, a bare `"message_post(" in models_py` substring check, fired on text that was never
@@ -14874,7 +14874,7 @@ def _validate_message_post_requires_mail_thread_inherit(generated: GeneratedModu
     Deliberately stays a pure, sync, literal-string-only check -- this is the fast internal-loop
     preview version (registered in `_INTERNAL_LOOP_NARROW_VALIDATORS`, which requires plain
     `Callable[[GeneratedModuleFiles], None]` functions, no live calls). A known, real false
-    positive this literal-only check has (task027, 2026-08-04: `_inherit = 'project.meerwerk'`,
+    positive this literal-only check has (task027, 2026-08-04: `_inherit = 'project.fieldjob'`,
     which already transitively provides mail.thread) is NOT fixed here -- seeing that finding in
     the internal loop's own fast preview at worst costs one extra (harmless) internal-loop patch
     attempt; the real, authoritative fix lives in the async sibling
@@ -14969,7 +14969,7 @@ async def _validate_message_post_requires_mail_thread_inherit_live(
 
     Real, confirmed false positive found live (2026-08-04, same-night full 30-task sweep,
     task027): the sync sibling's literal-string-only check raises on `_inherit =
-    'project.meerwerk'` + message_post(), even though `project.meerwerk` ALREADY provides
+    'project.fieldjob'` + message_post(), even though `project.fieldjob` ALREADY provides
     mail.thread transitively (via its own `_inherit`) -- genuinely correct Odoo code, wrongly
     rejected. This regression was introduced the moment the sibling autofix
     (`_autofix_add_mail_thread_inherit_when_message_post_used`) stopped blindly adding a
@@ -15029,8 +15029,8 @@ async def _validate_activity_calls_require_activity_mixin_inherit_live(
     Real, confirmed false positive found live (2026-08-07, HUMAN_DECISION push, task046, real
     task_ids v5-v7, 3 consecutive `qwen3-coder-30b-a3b` repetition-loop infra aborts all triggered
     by the same pointless internal-fix-loop retry): the sync sibling's literal-string-only check
-    raises on `_inherit = 'project.meerwerk'` + `activity_schedule(...)`, even though
-    `project.meerwerk` ALREADY provides `mail.activity.mixin` transitively (its own real, live
+    raises on `_inherit = 'project.fieldjob'` + `activity_schedule(...)`, even though
+    `project.fieldjob` ALREADY provides `mail.activity.mixin` transitively (its own real, live
     schema includes `activity_ids`/`activity_state`/`activity_type_id` etc., confirmed via a live
     `get_model_fields_fast` lookup) -- genuinely correct Odoo code, wrongly rejected every round.
     Same live field-presence check pattern, same conservative posture: an inconclusive live lookup
@@ -15124,9 +15124,9 @@ def _validate_name_attribute_matches_odoo_naming_convention(generated: Generated
     defect to `_validate_model_declares_name_or_inherit` above -- that validator only checks
     `_name` is PRESENT, not that its value is actually a legal Odoo model name. Three independent
     tasks in the same sweep (task016, task022, task027) generated a Python-class-style `_name`
-    (`'ProjectMeerwerk'`, `'InvoiceSummary'`) instead of Odoo's required dotted-lowercase form
-    (`'project.meerwerk'`, `'invoice.summary'`), and all three failed at registry-build time with
-    the exact same live traceback: `ValueError: The _name attribute ProjectMeerwerk is not valid.`
+    (`'ProjectFieldjob'`, `'InvoiceSummary'`) instead of Odoo's required dotted-lowercase form
+    (`'project.fieldjob'`, `'invoice.summary'`), and all three failed at registry-build time with
+    the exact same live traceback: `ValueError: The _name attribute ProjectFieldjob is not valid.`
     Confirmed against this deployment's own real `odoo/models.py` (not assumed/guessed): Odoo's
     `check_object_name()` uses `regex_object_name = re.compile(r'^[a-z0-9_.]+$')` -- lowercase
     letters, digits, underscore, and dot only, nothing else. This validator reuses that exact
@@ -15164,7 +15164,7 @@ def _validate_name_attribute_matches_odoo_naming_convention(generated: Generated
                 raise ValueError(
                     f"class '{node.name}' declares _name = {name_value!r}, which is not a valid "
                     f"Odoo model name -- Odoo requires lowercase letters, digits, underscores, "
-                    f"and dots only (e.g. 'project.meerwerk', not '{name_value}'); Odoo raises "
+                    f"and dots only (e.g. 'project.fieldjob', not '{name_value}'); Odoo raises "
                     f"directly at registry-build time with this exact deployment's own "
                     f"check_object_name() regex."
                 )
@@ -15961,7 +15961,7 @@ def _validate_goal_named_record_ownership_restriction_is_implemented(
     generated: GeneratedModuleFiles, goal: str, goal_facts: dict | None = None,
 ) -> None:
     """P11 Tier C item 72 (expert design §2.5, addendum addition). Real, confirmed gap: this exact
-    directive was logged twice as an uncorrected Operator correction on the real meerwerk task, and no
+    directive was logged twice as an uncorrected Operator correction on the real fieldjob task, and no
     existing validator checks it. When the goal explicitly requests ownership-scoped visibility,
     confirm a real ir.rule record exists whose domain actually restricts by the current user --
     flag only, the exact restricting field/domain shape is a judgment call, EXCEPT when the goal
@@ -16194,7 +16194,7 @@ _MIGRATION_SHAPED_GOAL_RE = re.compile(
     re.IGNORECASE,
 )
 # Real, confirmed regression risk (not previously called out anywhere else): Task 018 in this same
-# 50-task set ("Every night at midnight, automatically change all meerwerk records that have been
+# 50-task set ("Every night at midnight, automatically change all fieldjob records that have been
 # in 'sent' state for more than 30 days to 'rejected'") is a goal that legitimately, correctly
 # SHOULD use ir.cron -- an explicitly recurring scheduled job, not a one-time migration. Recurring-
 # schedule language must always win over migration-shaped language if a goal somehow matches both,
@@ -16287,7 +16287,7 @@ _COMPUTED_FIELD_DISPLAY_SIGNAL_RE = re.compile(
     # right-hand alternative listed bare "automatically" as a standalone trigger alongside
     # "total/sum/calculat/comput" -- meaning ANY goal mentioning a form/view/header near the word
     # "automatically" matched this shape, even with zero total/sum/computation semantics at all.
-    # Confirmed live: task 005's goal ("When I select a project on the meerwerk form, I want the
+    # Confirmed live: task 005's goal ("When I select a project on the fieldjob form, I want the
     # 'Assigned to' field to automatically fill with the project manager") -- a pure onchange
     # auto-fill task with no computed total anywhere -- matched THIS shape instead (via
     # "form"..."automatically"), shadowing the correct, more specific onchange-autofill shape and
@@ -16311,7 +16311,7 @@ _ONCHANGE_AUTOFILL_SIGNAL_RE = re.compile(
 _SMART_BUTTON_SIGNAL_RE = re.compile(
     # Real, confirmed gap found live (2026-08-06, fix-pass task 009): the original regex
     # required the literal word "count" near "button" -- task 009's own real goal ("a button in
-    # the top-right corner that shows how many meerwerk records exist for this project") never
+    # the top-right corner that shows how many fieldjob records exist for this project") never
     # says "count" at all, only "how many ... exist", so this shape (the reasoning-analysis doc's
     # own category-A smart-button example) went completely undetected. Widened to also match
     # "how many X (?:records|items|...) exist/are there" near "button", the natural-language
@@ -16323,7 +16323,7 @@ _SMART_BUTTON_SIGNAL_RE = re.compile(
 _STATE_TRANSITION_TRIGGER_SIGNAL_RE = re.compile(
     # Widened (2026-08-06, fix-pass task 020): the original trigger-word list ("sent", "approved",
     # "confirmed", "paid", "completed", "submitted") missed "accepted"/"rejected"/"marked as X" --
-    # task 020's own real goal ("When a meerwerk is marked as accepted, automatically send a
+    # task 020's own real goal ("When a fieldjob is marked as accepted, automatically send a
     # confirmation email...") went completely undetected. This shape is also slightly different
     # from the original "the record's own state field should change" case -- it's "an action
     # should FIRE when a state transition happens" -- covered by the same worked example (field(s)
@@ -18312,7 +18312,7 @@ _INTERNAL_LOOP_NARROW_VALIDATORS: list[tuple[str, "Callable[[GeneratedModuleFile
     # list (2026-08-07, HUMAN_DECISION push, task046): unlike its sibling
     # `message_post_requires_mail_thread_inherit` above, this sync check's false-positive rate on
     # a real `_inherit`-only extension of an already-mixin-providing model (confirmed live,
-    # project.meerwerk) was directly, repeatedly observed causing wasted internal-fix-loop retries
+    # project.fieldjob) was directly, repeatedly observed causing wasted internal-fix-loop retries
     # that triggered 3 consecutive real qwen3-coder-30b-a3b repetition-loop infra crashes on the
     # same task. The accurate, live-lookup-based sibling
     # (`_validate_activity_calls_require_activity_mixin_inherit_live`) already runs at the final
@@ -20736,7 +20736,7 @@ class BuildSpecialist:
             "already exists -- use `_inherit`, never `_name`, for it.\n\n"
             "CRITICAL, non-negotiable `_name` FORMAT rule (found live, 2026-08-06, Phase 30 root-"
             "cause pass: task047 and task050 both repeatedly wrote a bare, undotted `_name` -- e.g. "
-            "`_name = 'container'` or `_name = 'meerwerk'` -- crashing install with 'The _name "
+            "`_name = 'container'` or `_name = 'fieldjob'` -- crashing install with 'The _name "
             "attribute <x> is not valid', identically across every round even after Code-Review "
             "flagged it, because this rule was previously only ever implied by a single example "
             "buried in the UNRELATED security_csv rule below, never stated on its own): whenever "
@@ -20936,7 +20936,7 @@ class BuildSpecialist:
             node_id=contract.current_constraint_label,
             call_label="Writing the module's manifest and model code",
             # Phase 18 (§22.12 Component 8): confirmed live against the
-            # real dev-build inference host (10.1.19.195:9090, vLLM
+            # real dev-build inference host (internal GPU host, vLLM
             # 0.24.0 behind llama-swap) that response_format: json_schema
             # is honored end to end for qwen3-coder-30b-a3b -- a cheaper,
             # earlier filter for malformed/truncated structured output,

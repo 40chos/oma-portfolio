@@ -173,12 +173,12 @@ def test_narrow_validators_find_nothing_on_clean_content():
 
 _MISSING_IDENTITY_MODELS_PY = (
     "from odoo import models, fields\n\n"
-    "class ProjectMeerwerk(models.Model):\n\n"
+    "class ProjectFieldjob(models.Model):\n\n"
     "    total = fields.Float()\n"
 )
 _VALID_NAME_MODELS_PY = "class X(models.Model):\n    _name = 'x.x'\n"
-_VALID_INHERIT_MODELS_PY = "class X(models.Model):\n    _inherit = 'project.meerwerk'\n"
-_VALID_INHERIT_LIST_MODELS_PY = "class X(models.Model):\n    _inherit = ['mail.thread', 'project.meerwerk']\n"
+_VALID_INHERIT_MODELS_PY = "class X(models.Model):\n    _inherit = 'project.fieldjob'\n"
+_VALID_INHERIT_LIST_MODELS_PY = "class X(models.Model):\n    _inherit = ['mail.thread', 'project.fieldjob']\n"
 
 
 def test_narrow_validators_catch_a_real_observed_missing_model_identity():
@@ -194,7 +194,7 @@ def test_missing_model_identity_validator_flags_bare_class_directly():
         _validate_model_declares_name_or_inherit(generated)
     except ValueError as exc:
         raised = True
-        assert "ProjectMeerwerk" in str(exc)
+        assert "ProjectFieldjob" in str(exc)
         assert "_name" in str(exc) and "_inherit" in str(exc)
     assert raised, "a class with neither _name nor _inherit must be flagged"
 
@@ -235,15 +235,15 @@ def test_missing_model_identity_validator_silent_on_syntax_error():
 # 7th narrow validator (2026-08-04): _name declared but not Odoo's required
 # dotted-lowercase form -- a real, confirmed-live-3x-in-one-night sibling gap
 # to the 6th validator above (task016/022/027, all "The _name attribute
-# ProjectMeerwerk/InvoiceSummary is not valid" live tracebacks against this
+# ProjectFieldjob/InvoiceSummary is not valid" live tracebacks against this
 # deployment's own odoo/models.py). That validator only checks _name is
 # PRESENT; this one checks its VALUE is legal.
 # ---------------------------------------------------------------------------
 
-_CAMELCASE_NAME_MODELS_PY = "class ProjectMeerwerk(models.Model):\n    _name = 'ProjectMeerwerk'\n"
+_CAMELCASE_NAME_MODELS_PY = "class ProjectFieldjob(models.Model):\n    _name = 'ProjectFieldjob'\n"
 _ANOTHER_CAMELCASE_NAME_MODELS_PY = "class InvoiceSummary(models.Model):\n    _name = 'InvoiceSummary'\n"
-_VALID_DOTTED_NAME_MODELS_PY = "class X(models.Model):\n    _name = 'project.meerwerk'\n"
-_VALID_SINGLE_WORD_NAME_MODELS_PY = "class X(models.Model):\n    _name = 'meerwerk'\n"
+_VALID_DOTTED_NAME_MODELS_PY = "class X(models.Model):\n    _name = 'project.fieldjob'\n"
+_VALID_SINGLE_WORD_NAME_MODELS_PY = "class X(models.Model):\n    _name = 'fieldjob'\n"
 
 
 def test_narrow_validators_catch_a_real_observed_camelcase_name():
@@ -259,8 +259,8 @@ def test_name_convention_validator_flags_camelcase_directly():
         _validate_name_attribute_matches_odoo_naming_convention(generated)
     except ValueError as exc:
         raised = True
-        assert "ProjectMeerwerk" in str(exc)
-    assert raised, "_name = 'ProjectMeerwerk' (CamelCase, no dots) must be flagged"
+        assert "ProjectFieldjob" in str(exc)
+    assert raised, "_name = 'ProjectFieldjob' (CamelCase, no dots) must be flagged"
 
 
 def test_name_convention_validator_flags_second_real_observed_camelcase_name():
@@ -476,11 +476,11 @@ def test_empty_ref_validator_no_op_when_views_xml_is_none():
 # ---------------------------------------------------------------------------
 
 _TWO_ROOT_TREE_SEARCH_XML = (
-    '<odoo>\n  <record id="view_meerwerk_list_tree" model="ir.ui.view">\n'
-    '    <field name="name">meerwerk.list.tree</field>\n'
-    '    <field name="model">meerwerk.list</field>\n'
+    '<odoo>\n  <record id="view_fieldjob_list_tree" model="ir.ui.view">\n'
+    '    <field name="name">fieldjob.list.tree</field>\n'
+    '    <field name="model">fieldjob.list</field>\n'
     '    <field name="arch" type="xml">\n'
-    '      <tree string="Meerwerk List">\n'
+    '      <tree string="Fieldjob List">\n'
     '        <field name="name"/>\n'
     "      </tree>\n"
     "      <search>\n"
@@ -491,11 +491,11 @@ _TWO_ROOT_TREE_SEARCH_XML = (
 )
 
 _SINGLE_ROOT_TREE_XML = (
-    '<odoo>\n  <record id="view_meerwerk_list_tree" model="ir.ui.view">\n'
-    '    <field name="name">meerwerk.list.tree</field>\n'
-    '    <field name="model">meerwerk.list</field>\n'
+    '<odoo>\n  <record id="view_fieldjob_list_tree" model="ir.ui.view">\n'
+    '    <field name="name">fieldjob.list.tree</field>\n'
+    '    <field name="model">fieldjob.list</field>\n'
     '    <field name="arch" type="xml">\n'
-    '      <tree string="Meerwerk List">\n'
+    '      <tree string="Fieldjob List">\n'
     '        <field name="name"/>\n'
     "      </tree>\n"
     "    </field>\n"
@@ -503,18 +503,18 @@ _SINGLE_ROOT_TREE_XML = (
 )
 
 _SEPARATE_SEARCH_VIEW_XML = (
-    '<odoo>\n  <record id="view_meerwerk_list_tree" model="ir.ui.view">\n'
-    '    <field name="name">meerwerk.list.tree</field>\n'
-    '    <field name="model">meerwerk.list</field>\n'
+    '<odoo>\n  <record id="view_fieldjob_list_tree" model="ir.ui.view">\n'
+    '    <field name="name">fieldjob.list.tree</field>\n'
+    '    <field name="model">fieldjob.list</field>\n'
     '    <field name="arch" type="xml">\n'
-    '      <tree string="Meerwerk List">\n'
+    '      <tree string="Fieldjob List">\n'
     '        <field name="name"/>\n'
     "      </tree>\n"
     "    </field>\n"
     "  </record>\n"
-    '  <record id="view_meerwerk_list_search" model="ir.ui.view">\n'
-    '    <field name="name">meerwerk.list.search</field>\n'
-    '    <field name="model">meerwerk.list</field>\n'
+    '  <record id="view_fieldjob_list_search" model="ir.ui.view">\n'
+    '    <field name="name">fieldjob.list.search</field>\n'
+    '    <field name="model">fieldjob.list</field>\n'
     '    <field name="arch" type="xml">\n'
     "      <search>\n"
     '        <filter name="filter_accepted" string="Accepted" domain="[]"/>\n'

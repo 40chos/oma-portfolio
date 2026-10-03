@@ -240,7 +240,7 @@ def test_install_succeeds_on_the_duplicate_db_and_field_genuinely_exists():
     on this deployment's duplicate databases) is CONFIRMED RESOLVED --
     re-ran the exact same real module/db pair this test always used and
     it now installs cleanly. Whoever administers the actual Postgres
-    server behind odoo-dev.int must have applied the one-time table-
+    server behind the dev host must have applied the one-time table-
     ownership fix the code's own comments always said was needed and
     outside this project's access boundary.
 

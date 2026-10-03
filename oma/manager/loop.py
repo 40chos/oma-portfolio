@@ -1,6 +1,6 @@
 """The Manager's own phased async loop -- Phase 6 step 5. A plain async
 function with six sequential phases, following §2.3's confirmed real
-Nexo pattern (a single async function, local variables, no graph
+Pulsar pattern (a single async function, local variables, no graph
 library) rather than an invented shape.
 
 Phase 1: correction-detection check on the incoming message.
@@ -235,12 +235,12 @@ def _schema_detected_model_hint(detected_existing_module_dependency: str | None,
     own live-schema-grounding prompt injection (§26 item 1), which silently never fired without
     this. Deliberately conservative, matching detect_existing_custom_module_target()'s own "a
     wrong guess is worse than no guess" philosophy: only trusted when the module owns EXACTLY ONE
-    model, OR (real gap found live, 2026-08-04, second retest pass: `project_meerwerk` owns FOUR
-    models -- `project.meerwerk`, `.batch.invoice`, `.line`, plus its own extension of core
+    model, OR (real gap found live, 2026-08-04, second retest pass: `project_fieldjob` owns FOUR
+    models -- `project.fieldjob`, `.batch.invoice`, `.line`, plus its own extension of core
     `project.project` -- so the "exactly one" rule alone left this real, common shape (a primary
     model plus its own line-items/sub-models) unresolved even with a correct module pick in hand)
     one of the owned models' own dotted name, with dots replaced by underscores, EXACTLY equals
-    the module's own name -- confirmed live: `project_meerwerk` module -> `project.meerwerk`
+    the module's own name -- confirmed live: `project_fieldjob` module -> `project.fieldjob`
     model is exactly this real, common Odoo naming convention (the module is named after its own
     primary model), a safe, structural signal, never a guess at which of several equally-plausible
     candidates is "the" one. Still returns None (never guesses) if neither condition is met.
@@ -432,7 +432,7 @@ async def run_turn(
     same pause forever -- the failure count this reads never decreases on its own. Confirmed
     live: 3 completely different, unrelated real business tasks (008/009/010, none sharing any
     actual content or root cause with each other) all got paused here purely because 2 EARLIER,
-    genuinely unrelated tasks against the same Odoo model (`project.meerwerk`) had failed --
+    genuinely unrelated tasks against the same Odoo model (`project.fieldjob`) had failed --
     correct, conservative behavior for the check itself, but with literally no way for a caller
     who's made the deliberate, informed choice to proceed anyway (a real "yes, keep trying"
     answer, not a blind retry) to express that choice. Defaults to False -- zero behavior change
@@ -515,7 +515,7 @@ async def run_turn(
     # running the SITE 50-task list -- a plain-text goal submitted
     # through this ordinary chat entry point had NO way to tell Build
     # "this targets an ALREADY-INSTALLED custom module" (e.g. "the
-    # meerwerk record" meaning the real project_meerwerk module, 48
+    # fieldjob record" meaning the real project_fieldjob module, 48
     # real fields already there), so Build scaffolded a brand-new
     # module with its own fresh field set instead, hitting the
     # single-constraint-per-round decomposition cap on a task that
@@ -527,7 +527,7 @@ async def run_turn(
     # real target," which only ever made sense for a module OUR OWN
     # pipeline previously scaffolded under /mnt/extra-addons; tried
     # live against a genuine pre-existing CUSTOMER module
-    # (`project_meerwerk`, real files at /opt/site/site16, never
+    # (`project_fieldjob`, real files at /opt/site/site16, never
     # written by this pipeline), it silently scaffolded a second,
     # colliding module of the same name instead of touching the real
     # one -- and even if it hadn't collided, directly rewriting real,
@@ -805,9 +805,9 @@ async def run_turn(
     #
     # Phase 30 §26 follow-up (2026-08-04): real, confirmed gap -- resolve_module_identity()'s own
     # prose fallback only matches a literal `Model: X` line or a dotted identifier (e.g.
-    # "project.meerwerk") appearing verbatim in the goal text. Confirmed live: every one of a
-    # real 24-task benchmark's goals describes the target in plain English ("the meerwerk form",
-    # never "project.meerwerk"), so module_identity resolved to None on 100% of them -- silently
+    # "project.fieldjob") appearing verbatim in the goal text. Confirmed live: every one of a
+    # real 24-task benchmark's goals describes the target in plain English ("the fieldjob form",
+    # never "project.fieldjob"), so module_identity resolved to None on 100% of them -- silently
     # disabling Build's own live-schema-grounding prompt injection (§26 item 1) for exactly the
     # goal-writing style real users (and, per this comment's own point below, real production
     # traffic) actually use. detect_existing_custom_module_target() (already computed above, at

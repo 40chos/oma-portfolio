@@ -1,8 +1,8 @@
 """Phase 2 tests, revised 2026-07-13 for the two-dedicated-GPU-host
 infra change: ModelGatewayClient + call_structured, against the two
 real resident inference hosts --
-GPU Worker 01 (10.1.19.195:9090, coder only) and
-GPU Worker 02 (10.1.19.203:9090, the one shared qwen3.6-27b reasoning
+GPU Worker 01 (192.0.2.11:9090, coder only) and
+GPU Worker 02 (192.0.2.12:9090, the one shared qwen3.6-27b reasoning
 model, served under the host alias `JA-GPU2-27B-INT4-64K`) -- per the
 build plan's own instruction to test this against the real gateway
 before building anything on top of it, plus a deliberately broken URL

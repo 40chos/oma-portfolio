@@ -28,15 +28,15 @@ from specialists.testing_qa.specialist import (
 
 _STANDARD_IDIOM_MODELS_PY = (
     "from odoo import api, fields, models\n\n"
-    "class ProjectMeerwerk(models.Model):\n"
-    "    _inherit = 'project.meerwerk'\n"
+    "class ProjectFieldjob(models.Model):\n"
+    "    _inherit = 'project.fieldjob'\n"
     "    name = fields.Char(string='Name', default='New', copy=False, readonly=True)\n"
     "\n"
     "    @api.model_create_multi\n"
     "    def create(self, vals_list):\n"
     "        for vals in vals_list:\n"
     "            if vals.get('name', 'New') == 'New':\n"
-    "                vals['name'] = self.env['ir.sequence'].next_by_code('project.meerwerk') or 'New'\n"
+    "                vals['name'] = self.env['ir.sequence'].next_by_code('project.fieldjob') or 'New'\n"
     "        return super().create(vals_list)\n"
 )
 
@@ -299,8 +299,8 @@ def test_state_button_exemption_never_fires_on_a_method_with_extra_logic():
 
 _SUM_COMPUTE_MODELS_PY = (
     "from odoo import api, fields, models\n\n"
-    "class ProjectMeerwerk(models.Model):\n"
-    "    _inherit = 'project.meerwerk'\n"
+    "class ProjectFieldjob(models.Model):\n"
+    "    _inherit = 'project.fieldjob'\n"
     "    amount_total = fields.Monetary(string='Amount Total', "
     "compute='_compute_amount_total', store=True)\n\n"
     "    @api.depends('line_ids.price_unit')\n"
@@ -309,8 +309,8 @@ _SUM_COMPUTE_MODELS_PY = (
     "            record.amount_total = sum(record.line_ids.mapped('price_unit'))\n"
 )
 _SUM_COMPUTE_GOAL = (
-    "On the meerwerk record, I want to see the total of all line prices shown automatically in "
-    "the header.\n\nModule: project_meerwerk\nModel: project.meerwerk\n"
+    "On the fieldjob record, I want to see the total of all line prices shown automatically in "
+    "the header.\n\nModule: project_fieldjob\nModel: project.fieldjob\n"
     "Field: amount_total (Monetary, compute=_compute_amount_total, depends on "
     "line_ids.price_unit, store=True)\n"
 )
@@ -367,8 +367,8 @@ def test_sum_compute_exemption_never_fires_without_a_concrete_compute_goal():
 
 _ONCHANGE_MODELS_PY = (
     "from odoo import api, fields, models\n\n"
-    "class ProjectMeerwerk(models.Model):\n"
-    "    _inherit = 'project.meerwerk'\n\n"
+    "class ProjectFieldjob(models.Model):\n"
+    "    _inherit = 'project.fieldjob'\n\n"
     "    @api.onchange('project_id')\n"
     "    def _onchange_project_id(self):\n"
     "        if self.project_id and self.project_id.user_id:\n"
@@ -377,9 +377,9 @@ _ONCHANGE_MODELS_PY = (
     "            self.user_id = False\n"
 )
 _ONCHANGE_GOAL = (
-    "When I select a project on the meerwerk form, I want the 'Assigned to' field to "
+    "When I select a project on the fieldjob form, I want the 'Assigned to' field to "
     "automatically fill with the project manager.\n\n"
-    "Module: project_meerwerk\nModel: project.meerwerk\n"
+    "Module: project_fieldjob\nModel: project.fieldjob\n"
     "Trigger field: project_id\nTarget field: user_id\nMethod name: _onchange_project_id\n"
 )
 

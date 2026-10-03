@@ -21,7 +21,7 @@ _MANIFEST = ManifestFields(
 
 _RULE_XML = (
     '<record id="rule_delete_restrict" model="ir.rule">'
-    '<field name="model_id" ref="model_project_meerwerk"/>'
+    '<field name="model_id" ref="model_project_fieldjob"/>'
     '<field name="groups" eval="[(4, ref(\'oma_x.group_admin\'))]"/>'
     '<field name="perm_read">0</field>'
     '<field name="perm_write">0</field>'
@@ -41,7 +41,7 @@ def _gen(security_csv: str, security_xml: str = _RULE_XML) -> GeneratedModuleFil
 def test_widens_denied_perm_unlink_for_rule_referenced_group():
     csv = (
         "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-        "access_x,x,model_project_meerwerk,oma_x.group_admin,1,1,1,0\n"
+        "access_x,x,model_project_fieldjob,oma_x.group_admin,1,1,1,0\n"
     )
     g = _gen(csv)
     _autofix_widen_baseline_access_row_denied_by_referencing_rule(g)
@@ -53,7 +53,7 @@ def test_widens_denied_perm_unlink_for_rule_referenced_group():
 def test_leaves_unrelated_group_row_untouched():
     csv = (
         "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-        "access_x,x,model_project_meerwerk,oma_x.group_admin,1,1,1,0\n"
+        "access_x,x,model_project_fieldjob,oma_x.group_admin,1,1,1,0\n"
         "access_y,y,model_res_partner,base.group_user,1,1,1,0\n"
     )
     g = _gen(csv)
@@ -66,7 +66,7 @@ def test_leaves_unrelated_group_row_untouched():
 def test_never_touches_already_granted_row():
     csv = (
         "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-        "access_x,x,model_project_meerwerk,oma_x.group_admin,1,1,1,1\n"
+        "access_x,x,model_project_fieldjob,oma_x.group_admin,1,1,1,1\n"
     )
     g = _gen(csv)
     before = g.security_csv
@@ -78,7 +78,7 @@ def test_never_touches_already_granted_row():
 def test_noop_without_ir_rule():
     csv = (
         "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-        "access_x,x,model_project_meerwerk,oma_x.group_admin,1,1,1,0\n"
+        "access_x,x,model_project_fieldjob,oma_x.group_admin,1,1,1,0\n"
     )
     g = _gen(csv, security_xml="")
     before = g.security_csv
@@ -131,14 +131,14 @@ def test_still_widens_perm_unlink_for_an_elevating_rule_with_a_domain_force():
     """
     elevating_rule_xml = (
         '<record id="rule_admin_delete" model="ir.rule">'
-        '<field name="model_id" ref="model_project_meerwerk"/>'
+        '<field name="model_id" ref="model_project_fieldjob"/>'
         '<field name="domain_force">[]</field>'
         '<field name="groups" eval="[(4, ref(\'oma_x.group_admin\'))]"/>'
         "</record>"
     )
     csv = (
         "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-        "access_x,x,model_project_meerwerk,oma_x.group_admin,1,1,1,0\n"
+        "access_x,x,model_project_fieldjob,oma_x.group_admin,1,1,1,0\n"
     )
     g = _gen(csv, security_xml=elevating_rule_xml)
     _autofix_widen_baseline_access_row_denied_by_referencing_rule(g)
@@ -150,7 +150,7 @@ def test_still_widens_perm_unlink_for_an_elevating_rule_with_a_domain_force():
 def test_validator_no_longer_fires_after_autofix_runs_first():
     csv = (
         "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-        "access_x,x,model_project_meerwerk,oma_x.group_admin,1,1,1,0\n"
+        "access_x,x,model_project_fieldjob,oma_x.group_admin,1,1,1,0\n"
     )
     g = _gen(csv)
     _autofix_widen_baseline_access_row_denied_by_referencing_rule(g)

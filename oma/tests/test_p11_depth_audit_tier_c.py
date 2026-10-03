@@ -424,11 +424,11 @@ def test_item162_never_raises_when_goal_mentions_delete():
 def test_autofix_downgrades_perm_unlink_to_zero_on_task010_real_shape():
     csv = (
         "id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink\n"
-        "access_project_meerwerk_group_mechanics,project.meerwerk,"
-        "project_meerwerk.model_project_meerwerk,oma_x.group_mechanics,1,1,1,1"
+        "access_project_fieldjob_group_mechanics,project.fieldjob,"
+        "project_fieldjob.model_project_fieldjob,oma_x.group_mechanics,1,1,1,1"
     )
     gen = _gen(security_csv=csv)
-    goal = "Mechanics should only see the meerwerk records they created themselves."
+    goal = "Mechanics should only see the fieldjob records they created themselves."
     _autofix_security_csv_perm_unlink_defaults_to_zero(gen, goal)
     assert gen.security_csv.endswith(",1,1,1,0")
     assert _raises(_validate_security_csv_perm_unlink_matches_goal_intent, gen, goal) is None

@@ -83,7 +83,7 @@ def test_extract_collision_confirmed_field_names_parses_the_real_marker_format()
     specialists/build/specialist.py's own `_extract_collision_marker_field_names()` sibling.
     """
     notes = (
-        "The module extends project.meerwerk to display amount_total.\n"
+        "The module extends project.fieldjob to display amount_total.\n"
         "ALREADY_SATISFIED_BY_REAL_TARGET_COLLISION: ['amount_total']"
     )
     assert _extract_collision_confirmed_field_names(notes) == ["amount_total"]

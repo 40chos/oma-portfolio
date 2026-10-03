@@ -76,8 +76,8 @@ def test_direct_field_filter_downgrades_using_graph_alone_when_rpc_path_unconfig
     os.environ.pop("OMA_ODOO_DB_DUPLICATE_FOR_BUILD", None)
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "from odoo import models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
         ),
         "/mnt/extra-addons/oma_x/data/mail_template_data.xml": (
             '<odoo><record><field name="body_html">{{ object.name }}</field></record></odoo>'
@@ -87,7 +87,7 @@ def test_direct_field_filter_downgrades_using_graph_alone_when_rpc_path_unconfig
         ReviewFinding(
             location="data/mail_template_data.xml:1", severity="blocking",
             explanation=(
-                "The template body references object.name, but the model project.meerwerk "
+                "The template body references object.name, but the model project.fieldjob "
                 "may not have a name field; verify field existence to prevent rendering errors."
             ),
         ),
@@ -112,8 +112,8 @@ def test_direct_field_filter_unions_graph_and_rpc_sources():
     os.environ["OMA_ODOO_DB_DUPLICATE_FOR_BUILD"] = "odoo16_dev"
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "from odoo import models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
         ),
         "/mnt/extra-addons/oma_x/data/mail_template_data.xml": (
             '<odoo><record><field name="body_html">'
@@ -152,8 +152,8 @@ def test_direct_field_filter_still_leaves_finding_untouched_when_both_sources_em
     os.environ.pop("OMA_ODOO_DB_DUPLICATE_FOR_BUILD", None)
     files = {
         "/mnt/extra-addons/oma_x/models/models.py": (
-            "from odoo import models\n\nclass ProjectMeerwerk(models.Model):\n"
-            "    _inherit = 'project.meerwerk'\n"
+            "from odoo import models\n\nclass ProjectFieldjob(models.Model):\n"
+            "    _inherit = 'project.fieldjob'\n"
         ),
         "/mnt/extra-addons/oma_x/data/mail_template_data.xml": (
             '<odoo><record><field name="body_html">{{ object.name }}</field></record></odoo>'

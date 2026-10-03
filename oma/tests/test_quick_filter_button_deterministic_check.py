@@ -1,5 +1,5 @@
 """Real, confirmed false-pass found live (2026-08-06, fix-pass task 007): task 007's real goal
-("In the meerwerk list, I want a quick filter button called 'Accepted' that shows only accepted
+("In the fieldjob list, I want a quick filter button called 'Accepted' that shows only accepted
 records, and another called 'My records' that shows only records assigned to me.") produced, in
 ALL 3 best-of-N candidates, a tree-view decoration-* attribute (Odoo's row-COLORING mechanism)
 instead of a real <filter> element inside a <search> view (Odoo's actual clickable quick-filter-
@@ -28,7 +28,7 @@ _MANIFEST = ManifestFields(
 )
 
 _TASK_007_GOAL = (
-    "In the meerwerk list, I want a quick filter button called 'Accepted' that shows only "
+    "In the fieldjob list, I want a quick filter button called 'Accepted' that shows only "
     "accepted records, and another called 'My records' that shows only records assigned to me."
 )
 
@@ -52,10 +52,10 @@ def test_raises_on_task007_own_real_shape_decoration_instead_of_filter():
     """The exact real defect: decoration-* attributes on the tree view, no <filter> anywhere."""
     views_xml = (
         '<?xml version="1.0" encoding="utf-8"?>\n<odoo>\n'
-        '  <record id="view_project_meerwerk_list_inherit" model="ir.ui.view">\n'
-        '    <field name="name">project.meerwerk.tree.inherit</field>\n'
-        '    <field name="model">project.meerwerk</field>\n'
-        '    <field name="inherit_id" ref="project_meerwerk.view_project_meerwerk_tree"/>\n'
+        '  <record id="view_project_fieldjob_list_inherit" model="ir.ui.view">\n'
+        '    <field name="name">project.fieldjob.tree.inherit</field>\n'
+        '    <field name="model">project.fieldjob</field>\n'
+        '    <field name="inherit_id" ref="project_fieldjob.view_project_fieldjob_tree"/>\n'
         '    <field name="arch" type="xml">\n'
         '      <xpath expr="//tree" position="attributes">\n'
         '        <attribute name="decoration-success">is_accepted</attribute>\n'
@@ -75,10 +75,10 @@ def test_raises_on_task007_own_real_shape_decoration_instead_of_filter():
 def test_passes_with_a_real_filter_element():
     views_xml = (
         '<?xml version="1.0" encoding="utf-8"?>\n<odoo>\n'
-        '  <record id="view_project_meerwerk_search_inherit" model="ir.ui.view">\n'
-        '    <field name="name">project.meerwerk.search.inherit</field>\n'
-        '    <field name="model">project.meerwerk</field>\n'
-        '    <field name="inherit_id" ref="project_meerwerk.view_project_meerwerk_search"/>\n'
+        '  <record id="view_project_fieldjob_search_inherit" model="ir.ui.view">\n'
+        '    <field name="name">project.fieldjob.search.inherit</field>\n'
+        '    <field name="model">project.fieldjob</field>\n'
+        '    <field name="inherit_id" ref="project_fieldjob.view_project_fieldjob_search"/>\n'
         '    <field name="arch" type="xml">\n'
         '      <xpath expr="//search" position="inside">\n'
         '        <filter name="accepted" string="Accepted" domain="[(\'state\',\'=\',\'accepted\')]"/>\n'

@@ -57,7 +57,7 @@ CLOUD_ESCALATION_CALL_SITES = frozenset({
 # Confirmed live, 2026-08-04 (the scoped Sonnet-5 A/B experiment this section's own §26.0 refers
 # to): Sonnet correctly wrote real, non-empty, well-reasoned module content on both test tasks --
 # closing the "empty class" failure mode qwen3-coder-30b-a3b showed -- but still guessed a WRONG
-# model name (`meerwerk.order` instead of the real `project.meerwerk`) on one of the two, and its
+# model name (`fieldjob.order` instead of the real `project.fieldjob`) on one of the two, and its
 # own `notes` field explicitly said the real target schema/prior module content was never in its
 # prompt. This independently reconfirms §26.1/§26.2's own root-cause finding (a context/prompt-
 # assembly gap, not a pure model-capability ceiling) rather than contradicting it -- but ALSO

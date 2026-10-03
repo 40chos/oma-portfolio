@@ -112,7 +112,7 @@ def test_get_relation_fields_fast_includes_a_group_restricted_relation():
     ]
     with patch("tools_odoo.odoo_schema_client._get_or_create_shared_key", return_value=(2, "fake-key")), \
          patch("tools_odoo.odoo_schema_client._models_proxy", return_value=_fake_models_proxy(rows)):
-        result = get_relation_fields_fast("project.meerwerk", "odoo16_dev")
+        result = get_relation_fields_fast("project.fieldjob", "odoo16_dev")
     assert result == {"partner_id": "res.partner", "restricted_line_ids": "res.partner"}, (
         f"a group-restricted relational field must still be included -- got {result!r}"
     )

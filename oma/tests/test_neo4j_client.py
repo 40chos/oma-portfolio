@@ -25,7 +25,7 @@ def _clear_singleton():
 
 def _env(**overrides):
     base = {
-        "NEO4J_URI": "bolt://10.1.13.151:7687",
+        "NEO4J_URI": "bolt://192.0.2.10:7687",
         "NEO4J_USER": "test-user",
         "NEO4J_PASSWORD": "test-password",
     }
@@ -43,7 +43,7 @@ def test_get_neo4j_driver_reads_credentials_only_from_settings():
     assert result is fake_driver
     mock_gd.driver.assert_called_once()
     args, kwargs = mock_gd.driver.call_args
-    assert args[0] == "bolt://10.1.13.151:7687"
+    assert args[0] == "bolt://192.0.2.10:7687"
     assert kwargs["auth"] == ("test-user", "test-password")
     assert kwargs["connection_timeout"] == 5.0
     assert kwargs["max_transaction_retry_time"] == 15.0

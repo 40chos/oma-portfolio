@@ -1,4 +1,4 @@
-"""Phase 29B auto-generated test for generated_models_py_x_projectmeerwerk_x.py -- executed for real during drafting (not just compile-checked) and passed. Review this test's own correctness alongside the validator before promotion; a generated test is only as trustworthy as a human confirms it to be.
+"""Phase 29B auto-generated test for generated_models_py_x_projectfieldjob_x.py -- executed for real during drafting (not just compile-checked) and passed. Review this test's own correctness alongside the validator before promotion; a generated test is only as trustworthy as a human confirms it to be.
 """
 
 import sys, os

@@ -276,8 +276,8 @@ def test_live_message_post_email_is_not_flagged_as_templated_email():
     from infra.gateway_client import ModelGatewayClient
 
     task020_goal = (
-        "When a meerwerk is marked as accepted, automatically send a confirmation email to the "
-        "customer in their own language. Include the meerwerk reference, total amount, and "
+        "When a fieldjob is marked as accepted, automatically send a confirmation email to the "
+        "customer in their own language. Include the fieldjob reference, total amount, and "
         "expected finish date."
     )
     genuine_template_goal = (

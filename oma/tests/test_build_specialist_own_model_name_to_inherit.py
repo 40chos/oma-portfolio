@@ -186,13 +186,13 @@ def test_rewrites_when_ownership_cannot_be_determined(monkeypatch):
 
 
 # --- Real, confirmed gap found live (2026-08-03, task016's own real escalation) ---
-# The full dotted model name ('project.meerwerk') never appears verbatim in ordinary, casual
-# goal phrasing -- every one of these real tasks refers to "a meerwerk record", never the
+# The full dotted model name ('project.fieldjob') never appears verbatim in ordinary, casual
+# goal phrasing -- every one of these real tasks refers to "a fieldjob record", never the
 # technical dotted name. Widened to also accept the model's own last dot-segment as a match.
 
 _REAL_TASK016_GOAL = (
     "I want to see in the chatter history whenever someone changes the 'state' or 'user_id' "
-    "on a meerwerk record — who changed it and what it changed from/to."
+    "on a fieldjob record — who changed it and what it changed from/to."
 )
 
 
@@ -200,13 +200,13 @@ def test_rewrites_name_to_inherit_when_goal_only_casually_mentions_the_model(mon
     monkeypatch.setattr(build_specialist, "get_model_fields", lambda name, db: ["state", "user_id"])
     generated = _make_generated(
         "from odoo import models, fields\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _name = 'project.meerwerk'\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _name = 'project.fieldjob'\n"
     )
     asyncio.run(_autofix_rewrite_own_task_model_name_to_inherit(generated, _REAL_TASK016_GOAL, "odoo16_dev"))
-    assert "_inherit = 'project.meerwerk'" in generated.models_py
-    assert "_name = 'project.meerwerk'" not in generated.models_py
-    print("PASS: task016's real casual 'meerwerk record' phrasing (not the full dotted name) "
+    assert "_inherit = 'project.fieldjob'" in generated.models_py
+    assert "_name = 'project.fieldjob'" not in generated.models_py
+    print("PASS: task016's real casual 'fieldjob record' phrasing (not the full dotted name) "
           "still passes the goal-mention safety gate")
 
 
@@ -229,19 +229,19 @@ def test_still_does_not_rewrite_when_last_segment_also_absent_from_goal():
 # `_name` value that reuses the Python CLASS name (PascalCase) as the model identifier is never
 # a real, existing Odoo model -- so the "already real" collision check above never catches it --
 # yet it's also never a VALID Odoo model identifier (Odoo requires lowercase, dot-separated).
-# Odoo's own real install crashed with "The _name attribute ProjectMeerwerk is not valid."
+# Odoo's own real install crashed with "The _name attribute ProjectFieldjob is not valid."
 
 def test_raises_on_pascalcase_name_reused_from_the_class():
     generated = _make_generated(
         "from odoo import models, fields\n\n"
-        "class ProjectMeerwerk(models.Model):\n"
-        "    _name = 'ProjectMeerwerk'\n"
+        "class ProjectFieldjob(models.Model):\n"
+        "    _name = 'ProjectFieldjob'\n"
     )
     try:
         _validate_new_model_name_is_valid_odoo_identifier(generated)
         assert False, "must raise on a PascalCase _name value"
     except ValueError as exc:
-        assert "ProjectMeerwerk" in str(exc)
+        assert "ProjectFieldjob" in str(exc)
     print("PASS: task016's real PascalCase _name (class name reused as model identifier) raises")
 
 
@@ -257,7 +257,7 @@ def test_never_raises_on_a_valid_dotted_name():
 
 def test_never_touches_inherit_only_name():
     generated = _make_generated(
-        "from odoo import models\n\nclass X(models.Model):\n    _inherit = 'ProjectMeerwerk'\n"
+        "from odoo import models\n\nclass X(models.Model):\n    _inherit = 'ProjectFieldjob'\n"
     )
     _validate_new_model_name_is_valid_odoo_identifier(generated)
     print("PASS: _inherit is never checked, only _name")

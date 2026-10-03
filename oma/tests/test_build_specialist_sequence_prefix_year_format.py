@@ -24,15 +24,15 @@ _MANIFEST = ManifestFields(
 )
 
 _TASK006_GOAL = (
-    "Every meerwerk record should get a unique reference number like MW-2026-0001, "
+    "Every fieldjob record should get a unique reference number like MW-2026-0001, "
     "auto-generated when created. The user should never have to type this."
 )
 
 _TASK006_OWN_REAL_SEQUENCE_XML = (
     '<?xml version="1.0" encoding="utf-8"?>\n<odoo>\n'
-    '  <record id="seq_project_meerwerk_ref" model="ir.sequence">\n'
-    '    <field name="name">Project Meerwerk Reference</field>\n'
-    '    <field name="code">project.meerwerk.ref</field>\n'
+    '  <record id="seq_project_fieldjob_ref" model="ir.sequence">\n'
+    '    <field name="name">Project Fieldjob Reference</field>\n'
+    '    <field name="code">project.fieldjob.ref</field>\n'
     '    <field name="prefix">MW-</field>\n'
     '    <field name="padding">4</field>\n'
     '    <field name="number_next">1</field>\n'
@@ -87,7 +87,7 @@ def test_no_op_when_goal_gives_no_concrete_year_example():
     """A goal that just says 'auto-generated reference' with no concrete LETTERS-YYYY-NNNN
     example at all must never be flagged -- inferring a year requirement from nothing is exactly
     the kind of guess this validator must never make."""
-    goal = "Every meerwerk record should get a unique reference number, auto-generated when created."
+    goal = "Every fieldjob record should get a unique reference number, auto-generated when created."
     generated = _generated({"data/sequence_data.xml": _TASK006_OWN_REAL_SEQUENCE_XML})
     _validate_sequence_prefix_matches_goal_example_year_format(generated, goal)  # must not raise
 

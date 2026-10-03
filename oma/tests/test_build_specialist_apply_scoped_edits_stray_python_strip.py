@@ -92,7 +92,7 @@ def test_no_op_when_no_stray_file_exists_at_all():
 def test_flags_security_xml_referenced_in_manifest_but_missing_from_applied():
     manifest_fields = ManifestFields(
         name="oma_x", version="16.0.1.0.0", category="Hidden", summary="x", author="x",
-        depends=["base", "project_meerwerk"], data=["security/security.xml", "security/ir.model.access.csv"],
+        depends=["base", "project_fieldjob"], data=["security/security.xml", "security/ir.model.access.csv"],
     )
     prior_files = dict(_PRIOR_FILES)
     prior_files["__manifest__.py"] = _render_manifest_py(manifest_fields)
@@ -133,7 +133,7 @@ def test_never_flags_a_module_that_legitimately_has_no_security_xml():
 def test_never_flags_when_security_xml_correctly_survives():
     manifest_fields = ManifestFields(
         name="oma_x", version="16.0.1.0.0", category="Hidden", summary="x", author="x",
-        depends=["base", "project_meerwerk"], data=["security/security.xml", "security/ir.model.access.csv"],
+        depends=["base", "project_fieldjob"], data=["security/security.xml", "security/ir.model.access.csv"],
     )
     prior_files = dict(_PRIOR_FILES)
     prior_files["__manifest__.py"] = _render_manifest_py(manifest_fields)
