@@ -14,5 +14,5 @@ regexes = [
   # Deliberately fake credential used as a fixture in
   # tests/test_code_review_specialist.py to verify the Code-Review
   # specialist actually flags hardcoded secrets in generated code.
-  '''sk_live_51H8x9K2mZQwLIVEsecretdonotcommit12345''',
+  '''sk_test_51H8x9K2mZQwMOCKsecretdonotcommit12345''',
 ]

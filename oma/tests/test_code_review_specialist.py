@@ -47,7 +47,7 @@ def _write_deliberately_bad_module() -> None:
         'class BadPatternPartner(models.Model):\n'
         '    _inherit = "res.partner"\n\n'
         '    # Hardcoded credential -- exactly the kind of thing review must flag.\n'
-        '    API_SECRET_KEY = "sk_live_51H8x9K2mZQwLIVEsecretdonotcommit12345"\n\n'
+        '    API_SECRET_KEY = "sk_test_51H8x9K2mZQwMOCKsecretdonotcommit12345"\n\n'
         '    def unsafe_bulk_delete_all_partners(self):\n'
         '        # Overly broad sudo() bypassing all access rules, deleting\n'
         '        # every partner record in the system unconditionally.\n'
